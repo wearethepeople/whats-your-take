@@ -57,3 +57,19 @@ jobs:
       - run: npm run db:generate
       - name: fail if schema drifted from committed migrations
         run: git diff --exit-code drizzle/
+
+  deploy:
+    name: deploy to Fly
+    needs: [lint, typecheck, test, migration-check]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    # Single-machine SQLite: never let two deploys overlap.
+    concurrency: deploy-group
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # --ha=false: harmless when the machine exists; prevents Fly's
+      # two-machine default if it ever doesn't. Machine count must stay 1.
+      - run: flyctl deploy --remote-only --ha=false
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
