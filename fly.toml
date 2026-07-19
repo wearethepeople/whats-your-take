@@ -1,0 +1,45 @@
+# fly.toml app configuration file generated for whats-your-take on 2026-07-19T16:18:35-05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+# SQLite on a single volume means the machine count MUST stay at 1 — never
+# scale up. fly.toml cannot pin count; it is enforced by deploying with
+# `fly deploy --ha=false` and `fly scale count 1` (see docs/deploy.md).
+# Litestream performs its final replication sync after the app exits, so
+# kill_timeout below stays above Fly's 5s default.
+#
+
+app = 'whats-your-take'
+primary_region = 'dfw'
+kill_signal = 'SIGINT'
+kill_timeout = '15s'
+swap_size_mb = 512
+
+[build]
+[env]
+DATABASE_PATH = '/data/sqlite.db'
+PORT = '8080'
+
+[[mounts]]
+source = 'data'
+destination = '/data'
+
+[http_service]
+internal_port = 8080
+force_https = true
+auto_stop_machines = 'off'
+auto_start_machines = true
+min_machines_running = 1
+
+[[http_service.checks]]
+interval = '30s'
+timeout = '5s'
+grace_period = '10s'
+method = 'GET'
+path = '/resources/healthcheck'
+
+[[vm]]
+memory = '1gb'
+cpu_kind = 'shared'
+cpus = 1
+memory_mb = 1024

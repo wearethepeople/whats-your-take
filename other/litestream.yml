@@ -1,0 +1,16 @@
+# Litestream replication config — SQLite on the Fly volume replicated to
+# Tigris (Fly-native object storage; Tigris Data infrastructure, S3 protocol).
+# Bucket + credentials are created by `fly storage create` and arrive as Fly
+# secrets: BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+# AWS_ENDPOINT_URL_S3 (the AWS_* names are Tigris's convention for
+# S3-protocol clients — no Amazon infrastructure is involved).
+
+dbs:
+  - path: /data/sqlite.db
+    replicas:
+      - type: s3
+        endpoint: ${AWS_ENDPOINT_URL_S3}
+        bucket: ${BUCKET_NAME}
+        path: sqlite.db
+        access-key-id: ${AWS_ACCESS_KEY_ID}
+        secret-access-key: ${AWS_SECRET_ACCESS_KEY}
