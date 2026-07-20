@@ -23,16 +23,16 @@ and after each event publishes a synthesis + browsable corpus. Full design:
 - CI from first commit: lint, typecheck, test, migration check
 - Drizzle migrations from the first table; schema lives in `docs/spec.md`
   Part II and changes land there first
-- Tests where the risk is: token/OTP verification, submission validation,
-  moderation state transitions, event open/close enforcement
+- Tests where the risk is: staging/promotion handshake, submission
+  validation, moderation state transitions, event open/close enforcement
 - Build in slices (`docs/spec.md` Part II, "Build slices"); one slice per
   session; weekend target is slices 1–4
 
 ## Jobs the site does
 
 Explain the project · reveal the portrait (synthesis — afterglow visitor's
-front door) · browse/export the corpus · submit an entry (QR/OTP-gated,
-event-open only) · run the table (host console)
+front door) · browse/export the corpus · submit an entry (staged, then
+host-promoted by claim code; event-open only) · run the table (host console)
 
 ## Never do
 

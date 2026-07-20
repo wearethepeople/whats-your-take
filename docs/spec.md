@@ -132,9 +132,10 @@ operations console. Its jobs:
    and curated card images. This is the front door; the exit card is
    addressed to this person.
 3. **Browse & export the corpus** — the receipts, beneath the portrait.
-4. **Submit an entry** — QR/OTP-guarded, event-open only.
-5. **Run the table** (host-facing) — event open/close, rotating QR / OTP
-   view, card batch-entry, moderation, live count.
+4. **Submit an entry** — staged at submit, promoted into the corpus by the
+   host's claim-code handshake, event-open only.
+5. **Run the table** (host-facing) — event open/close, promote console
+   (claim-code entry, later scan), card batch-entry, moderation, live count.
 
 Guestbook only. One weekend-buildable web app that: accepts anonymous
 presence-gated responses at events; gives the host an admin surface for events,
@@ -160,8 +161,8 @@ Build the pipeline after the format survives contact with a real crowd.
   its-our-money).
 - CI from first commit (lint, typecheck, test, migration check).
 - Drizzle migrations from the first table.
-- A few honest tests: token verification, submission validation, moderation
-  state transitions.
+- A few honest tests: staging/promotion handshake, submission validation,
+  moderation state transitions.
 - A short `INVARIANTS.md` at the repo root (table-site edition, below),
   imported into `CLAUDE.md` via `@INVARIANTS.md`.
 
@@ -189,21 +190,34 @@ Response
                                            -- sub-hour submission times are
                                            -- never recorded (amended
                                            -- 2026-07-19: precision proved
-                                           -- indefensible — token/OTP checks
+                                           -- indefensible — validity checks
                                            -- are current-clock, abuse counts
                                            -- live in PresenceWindow, and a
                                            -- precise time would place a row
-                                           -- inside one token window,
+                                           -- inside one staging window,
                                            -- partially relinking code→row)
   created_bucket  text                     -- e.g. "afternoon" — the only
                                            -- time granularity ever exposed
 
-PresenceWindow                             -- per token-rotation window:
-  id, event_id, window_start, window_end,  -- count-level abuse detection only;
-  submission_count                         -- never linked to any response row
+PresenceWindow                             -- per 60s clock window: staging
+  id, event_id, window_start, window_end,  -- counts for telemetry + the
+  submission_count                         -- circuit breaker only; no auth
+                                           -- function; never referenced by
+                                           -- any response or draft
 
-Otp                                        -- host-minted fallback codes
-  id, event_id, code_hash, issued_at, expires_at, redeemed_at
+StagedDraft                                -- ephemeral pre-corpus holding pen
+  id, event_id,                            -- (2026-07-19 flow reversal): the
+  body (nullable),                         -- participant STAGES, the host
+  code, expires_at,                        -- PROMOTES by claim code. body is
+  promoted_at (nullable)                   -- nulled at promotion; code +
+                                           -- promoted_at persist only until
+                                           -- sweep (they serve the
+                                           -- participant's status poll).
+                                           -- Rows are swept after expiry —
+                                           -- staged drafts are not responses;
+                                           -- append-only (I5) applies to
+                                           -- Response only. Deliberately no
+                                           -- created_at column.
 
 ShowcaseCard                               -- host-CURATED publication media:
   id, event_id, storage_key, caption,      -- a handful of standout decorated
@@ -227,30 +241,39 @@ framework strictly requires, no analytics on the submission path.
 The goal is provenance ("this corpus came from bodies at the table today"), not
 identity. Prefer short-lived, single-use-ish, human-scale, never linkable to a person.
 
-**Site flow — compose first, prove presence at submit:**
+**Site flow — compose first, hand off at submit** (amended 2026-07-19:
+direction reversed from "host displays a rotating HMAC-QR token; participant
+scans it; OTP fallback." In the reversed flow nothing public writes into the
+corpus — promotion requires host credentials, so a photographed or leaked
+code is useless, one-per-person is technically enforced rather than social,
+junk lands in an auto-expiring staging table instead of the moderation
+queue, and the token + OTP machinery is deleted outright):
 
 1. Participant reaches the form (printed URL/QR at the table — this QR is just
    the address, not a credential), writes their response. Draft persists in
    localStorage so festival connectivity can't eat it.
-2. On submit, the site says: *"Use your camera to scan the host's code."* A
-   button opens the camera in-page.
-3. The **host shows a rotating QR** from their phone or the iPad admin view —
-   a signed (HMAC, server secret) token: `event_id`, `window_start`, short TTL
-   (1–2 min is fine since it's scanned at close range at the moment of
-   submission). Scan attaches the token; the submission posts.
-4. **OTP fallback for camera trouble:** the host view offers a manual-entry
-   code (6 digits, single-use, short-lived, minted on demand). The site's
-   scan screen links to "enter a code instead."
-5. Server accepts submissions with a valid, unexpired token/OTP while the
-   event is `open`. Per-window rate limits + anomaly eyeballing
-   (`PresenceWindow` counts) rather than brittle single-use enforcement.
+2. On submit, the server **stages** the draft — an ephemeral `StagedDraft`
+   (~15 min TTL), not a response — and the participant's screen shows a short
+   **claim code** (6 digits, large type; rendered as a QR in slice 4).
+3. Participant shows the code to the host. From the authenticated console the
+   host enters (later: scans) the code, which **promotes** the draft into a
+   `pending` response. Promotion is by reference — the body never transits
+   the host's device, preserving "the host doesn't read responses mid-event."
+   The participant's screen (polling status only) flips to confirmation.
+4. Camera trouble is a non-event: the code is six typeable digits. No
+   separate OTP system exists.
+5. Staging is accepted while the event is `open`, up to a high circuit
+   breaker (~100 per event per minute — no honest table approaches it; never
+   refuse a plausible submission). `PresenceWindow` counts are telemetry for
+   anomaly eyeballing, reviewed at hour granularity. Closing the event
+   hard-stops both staging and promotion — the host clears the line, then
+   closes.
 
 The host handoff is deliberate — it is the one-per-person human-judgment
-channel, and a human moment. **Late upload (scan now, post when signal
-returns) is deferred** — needs design discussion, not needed for months; the
-truly-offline participant uses cards or the kiosk, which is the cards-primary
-design working. The purpose-built LAN is rejected for v1 (suspicion cost,
-captive-portal jank).
+channel, and a human moment; the reversal makes it structural. The
+truly-offline participant uses cards or the kiosk, which is the
+cards-primary design working. The purpose-built LAN is rejected for v1
+(suspicion cost, captive-portal jank).
 
 **Kiosk flow:** the iPad is provisioned once per event by the host (enter event
 passcode → device holds an event-scoped session token). iPad in Guided Access,
@@ -262,16 +285,25 @@ A host types cards in via the admin batch-entry form (during lulls / at
 close, out of participants' view) → `pending` responses with `channel=card`.
 No images, no AI processing; the physical cards are the archive.
 
-**Linkage rule (load-bearing):** the server stores nothing that links a token
-or OTP to a response beyond `event_id` and coarse time. Response timestamps
-are hour-truncated at write — sub-hour timing is never stored, so a row can
-never be placed inside a specific token-rotation window; anything public uses
-the bucket, so a response can't be correlated with photos/video of who was at
-the table when.
+**Linkage rule (load-bearing):** the server stores nothing that links a claim
+code to a response beyond `event_id` and coarse time. At promotion the staged
+row's `body` is nulled; `code` and `promoted_at` persist only until sweep, to
+serve the participant's status poll. Response timestamps are hour-truncated
+at write — sub-hour timing is never stored, so a row can never be placed
+inside a specific staging window; anything public uses the bucket, so a
+response can't be correlated with photos/video of who was at the table when.
+(The residual inference — an hour containing exactly one response narrows
+that response to its promotion moment for anyone holding the pre-sweep
+staging table — is the same trade-off the hour-truncation amendment
+accepted, stated here so it stays a decision and not a surprise.)
 
 ### Admin surface
 
-- Event CRUD + open/close. Closing an event hard-stops the submission endpoints.
+- Event CRUD + open/close. Closing an event hard-stops the submission
+  endpoints (staging and promotion both).
+- Promote console — the submit handshake: host enters (slice 4: scans) a
+  participant's claim code to promote their staged draft into a `pending`
+  response. Built in slice 2 with minimal single-account auth.
 - Live count (count only — the host shouldn't be reading responses mid-event
   either; the mirror waits for close).
 - Card entry: batch form for typing in physical cards (`channel=card`) —
@@ -324,8 +356,9 @@ submission path.
 1. **No PII, no accounts, no contact capture.** Participants are never asked
    for name, email, or phone. The claim "we store no PII" must survive
    inspection, including infra logs.
-2. **Presence, never identity.** Tokens and OTPs prove "at the table, today."
-   Nothing links a code to a response beyond event and coarse time bucket.
+2. **Presence, never identity.** The claim-code handshake proves "at the
+   table, today." Nothing links a code to a response beyond event and coarse
+   time bucket.
 3. **Public means public, and consent knows it.** The approved corpus is
    browsable and exportable — never claim "viewable but not exportable";
    anything readable is copyable. Publication happens only post-close, only
@@ -342,12 +375,13 @@ submission path.
 1. **Scaffold:** repo, CI, Fly app (1 machine + volume), SQLite + Drizzle,
    Litestream to object storage, first migration (Event/Prompt/Response),
    INVARIANTS.md + CLAUDE.md with import line.
-2. **Submit path:** public form (kiosk + phone rendering), token verification,
-   rate limits, event open/close enforcement. Tests here.
-3. **Admin path:** event CRUD, OTP mint, live count, card batch-entry,
-   moderation list, export.
-4. **Host QR view** (rotating token QR + OTP display in the admin view) and
-   the in-page camera scan on the submit screen.
+2. **Submit path:** public form (kiosk + phone rendering) that stages
+   drafts, claim-code issue + status poll, minimal host auth + promote
+   console, circuit breaker, event open/close enforcement. Tests here.
+3. **Admin path:** event CRUD, live count, card batch-entry, moderation
+   list, export.
+4. **Claim-code QR:** participant screen renders the code as a QR; host
+   console gets the in-page camera scan.
 5. *(Post-weekend)* Public pages: per-event page (synthesis → showcase panel
    of quotes + curated card images → corpus explorer + JSON/CSV download) and
    the **prompt-level rollup** — same question, many places, one growing

@@ -1,21 +1,6 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { expect, test } from "vitest";
 import * as schema from "~/db/schema.server";
-
-function freshDb() {
-  const dir = mkdtempSync(path.join(tmpdir(), "wyt-test-"));
-  const sqlite = new Database(path.join(dir, "test.db"));
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
-  const db = drizzle(sqlite, { schema });
-  migrate(db, { migrationsFolder: "./drizzle" });
-  return { db, sqlite };
-}
+import { freshDb } from "./helpers";
 
 test("migrations apply and WAL mode is active", () => {
   const { sqlite } = freshDb();
@@ -24,7 +9,9 @@ test("migrations apply and WAL mode is active", () => {
     .prepare("select name from sqlite_master where type = 'table'")
     .all()
     .map((row) => (row as { name: string }).name);
-  expect(tables).toEqual(expect.arrayContaining(["prompts", "events", "responses"]));
+  expect(tables).toEqual(
+    expect.arrayContaining(["prompts", "events", "responses", "staged_drafts", "presence_windows"]),
+  );
 });
 
 test("status defaults: event draft, response pending, showcase false", () => {

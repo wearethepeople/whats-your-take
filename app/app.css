@@ -17,3 +17,90 @@ body {
   margin: 0 auto;
   padding: 3rem 1rem;
 }
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.stack textarea,
+.stack input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.75rem;
+}
+
+.stack button {
+  font: inherit;
+  padding: 0.75rem 2rem;
+  min-height: 44px;
+}
+
+.banner {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.banner-error {
+  background: color-mix(in srgb, crimson 15%, transparent);
+}
+
+.banner-ok {
+  background: color-mix(in srgb, seagreen 18%, transparent);
+}
+
+.consent {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.claim-code {
+  font-size: 4rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  font-variant-numeric: tabular-nums;
+  margin: 1rem 0;
+}
+
+.code-input {
+  font-size: 2rem;
+  letter-spacing: 0.15em;
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Kiosk rendering: full-screen, large touch targets, nothing but the form.
+   Session provisioning is slice 3 — this is presentation only. */
+.kiosk {
+  max-width: 48rem;
+  font-size: 1.25rem;
+}
+
+.kiosk textarea {
+  font-size: 1.4rem;
+  min-height: 40vh;
+}
+
+.kiosk .claim-code {
+  font-size: 6rem;
+}
+
+.kiosk button {
+  padding: 1rem 3rem;
+  font-size: 1.25rem;
+}

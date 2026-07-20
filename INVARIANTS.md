@@ -13,9 +13,15 @@ minimum). Admin auth is a single host account — no user management system.
 
 ## I2 — Presence, never identity
 
-Tokens and OTPs prove "at the table, today" — nothing more. Nothing in the
-database links a token or OTP to a response beyond `event_id` and the coarse
-time bucket. `PresenceWindow` holds counts, never row references.
+The claim-code handshake proves "at the table, today" — nothing more. A
+response enters the corpus only when the host promotes a participant's
+staged draft by its short-lived code; nothing in the database links a code
+to a response beyond `event_id` and the coarse time bucket. At promotion the
+staged row's body is nulled, and staged rows are swept after expiry.
+`PresenceWindow` holds counts, never row references.
+(Amended 2026-07-19: flow reversed from host-displayed rotating tokens +
+OTP fallback — host promotion replaced every public write path into the
+corpus, and the token/OTP machinery was deleted.)
 
 ## I3 — Public means public, and consent knows it
 
@@ -28,7 +34,7 @@ grant (signage/card/submit-screen: anonymous, shared publicly, any medium).
 
 `created_at` is truncated to the hour at write time — sub-hour submission
 timing does not exist anywhere, so a response can never be placed inside a
-specific token-rotation window (see I2). Every public surface — pages,
+specific staging window (see I2). Every public surface — pages,
 exports, API responses — carries `created_bucket` only, so no response can
 be correlated with photos or video of who was at the table when.
 (Amended 2026-07-19 from "precise time internal": full precision proved to
