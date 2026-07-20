@@ -85,7 +85,9 @@ body {
 }
 
 /* Kiosk rendering: full-screen, large touch targets, nothing but the form.
-   Session provisioning is slice 3 — this is presentation only. */
+   Kiosk mode is presentation only — same claim-code handshake as a phone,
+   and no draft persistence (shared device). Hardening is device config
+   (home-screen standalone install + Guided Access), not server state. */
 .kiosk {
   max-width: 48rem;
   font-size: 1.25rem;

@@ -113,8 +113,10 @@ function ComposeForm({
 
   // Restore an in-progress draft (festival connectivity can't eat it); keep
   // it saved as they type. JS-only enhancement — without JS the form still
-  // works, it just doesn't survive a page reload.
+  // works, it just doesn't survive a page reload. Never on the kiosk: the
+  // device is shared, and no participant may surface another's writing.
   useEffect(() => {
+    if (kiosk) return;
     if (body === "") {
       try {
         const saved = localStorage.getItem(draftKey(slug));
@@ -129,6 +131,7 @@ function ComposeForm({
 
   function handleChange(value: string) {
     setBody(value);
+    if (kiosk) return;
     try {
       if (value) localStorage.setItem(draftKey(slug), value);
       else localStorage.removeItem(draftKey(slug));
@@ -204,10 +207,12 @@ function CodeScreen({
 
   useEffect(() => {
     if (status !== "promoted") return;
-    try {
-      localStorage.removeItem(draftKey(slug));
-    } catch {
-      // Ignore storage failures.
+    if (!kiosk) {
+      try {
+        localStorage.removeItem(draftKey(slug));
+      } catch {
+        // Ignore storage failures.
+      }
     }
     if (kiosk) {
       // Reset for the next participant; replace-navigation means no
@@ -236,9 +241,13 @@ function CodeScreen({
     return (
       <>
         <h1>That code expired.</h1>
-        <p>Your draft is still saved on this device — head back and resubmit for a fresh code.</p>
+        {kiosk ? (
+          <p>Head back and submit again — the host is right there.</p>
+        ) : (
+          <p>Your draft is still saved on this device — head back and resubmit for a fresh code.</p>
+        )}
         <Link to={formUrl} replace>
-          Back to your draft
+          {kiosk ? "Back to the form" : "Back to your draft"}
         </Link>
       </>
     );
@@ -251,8 +260,8 @@ function CodeScreen({
         {claimCode}
       </p>
       <p>
-        The host enters this code to put your take in the book. It expires in 15 minutes; your draft
-        stays saved on this device.
+        The host enters this code to put your take in the book. It expires in 15 minutes
+        {kiosk ? "." : "; your draft stays saved on this device."}
       </p>
       <Link to={formUrl} replace>
         Back to the form

@@ -275,10 +275,20 @@ truly-offline participant uses cards or the kiosk, which is the
 cards-primary design working. The purpose-built LAN is rejected for v1
 (suspicion cost, captive-portal jank).
 
-**Kiosk flow:** the iPad is provisioned once per event by the host (enter event
-passcode → device holds an event-scoped session token). iPad in Guided Access,
-form resets after each submission, no back-scroll through prior entries —
-responses are never visible to the next participant.
+**Kiosk flow** (amended 2026-07-19 with the flow reversal — the original
+event-passcode → device-session provisioning is dropped): same handshake as
+the site flow. The iPad renders the form in kiosk presentation (`?kiosk=1`:
+large type, full viewport) and a submission ends in the same claim code
+shown to the host. No device-scoped session, no separate write path — a
+provisioned-device bypass would reintroduce a second road into the corpus,
+and uniform friction is the point; the kiosk's job is reaching participants
+without phones, and the host is at arm's length. Kiosk mode never persists
+drafts (shared device — no participant may surface another's writing) and
+the form resets after each submission; an idle-reset for abandoned screens
+lands with slices 3–4. Device hardening is physical configuration, not
+server state: install the event URL to the home screen as a standalone web
+app (no browser chrome; kiosk param baked into the start URL — a web app
+manifest ships with slices 3–4) and pin it with Guided Access.
 
 **Card flow:** no gating needed — the cards were physically at the table.
 A host types cards in via the admin batch-entry form (during lulls / at
