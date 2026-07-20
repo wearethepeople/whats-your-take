@@ -7,7 +7,7 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  if (await isHost(request)) throw redirect("/host/promote");
+  if (await isHost(request)) throw redirect("/host/events");
   return null;
 }
 
@@ -17,7 +17,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (!verifyPassword(password)) {
     return { error: "That's not it." };
   }
-  return createHostSession("/host/promote");
+  return createHostSession("/host/events");
 }
 
 export default function HostLogin({ actionData }: Route.ComponentProps) {

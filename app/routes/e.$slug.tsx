@@ -4,7 +4,7 @@
 // (I1/I6). The only per-participant state is their own draft, kept in their
 // own browser's localStorage.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { data, Form, Link, useNavigate } from "react-router";
 import type { Route } from "./+types/e.$slug";
 import { db } from "~/db/client.server";
@@ -59,12 +59,104 @@ function draftKey(slug: string): string {
   return `wyt-draft:${slug}`;
 }
 
+// Kiosk idle deadlines before the "Still there?" warning appears. The code
+// screen gets longer: resetting it destroys the only copy of the claim code
+// (the kiosk never touches localStorage) and the participant may be in the
+// host's line. 5 min still turns the screen over inside the 15-min TTL.
+const KIOSK_IDLE_COMPOSE_MS = 2 * 60 * 1000;
+const KIOSK_IDLE_CODE_MS = 5 * 60 * 1000;
+const IDLE_WARNING_SECONDS = 10;
+
+// React 19 hoists these into <head>; the RR static links export can't see
+// the slug. The manifest bakes the kiosk start URL for add-to-home-screen.
+function ManifestTags({ slug }: { slug: string }) {
+  return (
+    <>
+      <link rel="manifest" href={`/e/${slug}/manifest.webmanifest`} />
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+    </>
+  );
+}
+
+// Two-stage kiosk idle reset: after idleMs without interaction, show a
+// countdown warning with a keep-working button; only if that expires does
+// onReset fire. Any interaction (the button included — pointerdown/keydown
+// land on window first) re-arms the idle timer. Never rendered off-kiosk.
+function IdleResetGuard({
+  enabled,
+  idleMs,
+  onReset,
+}: {
+  enabled: boolean;
+  idleMs: number;
+  onReset: () => void;
+}) {
+  const [warning, setWarning] = useState(false);
+  const [remaining, setRemaining] = useState(IDLE_WARNING_SECONDS);
+  const armRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    if (!enabled) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const arm = () => {
+      clearTimeout(timer);
+      setWarning(false);
+      setRemaining(IDLE_WARNING_SECONDS);
+      timer = setTimeout(() => setWarning(true), idleMs);
+    };
+    armRef.current = arm;
+    arm();
+    const activity = ["pointerdown", "touchstart", "keydown"] as const;
+    for (const name of activity) window.addEventListener(name, arm);
+    return () => {
+      clearTimeout(timer);
+      for (const name of activity) window.removeEventListener(name, arm);
+    };
+  }, [enabled, idleMs]);
+
+  useEffect(() => {
+    if (!warning) return;
+    const tick = setInterval(() => setRemaining((seconds) => seconds - 1), 1000);
+    return () => clearInterval(tick);
+  }, [warning]);
+
+  useEffect(() => {
+    if (!warning || remaining > 0) return;
+    // Re-arm before resetting: clears the banner and starts a fresh idle
+    // cycle for the next participant (and keeps this effect from re-firing).
+    armRef.current();
+    onReset();
+  }, [warning, remaining, onReset]);
+
+  if (!warning) return null;
+  return (
+    <div className="banner banner-warn idle-warning" role="alertdialog" aria-live="assertive">
+      <p>Still there? The form resets in {Math.max(remaining, 0)}…</p>
+      <button type="button" onClick={() => armRef.current()}>
+        Keep working
+      </button>
+    </div>
+  );
+}
+
 export default function EventSubmit({ loaderData, actionData }: Route.ComponentProps) {
   const { slug, eventName, promptText, open, kiosk } = loaderData;
+  const navigate = useNavigate();
+  const [resetEpoch, setResetEpoch] = useState(0);
+  const formUrl = kiosk ? `/e/${slug}?kiosk=1` : `/e/${slug}`;
+
+  // Idle reset for abandoned kiosk screens: remount the compose form (the
+  // key drops typed-but-abandoned text) and replace-navigate so a lingering
+  // code screen clears — the same mechanism as the post-promotion reset.
+  const handleIdleReset = useCallback(() => {
+    setResetEpoch((epoch) => epoch + 1);
+    navigate(formUrl, { replace: true });
+  }, [navigate, formUrl]);
 
   if (!open) {
     return (
       <main className={kiosk ? "container kiosk" : "container"}>
+        <ManifestTags slug={slug} />
         <h1>{eventName}</h1>
         <p>
           This table has closed. After the host&rsquo;s review, everything said here — the portrait
@@ -78,14 +170,23 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
   if (staged) {
     return (
       <main className={kiosk ? "container kiosk" : "container"}>
-        <CodeScreen slug={slug} kiosk={kiosk} claimCode={staged.claimCode} />
+        <ManifestTags slug={slug} />
+        <CodeScreen
+          slug={slug}
+          kiosk={kiosk}
+          claimCode={staged.claimCode}
+          onIdleReset={handleIdleReset}
+        />
       </main>
     );
   }
 
   return (
     <main className={kiosk ? "container kiosk" : "container"}>
+      <ManifestTags slug={slug} />
+      <IdleResetGuard enabled={kiosk} idleMs={KIOSK_IDLE_COMPOSE_MS} onReset={handleIdleReset} />
       <ComposeForm
+        key={resetEpoch}
         slug={slug}
         kiosk={kiosk}
         promptText={promptText}
@@ -181,10 +282,12 @@ function CodeScreen({
   slug,
   kiosk,
   claimCode,
+  onIdleReset,
 }: {
   slug: string;
   kiosk: boolean;
   claimCode: string;
+  onIdleReset: () => void;
 }) {
   const [status, setStatus] = useState<"waiting" | "promoted" | "gone">("waiting");
   const navigate = useNavigate();
@@ -222,6 +325,17 @@ function CodeScreen({
     }
   }, [status, kiosk, slug, formUrl, navigate]);
 
+  // Promoted resets itself in 6s; waiting gets the long idle deadline (a
+  // reset destroys the only copy of the code), gone the short one.
+  const idleGuard =
+    status === "promoted" ? null : (
+      <IdleResetGuard
+        enabled={kiosk}
+        idleMs={status === "waiting" ? KIOSK_IDLE_CODE_MS : KIOSK_IDLE_COMPOSE_MS}
+        onReset={onIdleReset}
+      />
+    );
+
   if (status === "promoted") {
     return (
       <>
@@ -240,6 +354,7 @@ function CodeScreen({
   if (status === "gone") {
     return (
       <>
+        {idleGuard}
         <h1>That code expired.</h1>
         {kiosk ? (
           <p>Head back and submit again — the host is right there.</p>
@@ -255,6 +370,7 @@ function CodeScreen({
 
   return (
     <>
+      {idleGuard}
       <h1>Show this to the host</h1>
       <p className="claim-code" aria-label="Your claim code">
         {claimCode}

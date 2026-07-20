@@ -7,6 +7,7 @@
 import { randomInt } from "node:crypto";
 import { eq, lt, sql } from "drizzle-orm";
 import { z } from "zod";
+import { isUniqueViolation } from "~/db/errors.server";
 import { events, presenceWindows, stagedDrafts } from "~/db/schema.server";
 import type { Db } from "~/db/types.server";
 
@@ -113,13 +114,4 @@ export function draftStatus(db: Db, input: { code: string; now: Date }): DraftSt
   const row = db.select().from(stagedDrafts).where(eq(stagedDrafts.code, input.code)).get();
   if (!row || row.expiresAt <= input.now) return "gone";
   return row.promotedAt ? "promoted" : "waiting";
-}
-
-function isUniqueViolation(cause: unknown): boolean {
-  return (
-    typeof cause === "object" &&
-    cause !== null &&
-    "code" in cause &&
-    String((cause as { code: unknown }).code).startsWith("SQLITE_CONSTRAINT")
-  );
 }

@@ -3,7 +3,9 @@ import { Form } from "react-router";
 import type { Route } from "./+types/host.promote";
 import { db } from "~/db/client.server";
 import { events } from "~/db/schema.server";
+import { liveCount } from "~/events/counts.server";
 import { requireHost } from "~/host/auth.server";
+import { HostNav } from "~/host/nav";
 import { promoteDraft } from "~/submissions/promote.server";
 
 export function meta() {
@@ -12,9 +14,18 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireHost(request);
-  // Names only — no responses, no live count here (count arrives in slice 3).
-  const open = db.select({ name: events.name }).from(events).where(eq(events.status, "open")).all();
-  return { openEventNames: open.map((event) => event.name) };
+  // Names and counts only — never response bodies (I6).
+  const open = db
+    .select({ id: events.id, name: events.name })
+    .from(events)
+    .where(eq(events.status, "open"))
+    .all();
+  return {
+    openEvents: open.map((event) => ({
+      name: event.name,
+      total: liveCount(db, event.id).total,
+    })),
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -32,10 +43,13 @@ export async function action({ request }: Route.ActionArgs) {
 export default function HostPromote({ loaderData, actionData }: Route.ComponentProps) {
   return (
     <main className="container">
+      <HostNav />
       <h1>Promote a take</h1>
       <p>
-        {loaderData.openEventNames.length > 0
-          ? `Open: ${loaderData.openEventNames.join(" · ")}`
+        {loaderData.openEvents.length > 0
+          ? `Open: ${loaderData.openEvents
+              .map((event) => `${event.name} — ${event.total} in the book`)
+              .join(" · ")}`
           : "No event is open right now."}
       </p>
       <Form method="post" className="stack" key={actionData?.submittedAt ?? "initial"}>

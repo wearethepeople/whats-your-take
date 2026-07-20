@@ -18,7 +18,10 @@ export function freshDb() {
 
 type Db = ReturnType<typeof freshDb>["db"];
 
-export function seedOpenEvent(db: Db, overrides: { status?: "draft" | "open" | "closed" } = {}) {
+export function seedOpenEvent(
+  db: Db,
+  overrides: { status?: "draft" | "open" | "closed" | "archived"; slug?: string } = {},
+) {
   const prompt = db
     .insert(schema.prompts)
     .values({ text: "What would you remind an American in 2075?" })
@@ -27,7 +30,7 @@ export function seedOpenEvent(db: Db, overrides: { status?: "draft" | "open" | "
   const event = db
     .insert(schema.events)
     .values({
-      slug: "event-one",
+      slug: overrides.slug ?? "event-one",
       promptId: prompt.id,
       name: "Event One",
       venue: "The Park",

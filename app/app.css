@@ -55,6 +55,85 @@ body {
   background: color-mix(in srgb, seagreen 18%, transparent);
 }
 
+.banner-warn {
+  background: color-mix(in srgb, goldenrod 25%, transparent);
+}
+
+.host-nav {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.1rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-open {
+  color: seagreen;
+}
+
+.status-archived,
+.status-closed {
+  opacity: 0.65;
+}
+
+.event-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.event-meta {
+  opacity: 0.8;
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+}
+
+.live-count strong {
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.inline-form {
+  display: inline-block;
+  margin: 0 0.5rem 0.5rem 0;
+}
+
+.moderation-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.moderation-list blockquote {
+  margin: 0 0 0.25rem;
+  padding-left: 1rem;
+  border-left: 3px solid currentColor;
+  white-space: pre-wrap;
+}
+
+.moderation-list .event-meta {
+  margin: 0 0 0.5rem;
+}
+
+.inline-form button {
+  font: inherit;
+  padding: 0.5rem 1.25rem;
+  min-height: 44px;
+}
+
 .consent {
   font-size: 0.85rem;
   opacity: 0.8;
@@ -82,6 +161,31 @@ body {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Kiosk idle warning: fixed so it's visible wherever the screen idled;
+   big touch target — the next tap decides keep-or-reset. */
+.idle-warning {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.idle-warning p {
+  margin: 0;
+}
+
+.idle-warning button {
+  font: inherit;
+  padding: 0.75rem 1.5rem;
+  min-height: 44px;
 }
 
 /* Kiosk rendering: full-screen, large touch targets, nothing but the form.

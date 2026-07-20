@@ -284,11 +284,15 @@ provisioned-device bypass would reintroduce a second road into the corpus,
 and uniform friction is the point; the kiosk's job is reaching participants
 without phones, and the host is at arm's length. Kiosk mode never persists
 drafts (shared device — no participant may surface another's writing) and
-the form resets after each submission; an idle-reset for abandoned screens
-lands with slices 3–4. Device hardening is physical configuration, not
-server state: install the event URL to the home screen as a standalone web
-app (no browser chrome; kiosk param baked into the start URL — a web app
-manifest ships with slices 3–4) and pin it with Guided Access.
+the form resets after each submission. Abandoned screens idle-reset (slice
+3): after 2 minutes untouched on the compose screen (5 on the code screen,
+where a reset destroys the only copy of the code) a 10-second "Still there?"
+countdown appears with a keep-working button; only if that expires does the
+form wipe. Device hardening is physical configuration, not server state:
+install the event URL to the home screen as a standalone web app (no browser
+chrome; a per-event manifest at `/e/<slug>/manifest.webmanifest` bakes
+`start_url=/e/<slug>?kiosk=1`, display standalone — slice 3; add to home
+screen while on the kiosk URL) and pin it with Guided Access.
 
 **Card flow:** no gating needed — the cards were physically at the table.
 A host types cards in via the admin batch-entry form (during lulls / at
@@ -310,19 +314,31 @@ accepted, stated here so it stays a decision and not a surprise.)
 ### Admin surface
 
 - Event CRUD + open/close. Closing an event hard-stops the submission
-  endpoints (staging and promotion both).
+  endpoints (staging and promotion both). Status moves
+  draft→open→closed→archived; closed→open reopen is allowed (a table that
+  closes early can resume); archived is the one-way terminal gate. The
+  event form creates the season prompt inline when none fits — no separate
+  prompt admin exists.
 - Promote console — the submit handshake: host enters (slice 4: scans) a
   participant's claim code to promote their staged draft into a `pending`
   response. Built in slice 2 with minimal single-account auth.
 - Live count (count only — the host shouldn't be reading responses mid-event
   either; the mirror waits for close).
 - Card entry: batch form for typing in physical cards (`channel=card`) —
-  fast keyboard flow, one card per entry, submit-and-next.
+  fast keyboard flow, one card per entry, submit-and-next. Accepted while
+  the event is open (lulls) or closed (the post-close pass through the card
+  stack) — close hard-stops only the digital paths.
 - Moderation: everything is `pending` until approved; only `approved` responses
   enter the synthesis export. `hidden` is a terminal state, not deletion —
-  append-only habit.
+  append-only habit. The queue is available mid-event behind a prominent
+  warning (discipline, not a lock — see open items).
 - Corpus export: `approved` responses for an event as JSON/CSV (body, channel,
-  created_bucket, showcase only).
+  created_bucket, showcase only). Rows are ordered (created_at, body) so row
+  order never reconstructs intra-hour submission sequence — the same rule
+  applies to the slice-5 public corpus. CSV keeps bodies byte-faithful
+  (quoted per RFC 4180, never apostrophe-mangled for spreadsheet formula
+  safety) — corpus fidelity outranks protecting a spreadsheet app from a
+  leading `=`; the residual risk is accepted and stated here.
 - Showcase upload: photograph + caption + order the curated cards for the
   event page (post-close, part of the review/publish pass).
 
@@ -404,6 +420,13 @@ submission path.
 Slices 1–4 are the weekend target; a table can run on 1–4 plus a phone
 camera and manual transcription, with the public page following before the
 synthesis is announced.
+
+### Open items
+
+- **Moderation queue mid-event:** shipped allow-with-warning (slice 3).
+  Revisit post-weekend whether the queue should be gated instead — one idea
+  is local-dev only, making mid-event reading structurally impossible rather
+  than disciplined.
 
 ### Open items — resolved 2026-07-19
 
