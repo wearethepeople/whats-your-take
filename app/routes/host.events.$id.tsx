@@ -130,6 +130,9 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
             <Link to={`/e/${event.slug}?kiosk=1`}>open</Link>
           </li>
           <li>
+            <Link to="/host/promote">Promote (scan or type a code)</Link>
+          </li>
+          <li>
             <Link to={`/host/events/${event.id}/cards`}>Card entry</Link>
           </li>
           <li>

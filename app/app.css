@@ -148,6 +148,44 @@ body {
   margin: 1rem 0;
 }
 
+/* Fixed light/dark contrast regardless of the page's color-scheme —
+   scannability depends on it, not the theme. */
+.claim-qr {
+  width: 12rem;
+  height: 12rem;
+  background: white;
+}
+
+.kiosk .claim-qr {
+  width: 18rem;
+  height: 18rem;
+}
+
+.scan-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 24rem;
+}
+
+.scan-panel button {
+  font: inherit;
+  padding: 0.75rem 2rem;
+  min-height: 44px;
+}
+
+.scan-video {
+  width: 100%;
+  border-radius: 0.25rem;
+  background: black;
+}
+
+/* Pixel extraction only — never shown. */
+.scan-canvas {
+  display: none;
+}
+
 .code-input {
   font-size: 2rem;
   letter-spacing: 0.15em;

@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { useRef } from "react";
 import { Form } from "react-router";
 import type { Route } from "./+types/host.promote";
 import { db } from "~/db/client.server";
@@ -6,6 +7,7 @@ import { events } from "~/db/schema.server";
 import { liveCount } from "~/events/counts.server";
 import { requireHost } from "~/host/auth.server";
 import { HostNav } from "~/host/nav";
+import { ScanPanel } from "~/host/scan-panel";
 import { promoteDraft } from "~/submissions/promote.server";
 
 export function meta() {
@@ -41,6 +43,16 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function HostPromote({ loaderData, actionData }: Route.ComponentProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const codeInputRef = useRef<HTMLInputElement>(null);
+
+  // A scanned code fills the same field a typed one would and submits the
+  // same form — promoteDraft() doesn't care where the code came from.
+  function handleDecode(code: string) {
+    if (codeInputRef.current) codeInputRef.current.value = code;
+    formRef.current?.requestSubmit();
+  }
+
   return (
     <main className="container">
       <HostNav />
@@ -52,11 +64,17 @@ export default function HostPromote({ loaderData, actionData }: Route.ComponentP
               .join(" · ")}`
           : "No event is open right now."}
       </p>
-      <Form method="post" className="stack" key={actionData?.submittedAt ?? "initial"}>
+      <Form
+        method="post"
+        className="stack"
+        ref={formRef}
+        key={actionData?.submittedAt ?? "initial"}
+      >
         <label htmlFor="code">Participant&rsquo;s code</label>
         <input
           id="code"
           name="code"
+          ref={codeInputRef}
           className="code-input"
           inputMode="numeric"
           pattern="[0-9]*"
@@ -75,6 +93,9 @@ export default function HostPromote({ loaderData, actionData }: Route.ComponentP
         ) : null}
         <button type="submit">Promote</button>
       </Form>
+      {/* Kept outside the keyed Form above so remounting it on every submit
+          (to clear the typed input) doesn't also restart the camera stream. */}
+      <ScanPanel onDecode={handleDecode} resetToken={actionData?.submittedAt} />
     </main>
   );
 }

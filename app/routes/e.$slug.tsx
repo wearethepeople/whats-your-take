@@ -10,6 +10,7 @@ import type { Route } from "./+types/e.$slug";
 import { db } from "~/db/client.server";
 import { events, prompts } from "~/db/schema.server";
 import { eq } from "drizzle-orm";
+import { claimCodeQr } from "~/submissions/qr.server";
 import { MAX_BODY_LENGTH } from "~/submissions/constants";
 import { stageDraft } from "~/submissions/stage.server";
 
@@ -46,7 +47,13 @@ export async function action({ params, request }: Route.ActionArgs) {
   const body = form.get("body");
   const result = stageDraft(db, { slug: params.slug, body, now: new Date() });
   if (result.ok) {
-    return { staged: { claimCode: result.claimCode } };
+    // Flatten the matrix: the closure-based isDark() can't survive the
+    // action -> actionData JSON round trip.
+    const qr = claimCodeQr(result.claimCode);
+    const qrModules = Array.from({ length: qr.size }, (_row, row) =>
+      Array.from({ length: qr.size }, (_col, col) => qr.isDark(row, col)),
+    );
+    return { staged: { claimCode: result.claimCode, qrModules } };
   }
   // Echo the body back so a no-JS round trip never loses the writing.
   return {
@@ -175,6 +182,7 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
           slug={slug}
           kiosk={kiosk}
           claimCode={staged.claimCode}
+          qrModules={staged.qrModules}
           onIdleReset={handleIdleReset}
         />
       </main>
@@ -278,15 +286,36 @@ function ComposeForm({
   );
 }
 
+function ClaimCodeQr({ modules }: { modules: boolean[][] }) {
+  const size = modules.length;
+  return (
+    <svg
+      viewBox={`0 0 ${size} ${size}`}
+      className="claim-qr"
+      role="img"
+      aria-label="Scannable QR version of your claim code"
+    >
+      <rect width={size} height={size} fill="white" />
+      {modules.flatMap((row, r) =>
+        row.map((dark, c) =>
+          dark ? <rect key={`${r}-${c}`} x={c} y={r} width={1} height={1} fill="black" /> : null,
+        ),
+      )}
+    </svg>
+  );
+}
+
 function CodeScreen({
   slug,
   kiosk,
   claimCode,
+  qrModules,
   onIdleReset,
 }: {
   slug: string;
   kiosk: boolean;
   claimCode: string;
+  qrModules: boolean[][];
   onIdleReset: () => void;
 }) {
   const [status, setStatus] = useState<"waiting" | "promoted" | "gone">("waiting");
@@ -372,6 +401,7 @@ function CodeScreen({
     <>
       {idleGuard}
       <h1>Show this to the host</h1>
+      <ClaimCodeQr modules={qrModules} />
       <p className="claim-code" aria-label="Your claim code">
         {claimCode}
       </p>
