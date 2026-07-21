@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Form } from "react-router";
 import type { Route } from "./+types/host.promote";
 import { db } from "~/db/client.server";
@@ -35,11 +35,34 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const code = String(form.get("code") ?? "");
   const result = promoteDraft(db, { code, now: new Date() });
+  // The code prefixes both outcomes: during a fast run of scans the banner
+  // text can change before it's read, so it needs to say which code it's
+  // about, not just what happened.
+  const prefix = code ? `${code} — ` : "";
   // submittedAt keys the form so the input clears for the next code.
   if (result.ok) {
-    return { ok: true as const, message: "Promoted — it's in the book.", submittedAt: Date.now() };
+    return { ok: true as const, message: `${prefix}it's in the book.`, submittedAt: Date.now() };
   }
-  return { ok: false as const, message: result.message, submittedAt: Date.now() };
+  return { ok: false as const, message: `${prefix}${result.message}`, submittedAt: Date.now() };
+}
+
+// Auto-dismissing so a fresh banner reads as an event, not a static label —
+// remounted (via the Form's key below) on every submit, so the timer always
+// restarts clean and a new banner mid-countdown just replaces the old one.
+const BANNER_TIMEOUT_MS = 4000;
+
+function PromoteBanner({ ok, message }: { ok: boolean; message: string }) {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(false), BANNER_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  if (!visible) return null;
+  return (
+    <p className={`banner ${ok ? "banner-ok" : "banner-error"}`} role="status" aria-live="polite">
+      {message}
+    </p>
+  );
 }
 
 export default function HostPromote({ loaderData, actionData }: Route.ComponentProps) {
@@ -82,15 +105,7 @@ export default function HostPromote({ loaderData, actionData }: Route.ComponentP
           autoComplete="off"
           autoFocus
         />
-        {actionData ? (
-          <p
-            className={`banner ${actionData.ok ? "banner-ok" : "banner-error"}`}
-            role="status"
-            aria-live="polite"
-          >
-            {actionData.message}
-          </p>
-        ) : null}
+        {actionData ? <PromoteBanner ok={actionData.ok} message={actionData.message} /> : null}
         <button type="submit">Promote</button>
       </Form>
       {/* Kept outside the keyed Form above so remounting it on every submit

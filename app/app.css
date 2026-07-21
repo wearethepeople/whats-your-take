@@ -175,15 +175,46 @@ body {
   min-height: 44px;
 }
 
+.scan-frame {
+  position: relative;
+  width: 100%;
+}
+
 .scan-video {
+  display: block;
   width: 100%;
   border-radius: 0.25rem;
   background: black;
 }
 
-/* Pixel extraction only — never shown. */
+/* Pixel extraction only — never shown, except frozen on top of the video
+   once a code is locked in (below), so the host sees exactly the frame
+   that was read rather than the camera continuing to move underneath. */
 .scan-canvas {
   display: none;
+}
+
+.scan-canvas-frozen {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.25rem;
+}
+
+.scan-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, black 55%, transparent);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
 }
 
 .code-input {
