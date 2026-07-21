@@ -154,11 +154,130 @@ body {
   width: 12rem;
   height: 12rem;
   background: white;
+  /* position:static paints below any positioned sibling regardless of DOM
+     order — needed so the ring (position:absolute) can't paint over it. */
+  position: relative;
+  z-index: 1;
+  /* SVG is inline by default, which leaves baseline descender space below
+     it — .qr-frame ends up ~6px taller than the QR itself, so the ring's
+     inset (measured from .qr-frame) sits uneven: tight on 3 sides, loose
+     on the bottom. display:block makes .qr-frame hug the QR exactly. */
+  display: block;
 }
 
 .kiosk .claim-qr {
   width: 18rem;
   height: 18rem;
+}
+
+/* Tap-to-glow ring: a host-facing liveness cue, not a security boundary —
+   promoteDraft() never checks it. Adapted from the masked-reveal technique
+   at css-tip.com/glowing-border (rotating linear-gradient punches a
+   traveling window through a solid-color ring via mask-composite:subtract),
+   but built around a fixed 5s tap-triggered run instead of a perpetual
+   hover loop, and with color+glow both riding the ring's own opacity so
+   they can't drift out of sync. --ring-angle needs @property to interpolate
+   smoothly through keyframes; without support the ring still fades, it
+   just won't sweep. */
+@property --ring-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.qr-trigger {
+  all: unset;
+  cursor: pointer;
+  display: inline-block;
+  border-radius: 1rem;
+}
+
+.qr-trigger:focus-visible {
+  outline: 2px solid #39ff14;
+  outline-offset: 4px;
+}
+
+/* The QR itself lives outside .qr-ring, as a sibling — the ring only
+   decorates around it. It used to wrap the QR directly, which meant the
+   ring's opacity:0 resting state hid the code along with the border. */
+.qr-frame {
+  position: relative;
+  display: inline-block;
+}
+
+.qr-ring {
+  position: absolute;
+  /* Wider than the glow's reach (below) so the blur tapers to nothing
+     before it ever reaches the QR's edge — z-index already stops the ring
+     from painting over the QR, but a glow that's still near full brightness
+     right up to that boundary reads as bleed regardless of what's technically
+     underneath it. Sized for the corners, not the straight edges: a rounded
+     rect's border sits closer to the box corner along the diagonal than
+     inset alone suggests (radius*(1-sin45°) of cut-in), and a linear-gradient
+     mask's stops are percentages of the gradient LINE, which is longer on
+     the diagonal than along a side — so the reveal band is both closer to
+     the corner and wider there. Straight edges end up with room to spare. */
+  inset: -2rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
+  border-radius: 0.5rem;
+  border: 3px solid #39ff14;
+  opacity: 0;
+  pointer-events: none;
+  -webkit-mask:
+    conic-gradient(#000 0 0) content-box,
+    linear-gradient(var(--ring-angle), transparent 20%, #000 35% 65%, transparent 80%) subtract,
+    conic-gradient(#000 0 0) padding-box;
+  mask:
+    conic-gradient(#000 0 0) content-box,
+    linear-gradient(var(--ring-angle), transparent 20%, #000 35% 65%, transparent 80%) subtract,
+    conic-gradient(#000 0 0) padding-box;
+  filter: drop-shadow(0 0 2px #39ff14) drop-shadow(0 0 6px #39ff14)
+    drop-shadow(0 0 12px color-mix(in srgb, #39ff14 60%, transparent));
+}
+
+.qr-ring.is-pulsing {
+  animation: qr-pulse 5s cubic-bezier(0.22, 0.7, 0.3, 1) 1;
+}
+
+@keyframes qr-pulse {
+  0% {
+    opacity: 0;
+    --ring-angle: 0deg;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    --ring-angle: 1080deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qr-ring.is-pulsing {
+    animation: qr-pulse-reduced 5s ease 1;
+  }
+}
+
+@keyframes qr-pulse-reduced {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+}
+
+.kiosk .qr-ring {
+  inset: -1.75rem;
+  padding: 0.7rem;
+  border-width: 4px;
 }
 
 .scan-panel {

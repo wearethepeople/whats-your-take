@@ -319,6 +319,7 @@ function CodeScreen({
   onIdleReset: () => void;
 }) {
   const [status, setStatus] = useState<"waiting" | "promoted" | "gone">("waiting");
+  const [pulseCount, setPulseCount] = useState(0);
   const navigate = useNavigate();
   const formUrl = kiosk ? `/e/${slug}?kiosk=1` : `/e/${slug}`;
 
@@ -401,7 +402,21 @@ function CodeScreen({
     <>
       {idleGuard}
       <h1>Show this to the host</h1>
-      <ClaimCodeQr modules={qrModules} />
+      <button
+        type="button"
+        className="qr-trigger"
+        onClick={() => setPulseCount((count) => count + 1)}
+        aria-label="Tap to light up the code for the host"
+      >
+        <span className="qr-frame">
+          <span
+            key={pulseCount}
+            className={pulseCount > 0 ? "qr-ring is-pulsing" : "qr-ring"}
+            aria-hidden="true"
+          />
+          <ClaimCodeQr modules={qrModules} />
+        </span>
+      </button>
       <p className="claim-code" aria-label="Your claim code">
         {claimCode}
       </p>
