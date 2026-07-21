@@ -42,9 +42,11 @@ export default function HostEvents({ loaderData }: Route.ComponentProps) {
           {loaderData.events.map((event) => (
             <li key={event.id}>
               <Link to={`/host/events/${event.id}`}>{event.name}</Link>{" "}
-              <span className={`status-badge status-${event.status}`}>{event.status}</span><br />
+              <span className={`status-badge status-${event.status}`}>{event.status}</span>
+              <br />
               <span className="event-meta">
-                {event.venue} · <span style={{color: '#aaa'}}>/e/{event.slug}</span> · {event.total} in the book
+                {event.venue} · <span style={{ color: "#aaa" }}>/e/{event.slug}</span> ·{" "}
+                {event.total} in the book
               </span>
             </li>
           ))}
