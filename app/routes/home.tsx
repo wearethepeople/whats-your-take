@@ -3,6 +3,7 @@ import type { Route } from "./+types/home";
 import { db } from "~/db/client.server";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { CircledStep, GoldUnderline, Stamp, offsetShadow } from "~/components/visual-grammar";
 
 export function meta() {
@@ -63,28 +64,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </div>
       ) : null}
 
-      <header className="flex items-center justify-between gap-6 border-b-2 border-foreground px-6 py-5 sm:px-14">
-        <div className="flex items-baseline gap-2">
-          <Link to="/" className="text-[17px] font-bold">
-            What&rsquo;s your take?
-          </Link>
-          <span className="text-[12.5px] text-muted-tan">A civic mirror project</span>
-        </div>
-        <nav className="flex items-center gap-6 text-sm">
-          <a href="#question" className="hidden sm:inline">
-            The question
-          </a>
-          <Link to="/events" className="hidden sm:inline">
-            Where it&rsquo;s been
-          </Link>
-          <Link to="/about" className="hidden sm:inline">
-            About
-          </Link>
-          <Button render={<Link to="/find-the-table" />} nativeButton={false} variant="outline">
-            Find the table
-          </Button>
-        </nav>
-      </header>
+      <SiteHeader active="question" />
 
       <main>
         <section
@@ -231,10 +211,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </section>
       </main>
 
-      <footer className="flex flex-col gap-1 bg-footer px-6 py-6 text-sm text-footer-foreground sm:flex-row sm:items-center sm:justify-between sm:px-14">
-        <p>What&rsquo;s Your Take? · a We (ARE) The People project · Dallas, Texas</p>
-        <p className="text-muted-foreground">wearethepeople.us · wrtp.us</p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

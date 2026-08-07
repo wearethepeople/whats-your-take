@@ -6,7 +6,7 @@
 // is fine to expose — it's a count, not the corpus — but no per-event page
 // built on this data may render response bodies before the season premiere.
 
-import { and, count, desc, eq, inArray, isNull, lte } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull } from "drizzle-orm";
 import { events, prompts, responses } from "~/db/schema.server";
 import type { Db } from "~/db/types.server";
 
@@ -37,6 +37,22 @@ function ordinalSeasonLabel(ordinal: number): string {
   return `Season ${word}`;
 }
 
+// Every prompt's resolved label, keyed by id: the host-set seasonLabel, or
+// an ordinal ("Season One", "Season Two", ...) derived from creation order
+// (id order tracks autoincrement/creation order) when unset. One query
+// covers every prompt at once so callers needing more than one label (the
+// full-history ledger) don't do it per-row.
+function seasonLabels(db: Db): Map<number, string> {
+  const all = db
+    .select({ id: prompts.id, seasonLabel: prompts.seasonLabel })
+    .from(prompts)
+    .orderBy(asc(prompts.id))
+    .all();
+  return new Map(
+    all.map((prompt, index) => [prompt.id, prompt.seasonLabel ?? ordinalSeasonLabel(index + 1)]),
+  );
+}
+
 export type Season = {
   promptId: number;
   promptText: string;
@@ -44,26 +60,18 @@ export type Season = {
 };
 
 // The active (non-retired) prompt IS the current season (a prompt is a
-// season that runs until retired — see docs/spec.md Part I). If more than
-// one prompt is somehow non-retired at once, the most recently created one
-// is "current." Falls back to an ordinal label ("Season One", "Season
-// Two", ...) derived from creation order (by id, which tracks
-// autoincrement/creation order) when the host hasn't set one.
+// season that runs until retired — see docs/spec.md Part I). At most one
+// prompt may be non-retired at a time (prompts_single_active_season).
+// Falls back to an ordinal label when the host hasn't set one.
 export function currentSeason(db: Db): Season | undefined {
   const active = db
-    .select({ id: prompts.id, text: prompts.text, seasonLabel: prompts.seasonLabel })
+    .select({ id: prompts.id, text: prompts.text })
     .from(prompts)
     .where(isNull(prompts.retiredAt))
-    .orderBy(desc(prompts.createdAt), desc(prompts.id))
     .get();
   if (!active) return undefined;
 
-  const label =
-    active.seasonLabel ??
-    ordinalSeasonLabel(
-      db.select({ n: count() }).from(prompts).where(lte(prompts.id, active.id)).get()?.n ?? 1,
-    );
-
+  const label = seasonLabels(db).get(active.id) ?? "";
   return { promptId: active.id, promptText: active.text, label };
 }
 
@@ -152,4 +160,70 @@ export function seasonView(db: Db): SeasonView | undefined {
   };
 
   return { season, stats, ledger };
+}
+
+export type ArchiveEvent = LedgerEvent & { stopNumber: number; seasonLabel: string };
+
+export type ArchiveView = {
+  events: ArchiveEvent[];
+  totalTakes: number;
+  // "May 2026 — July 2026", derived from the real first/last event dates —
+  // not a design placeholder like the handoff mock's hardcoded range.
+  dateRangeLabel: string | null;
+};
+
+// The full public event history, across every season — not just the
+// current one. Unlike seasonView(), this never scopes to a single prompt:
+// "where the table has been" stays visible after a season closes and a new
+// one starts, which is the point of an archive page.
+export function archiveView(db: Db): ArchiveView {
+  const allEvents = db
+    .select({
+      id: events.id,
+      slug: events.slug,
+      name: events.name,
+      city: events.city,
+      startsAt: events.startsAt,
+      status: events.status,
+      promptId: events.promptId,
+    })
+    .from(events)
+    .where(inArray(events.status, PUBLIC_STATUSES))
+    .orderBy(desc(events.startsAt))
+    .all();
+
+  const takeCounts = eventTakeCounts(
+    db,
+    allEvents.map((event) => event.id),
+  );
+  const labels = seasonLabels(db);
+  const total = allEvents.length;
+
+  const archiveEvents: ArchiveEvent[] = allEvents.map((event, index) => ({
+    id: event.id,
+    slug: event.slug,
+    name: event.name,
+    city: event.city,
+    dateLabel: formatDateLabel(event.startsAt),
+    takeCount: takeCounts.get(event.id) ?? 0,
+    status: event.status === "open" ? "up-next" : "sealed",
+    stopNumber: total - index,
+    seasonLabel: labels.get(event.promptId) ?? "",
+  }));
+
+  let dateRangeLabel: string | null = null;
+  if (allEvents.length > 0) {
+    const monthYear = (date: Date) =>
+      new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
+    // allEvents is newest-first.
+    const earliest = monthYear(allEvents[allEvents.length - 1].startsAt);
+    const latest = monthYear(allEvents[0].startsAt);
+    dateRangeLabel = earliest === latest ? earliest : `${earliest} — ${latest}`;
+  }
+
+  return {
+    events: archiveEvents,
+    totalTakes: [...takeCounts.values()].reduce((sum, n) => sum + n, 0),
+    dateRangeLabel,
+  };
 }
