@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { reactRouter } from "@react-router/dev/vite";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, loadEnv } from "vite";
 
 // Local-only HTTPS for testing camera access (getUserMedia needs a secure
@@ -15,7 +16,7 @@ export default defineConfig(({ mode }) => {
   // dev. Production env comes from Fly secrets, not this path.
   Object.assign(process.env, loadEnv(mode, process.cwd(), ""));
   return {
-    plugins: [reactRouter()],
+    plugins: [tailwindcss(), reactRouter()],
     resolve: {
       tsconfigPaths: true,
     },
