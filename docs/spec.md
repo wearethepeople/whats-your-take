@@ -344,6 +344,23 @@ accepted, stated here so it stays a decision and not a surprise.)
 
 ### Publication posture
 
+**Superseded 2026-08-06.** The per-event publication model below —
+each event getting its own public page (synthesis, showcase, browsable/
+exportable corpus) as soon as it closes and is reviewed — is superseded by
+the sealed-until-reveal model in `docs/concept-the-ritual.md`: the corpus
+stays sealed across the whole season and opens only at the announced
+premiere, not per event. Post-close host review still happens on the same
+schedule described below, but it makes a response *eligible* for the
+premiere publish, not published immediately — showing responses before the
+reveal risks turning takes into replies, which the ritual is designed to
+prevent (see `docs/concept-the-ritual.md`, "The Civic Mirror," and
+`INVARIANTS.md` I3/I6/I7). Until a season's reveal ships, per-event public
+pages carry aggregate counts and status only — no browsable corpus, no
+export, no showcase of individual responses. The design work below (data
+shape, moderation gate, export format) still applies to the *premiere*
+surface when it's built; it just isn't per-event or immediate anymore. Left
+in place for that reason, not deleted.
+
 **The corpus is public — honestly public.** After an event closes and the host
 reviews, each event gets a public page ordered for the afterglow visitor:
 the synthesis (themes) on top, then the **showcase panel** — curated
@@ -408,11 +425,15 @@ submission path.
    list, export.
 4. **Claim-code QR:** participant screen renders the code as a QR; host
    console gets the in-page camera scan.
-5. *(Post-weekend)* Public pages: per-event page (synthesis → showcase panel
-   of quotes + curated card images → corpus explorer + JSON/CSV download) and
-   the **prompt-level rollup** — same question, many places, one growing
-   corpus. The rollup is the season's true mirror and the projection/book
-   source material. Public GETs go behind edge caching — post-close pages
+5. *(Post-weekend, superseded 2026-08-06 — see "Publication posture" above)*
+   Public pages: per-event page (synthesis → showcase panel of quotes +
+   curated card images → corpus explorer + JSON/CSV download) and the
+   **prompt-level rollup** — same question, many places, one growing
+   corpus. Under the sealed-until-reveal model this ships as the season
+   premiere feature, not a per-event page; marketing/event pages before the
+   reveal carry aggregate counts and status only. The rollup is the
+   season's true mirror and the projection source material. Public
+   GETs go behind edge caching — post-close pages
    are practically static, and a cache absorbs traffic spikes (availability
    posture: a site outage never botches a table; cards are the primary mode
    and nothing physical depends on the server).
