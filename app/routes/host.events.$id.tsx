@@ -1,7 +1,7 @@
 import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/host.events.$id";
 import { db } from "~/db/client.server";
-import { liveCount } from "~/events/counts.server";
+import { liveCount } from "~/features/events/services/counts.server";
 import {
   eventFormSchema,
   getEvent,
@@ -9,7 +9,7 @@ import {
   transitionEvent,
   updateEvent,
   type EventStatus,
-} from "~/events/manage.server";
+} from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
 import { HostNav } from "~/host/nav";
 

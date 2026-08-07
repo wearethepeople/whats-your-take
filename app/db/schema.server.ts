@@ -1,18 +1,35 @@
-import { sql } from "drizzle-orm";
+import { isNull, sql } from "drizzle-orm";
 import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Schema source of truth is docs/spec.md Part II; changes land there first.
 
 // A prompt IS a season: one question reused across events/geographies until
 // retired.
-export const prompts = sqliteTable("prompts", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  text: text("text").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  retiredAt: integer("retired_at", { mode: "timestamp" }),
-});
+export const prompts = sqliteTable(
+  "prompts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    text: text("text").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    retiredAt: integer("retired_at", { mode: "timestamp" }),
+    // Host-settable, not host-required: public copy (e.g. the homepage's
+    // season stamp) falls back to an ordinal label ("Season One", "Season
+    // Two", ...) derived from creation order when this is unset.
+    seasonLabel: text("season_label"),
+  },
+  (table) => [
+    // At most one row may have retired_at IS NULL: "the current season" is
+    // an enforced invariant, not a query heuristic (currentSeason() in
+    // season.server.ts relies on this uniqueness). Partial unique index —
+    // every qualifying row indexes the same constant, so a second one
+    // collides.
+    uniqueIndex("prompts_single_active_season")
+      .on(sql`1`)
+      .where(isNull(table.retiredAt)),
+  ],
+);
 
 export const events = sqliteTable("events", {
   id: integer("id").primaryKey({ autoIncrement: true }),

@@ -1,7 +1,7 @@
 import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/host.events.$id.moderation";
 import { db } from "~/db/client.server";
-import { getEvent } from "~/events/manage.server";
+import { getEvent } from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
 import { HostNav } from "~/host/nav";
 import { approveResponse, hideResponse, listForModeration } from "~/submissions/moderate.server";

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `prompts_single_active_season` ON `prompts` (1) WHERE "prompts"."retired_at" is null;

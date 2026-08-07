@@ -171,7 +171,12 @@ Build the pipeline after the format survives contact with a real crowd.
 ```
 Prompt                                  -- a prompt IS a season: one question
   id, text, created_at,                 -- reused across events/geographies
-  retired_at (nullable)                 -- until retired
+  retired_at (nullable),                -- until retired
+  season_label (nullable)               -- host-settable ("Season One");
+                                         -- unset falls back to an ordinal
+                                         -- label derived from creation
+                                         -- order (added 2026-08-06 for the
+                                         -- living-seasons homepage)
 
 Event
   id, slug, prompt_id, name, venue, address (nullable), zip, city,
@@ -448,6 +453,19 @@ synthesis is announced.
   Revisit post-weekend whether the queue should be gated instead — one idea
   is local-dev only, making mid-event reading structurally impossible rather
   than disciplined.
+- **In-between-seasons state (added 2026-08-06):** a season closes (its
+  prompt is retired) before the next prompt exists, and separately before
+  its own premiere — the site has no way to represent either gap yet.
+  Nothing today even retires a prompt (no host route/action sets
+  `retired_at`), so the state is currently unreachable, not just
+  unhandled. Needs: (1) a retire action, (2) splitting "the active
+  season" (`currentSeason()`, now guaranteed unique by the
+  `prompts_single_active_season` index) from "the most recently closed
+  season" so the homepage can show a closed season's sealed stats/ledger
+  instead of falling back to pre-launch ("on its way") copy that assumes
+  nothing has ever happened, and (3) deciding whether a multi-season
+  future needs a per-season reveal date rather than the single global
+  `REVEAL_DATE` constant `season.server.ts` uses today.
 
 ### Open items — resolved 2026-07-19
 

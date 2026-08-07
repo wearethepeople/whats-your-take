@@ -1,8 +1,8 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/host.events";
 import { db } from "~/db/client.server";
-import { liveCount } from "~/events/counts.server";
-import { listEvents } from "~/events/manage.server";
+import { liveCount } from "~/features/events/services/counts.server";
+import { listEvents } from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
 import { HostNav } from "~/host/nav";
 import { sweepExpired } from "~/submissions/stage.server";

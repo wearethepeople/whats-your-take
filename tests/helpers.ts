@@ -2,6 +2,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "~/db/schema.server";
@@ -22,11 +23,17 @@ export function seedOpenEvent(
   db: Db,
   overrides: { status?: "draft" | "open" | "closed" | "archived"; slug?: string } = {},
 ) {
-  const prompt = db
-    .insert(schema.prompts)
-    .values({ text: "What would you remind an American in 2075?" })
-    .returning()
-    .get();
+  // Reuse the db's already-active prompt rather than always inserting a
+  // fresh one: at most one prompt may have retired_at IS NULL
+  // (prompts_single_active_season), and most tests calling this twice on
+  // the same db want two events in one season, not two seasons.
+  const prompt =
+    db.select().from(schema.prompts).where(isNull(schema.prompts.retiredAt)).get() ??
+    db
+      .insert(schema.prompts)
+      .values({ text: "What would you remind an American in 2075?" })
+      .returning()
+      .get();
   const event = db
     .insert(schema.events)
     .values({

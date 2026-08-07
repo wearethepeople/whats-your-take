@@ -5,7 +5,7 @@
 import { data } from "react-router";
 import type { Route } from "./+types/host.events.$id.export";
 import { db } from "~/db/client.server";
-import { getEvent } from "~/events/manage.server";
+import { getEvent } from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
 import { exportRows, toCsv, toJson } from "~/submissions/export.server";
 

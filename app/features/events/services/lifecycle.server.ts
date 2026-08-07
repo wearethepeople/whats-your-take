@@ -45,14 +45,23 @@ export const eventFormSchema = z.object({
 
 export type EventFields = z.output<typeof eventFormSchema>;
 
-export type CreateEventError = "slug-taken" | "prompt-required" | "prompt-not-found";
+export type CreateEventError =
+  | "slug-taken"
+  | "prompt-required"
+  | "prompt-not-found"
+  | "season-active";
 export type CreateEventResult =
   | { ok: true; event: EventRow }
   | { ok: false; error: CreateEventError; message: string };
 
 export function createEvent(
   db: Db,
-  input: { fields: EventFields; promptId?: number; newPromptText?: string },
+  input: {
+    fields: EventFields;
+    promptId?: number;
+    newPromptText?: string;
+    newPromptSeasonLabel?: string;
+  },
 ): CreateEventResult {
   return db.transaction((tx): CreateEventResult => {
     // Slug check by select, not by catching the unique violation: the inline
@@ -70,7 +79,30 @@ export function createEvent(
     let promptId: number;
     const newPromptText = input.newPromptText?.trim();
     if (newPromptText) {
-      promptId = tx.insert(prompts).values({ text: newPromptText }).returning().get().id;
+      // At most one prompt may be active (retired_at IS NULL) at a time —
+      // enforced by the prompts_single_active_season index, checked here
+      // by select first for the same reason as the slug check above.
+      const active = tx
+        .select({ id: prompts.id })
+        .from(prompts)
+        .where(isNull(prompts.retiredAt))
+        .get();
+      if (active) {
+        return {
+          ok: false,
+          error: "season-active",
+          message: "A season is already active — retire its prompt before starting a new one.",
+        };
+      }
+      // seasonLabel is optional — public copy falls back to an ordinal
+      // label derived from creation order when unset (see
+      // currentSeason() in season.server.ts).
+      const seasonLabel = input.newPromptSeasonLabel?.trim() || null;
+      promptId = tx
+        .insert(prompts)
+        .values({ text: newPromptText, seasonLabel })
+        .returning()
+        .get().id;
     } else if (input.promptId != null) {
       const prompt = tx
         .select({ id: prompts.id })

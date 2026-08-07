@@ -7,7 +7,7 @@ import {
   transitionEvent,
   updateEvent,
   type EventStatus,
-} from "~/events/manage.server";
+} from "~/features/events/services/lifecycle.server";
 import { stageDraft } from "~/submissions/stage.server";
 import { freshDb, seedOpenEvent } from "./helpers";
 
@@ -88,6 +88,25 @@ describe("createEvent", () => {
     if (!result.ok) return;
     const prompt = db.select().from(prompts).where(eq(prompts.id, result.event.promptId)).get();
     expect(prompt?.text).toBe("What do you owe a stranger?");
+  });
+
+  it("refuses a new prompt while one is already active", () => {
+    const { db } = freshDb();
+    const { prompt: active } = seedOpenEvent(db);
+    const result = createEvent(db, {
+      fields: { ...FIELDS, slug: "second-season" },
+      newPromptText: "A second question",
+    });
+    expect(result).toMatchObject({ ok: false, error: "season-active" });
+    expect(db.select().from(prompts).all()).toHaveLength(1);
+
+    // Retiring the active prompt clears the way for a new one.
+    db.update(prompts).set({ retiredAt: NOW }).where(eq(prompts.id, active.id)).run();
+    const retried = createEvent(db, {
+      fields: { ...FIELDS, slug: "second-season" },
+      newPromptText: "A second question",
+    });
+    expect(retried.ok).toBe(true);
   });
 
   it("refuses a duplicate slug without leaking a stray prompt row", () => {

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { responses } from "~/db/schema.server";
-import { liveCount } from "~/events/counts.server";
+import { liveCount } from "~/features/events/services/counts.server";
 import { stageDraft } from "~/submissions/stage.server";
 import { insertResponse } from "~/submissions/write.server";
 import { freshDb, seedOpenEvent } from "./helpers";

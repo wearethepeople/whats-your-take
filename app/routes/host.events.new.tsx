@@ -1,7 +1,11 @@
 import { Form, redirect } from "react-router";
 import type { Route } from "./+types/host.events.new";
 import { db } from "~/db/client.server";
-import { createEvent, eventFormSchema, listActivePrompts } from "~/events/manage.server";
+import {
+  createEvent,
+  eventFormSchema,
+  listActivePrompts,
+} from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
 import { HostNav } from "~/host/nav";
 
@@ -28,6 +32,7 @@ export async function action({ request }: Route.ActionArgs) {
     endsAt: String(form.get("endsAt") ?? ""),
     promptId: String(form.get("promptId") ?? ""),
     newPromptText: String(form.get("newPromptText") ?? ""),
+    newPromptSeasonLabel: String(form.get("newPromptSeasonLabel") ?? ""),
   };
 
   const parsed = eventFormSchema.safeParse(values);
@@ -40,6 +45,7 @@ export async function action({ request }: Route.ActionArgs) {
     fields: parsed.data,
     promptId: values.promptId ? Number(values.promptId) : undefined,
     newPromptText: values.newPromptText || undefined,
+    newPromptSeasonLabel: values.newPromptSeasonLabel || undefined,
   });
   if (!result.ok) {
     return { error: result.message, values };
@@ -108,6 +114,16 @@ export default function HostEventsNew({ loaderData, actionData }: Route.Componen
 
         <label htmlFor="newPromptText">…or write a new prompt</label>
         <input id="newPromptText" name="newPromptText" defaultValue={values?.newPromptText} />
+
+        <label htmlFor="newPromptSeasonLabel">
+          Season label for the new prompt (optional — e.g. &ldquo;Season One&rdquo;; falls back to
+          an ordinal label if left blank)
+        </label>
+        <input
+          id="newPromptSeasonLabel"
+          name="newPromptSeasonLabel"
+          defaultValue={values?.newPromptSeasonLabel}
+        />
 
         {actionData?.error ? (
           <p className="banner banner-error" role="alert">

@@ -4,7 +4,7 @@ import { Form } from "react-router";
 import type { Route } from "./+types/host.promote";
 import { db } from "~/db/client.server";
 import { events } from "~/db/schema.server";
-import { liveCount } from "~/events/counts.server";
+import { liveCount } from "~/features/events/services/counts.server";
 import { requireHost } from "~/host/auth.server";
 import { HostNav } from "~/host/nav";
 import { ScanPanel } from "~/host/scan-panel";
