@@ -33,7 +33,16 @@ export const prompts = sqliteTable(
 
 export const events = sqliteTable("events", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  // Submission-only — printed on the physical QR, resolved by the /e/:slug
+  // flow. Never selected by a public marketing-site query/loader (the repo
+  // is public on GitHub and this value is meant to reach people only via
+  // the printed QR, not be crawlable from the site). Public pages use
+  // publicSlug instead.
   slug: text("slug").notNull().unique(),
+  // date+city composite, auto-generated once at creation and immutable
+  // after (see generatePublicSlug in lifecycle.server.ts) — the identifier
+  // for public URLs (/events/:publicSlug), deliberately unrelated to slug.
+  publicSlug: text("public_slug").notNull().unique(),
   promptId: integer("prompt_id")
     .notNull()
     .references(() => prompts.id),
@@ -44,6 +53,10 @@ export const events = sqliteTable("events", {
   city: text("city").notNull(),
   startsAt: integer("starts_at", { mode: "timestamp" }).notNull(),
   endsAt: integer("ends_at", { mode: "timestamp" }).notNull(),
+  // Host-authored, optional — free text for the public event detail page
+  // (how the day went). Never response content; the page works fine
+  // without it.
+  narrative: text("narrative"),
   status: text("status", { enum: ["draft", "open", "closed", "archived"] })
     .notNull()
     .default("draft"),

@@ -38,6 +38,7 @@ export function seedOpenEvent(
     .insert(schema.events)
     .values({
       slug: overrides.slug ?? "event-one",
+      publicSlug: `2026-09-01-dallas-${overrides.slug ?? "event-one"}`,
       promptId: prompt.id,
       name: "Event One",
       venue: "The Park",

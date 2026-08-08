@@ -7,7 +7,7 @@ import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { isUniqueViolation } from "~/db/errors.server";
 import { events, prompts } from "~/db/schema.server";
-import type { Db } from "~/db/types.server";
+import type { Db, Tx } from "~/db/types.server";
 import { sweepExpired } from "~/submissions/stage.server";
 
 export type EventStatus = "draft" | "open" | "closed" | "archived";
@@ -41,9 +41,45 @@ export const eventFormSchema = z.object({
   city: z.string().trim().min(1, "City is required."),
   startsAt: z.coerce.date({ message: "Start time is required." }),
   endsAt: z.coerce.date({ message: "End time is required." }),
+  narrative: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ? value : null)),
 });
 
 export type EventFields = z.output<typeof eventFormSchema>;
+
+function slugifyCity(city: string): string {
+  return city
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function dateKebab(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+// date+city composite for the public URL, generated once at creation and
+// never touched again (see the schema comment on events.publicSlug) — a
+// suffix is appended only on the rare collision (two stops, same city,
+// same day).
+function generatePublicSlug(tx: Tx, city: string, startsAt: Date): string {
+  const base = `${dateKebab(startsAt)}-${slugifyCity(city)}`;
+  let candidate = base;
+  for (let suffix = 2; ; suffix++) {
+    const taken = tx
+      .select({ id: events.id })
+      .from(events)
+      .where(eq(events.publicSlug, candidate))
+      .get();
+    if (!taken) return candidate;
+    candidate = `${base}-${suffix}`;
+  }
+}
 
 export type CreateEventError =
   | "slug-taken"
@@ -117,9 +153,10 @@ export function createEvent(
       return { ok: false, error: "prompt-required", message: "Pick a prompt or write a new one." };
     }
 
+    const publicSlug = generatePublicSlug(tx, input.fields.city, input.fields.startsAt);
     const event = tx
       .insert(events)
-      .values({ ...input.fields, promptId })
+      .values({ ...input.fields, promptId, publicSlug })
       .returning()
       .get();
     return { ok: true, event };

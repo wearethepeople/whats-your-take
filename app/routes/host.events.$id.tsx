@@ -77,6 +77,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         city: String(form.get("city") ?? ""),
         startsAt: String(form.get("startsAt") ?? ""),
         endsAt: String(form.get("endsAt") ?? ""),
+        narrative: String(form.get("narrative") ?? ""),
       });
       if (!parsed.success) {
         const message = parsed.error.issues[0]?.message ?? "Check the form.";
@@ -220,6 +221,11 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
             defaultValue={event.endsAtInput}
             required
           />
+
+          <label htmlFor="narrative">
+            Narrative (optional — how the day went, for the public event page)
+          </label>
+          <textarea id="narrative" name="narrative" defaultValue={event.narrative ?? ""} rows={5} />
 
           <button type="submit">Save</button>
         </Form>

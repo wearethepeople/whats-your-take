@@ -79,7 +79,7 @@ export type LedgerStatus = "up-next" | "sealed";
 
 export type LedgerEvent = {
   id: number;
-  slug: string;
+  publicSlug: string;
   name: string;
   city: string;
   dateLabel: string;
@@ -127,7 +127,7 @@ export function seasonView(db: Db): SeasonView | undefined {
   const seasonEvents = db
     .select({
       id: events.id,
-      slug: events.slug,
+      publicSlug: events.publicSlug,
       name: events.name,
       city: events.city,
       startsAt: events.startsAt,
@@ -145,7 +145,7 @@ export function seasonView(db: Db): SeasonView | undefined {
 
   const ledger: LedgerEvent[] = seasonEvents.map((event) => ({
     id: event.id,
-    slug: event.slug,
+    publicSlug: event.publicSlug,
     name: event.name,
     city: event.city,
     dateLabel: formatDateLabel(event.startsAt),
@@ -180,7 +180,7 @@ export function archiveView(db: Db): ArchiveView {
   const allEvents = db
     .select({
       id: events.id,
-      slug: events.slug,
+      publicSlug: events.publicSlug,
       name: events.name,
       city: events.city,
       startsAt: events.startsAt,
@@ -201,7 +201,7 @@ export function archiveView(db: Db): ArchiveView {
 
   const archiveEvents: ArchiveEvent[] = allEvents.map((event, index) => ({
     id: event.id,
-    slug: event.slug,
+    publicSlug: event.publicSlug,
     name: event.name,
     city: event.city,
     dateLabel: formatDateLabel(event.startsAt),
@@ -225,5 +225,96 @@ export function archiveView(db: Db): ArchiveView {
     events: archiveEvents,
     totalTakes: [...takeCounts.values()].reduce((sum, n) => sum + n, 0),
     dateRangeLabel,
+  };
+}
+
+function formatDayLabel(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatTimeLabel(starts: Date, ends: Date): string {
+  const time = (date: Date) =>
+    new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "numeric" })
+      .format(date)
+      .replace(":00 ", " ");
+  return `${time(starts)} – ${time(ends)}`;
+}
+
+export type EventDetail = {
+  id: number;
+  publicSlug: string;
+  name: string;
+  venue: string;
+  address: string | null;
+  city: string;
+  zip: string;
+  narrative: string | null;
+  dayLabel: string;
+  timeLabel: string;
+  status: LedgerStatus;
+  stopNumber: number;
+  seasonLabel: string;
+  takeCount: number;
+  // "screens" combines site + kiosk — the public distinction that matters
+  // is handwritten-in-person vs. typed, not the device.
+  channelBreakdown: { card: number; screens: number };
+};
+
+// A single event's public detail page data, or undefined if the publicSlug
+// doesn't resolve to a real (non-draft) event. Deliberately looked up by
+// publicSlug, not the submission slug — see the schema comment on
+// events.slug for why the two must never be conflated.
+export function eventDetail(db: Db, publicSlug: string): EventDetail | undefined {
+  const event = db
+    .select()
+    .from(events)
+    .where(and(eq(events.publicSlug, publicSlug), inArray(events.status, PUBLIC_STATUSES)))
+    .get();
+  if (!event) return undefined;
+
+  // Stop number: this event's 1-based position among all public events in
+  // chronological order — computed the same way as archiveView() so the
+  // numbers agree between the two pages.
+  const allPublicEvents = db
+    .select({ id: events.id, startsAt: events.startsAt })
+    .from(events)
+    .where(inArray(events.status, PUBLIC_STATUSES))
+    .orderBy(asc(events.startsAt), asc(events.id))
+    .all();
+  const stopNumber = allPublicEvents.findIndex((row) => row.id === event.id) + 1;
+
+  const channelRows = db
+    .select({ channel: responses.channel, n: count() })
+    .from(responses)
+    .where(eq(responses.eventId, event.id))
+    .groupBy(responses.channel)
+    .all();
+  const channelBreakdown = { card: 0, screens: 0 };
+  for (const row of channelRows) {
+    if (row.channel === "card") channelBreakdown.card += row.n;
+    else channelBreakdown.screens += row.n;
+  }
+
+  return {
+    id: event.id,
+    publicSlug: event.publicSlug,
+    name: event.name,
+    venue: event.venue,
+    address: event.address,
+    city: event.city,
+    zip: event.zip,
+    narrative: event.narrative,
+    dayLabel: formatDayLabel(event.startsAt),
+    timeLabel: formatTimeLabel(event.startsAt, event.endsAt),
+    status: event.status === "open" ? "up-next" : "sealed",
+    stopNumber,
+    seasonLabel: seasonLabels(db).get(event.promptId) ?? "",
+    takeCount: channelBreakdown.card + channelBreakdown.screens,
+    channelBreakdown,
   };
 }

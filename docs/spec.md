@@ -180,7 +180,19 @@ Prompt                                  -- a prompt IS a season: one question
 
 Event
   id, slug, prompt_id, name, venue, address (nullable), zip, city,
+  public_slug                           -- added 2026-08-07: date+city
+                                         -- composite, generated once at
+                                         -- creation, immutable. The public
+                                         -- identifier (/events/:publicSlug)
+                                         -- — slug (the submission URL/QR
+                                         -- address) is never exposed on a
+                                         -- public page; see "Site flow"
+                                         -- above
   starts_at, ends_at,
+  narrative (nullable)                  -- host-authored, added 2026-08-07
+                                         -- for the public event detail
+                                         -- page ("how the day went");
+                                         -- never response content
   status: draft | open | closed | archived,
   created_at
 
@@ -257,6 +269,16 @@ queue, and the token + OTP machinery is deleted outright):
 1. Participant reaches the form (printed URL/QR at the table — this QR is just
    the address, not a credential), writes their response. Draft persists in
    localStorage so festival connectivity can't eat it.
+   (Amended 2026-08-07: "not a credential" governs the promotion handshake,
+   not distribution — the `Event.slug` this URL is built from is still kept
+   off every public marketing page, and never appears in a public
+   loader/response. Not because it's secret in a security sense, but
+   because the repo is public on GitHub and there's no reason to make the
+   submission URL crawlable from the site when it's meant to reach people
+   only via the printed QR. Public pages (event listing, event detail)
+   reference events by a separate `publicSlug` — a date+location composite,
+   generated once at creation and immutable — so the two identifiers can
+   never be conflated.)
 2. On submit, the server **stages** the draft — an ephemeral `StagedDraft`
    (~15 min TTL), not a response — and the participant's screen shows a short
    **claim code** (6 digits, large type; rendered as a QR in slice 4).

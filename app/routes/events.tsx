@@ -109,7 +109,7 @@ function ArchiveRow({
 }: {
   event: {
     id: number;
-    slug: string;
+    publicSlug: string;
     name: string;
     city: string;
     dateLabel: string;
@@ -121,7 +121,7 @@ function ArchiveRow({
   const upNext = event.status === "up-next";
   return (
     <Link
-      to={`/e/${event.slug}`}
+      to={`/events/${event.publicSlug}`}
       className={`grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-4 border-b border-foreground/10 px-0 py-4 sm:gap-8 ${
         upNext ? "bg-card px-3" : ""
       }`}

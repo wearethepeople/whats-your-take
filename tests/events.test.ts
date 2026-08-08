@@ -22,6 +22,7 @@ const FIELDS = {
   city: "Tulsa",
   startsAt: new Date("2026-09-05T15:00:00Z"),
   endsAt: new Date("2026-09-05T23:00:00Z"),
+  narrative: null,
 };
 
 const ALL: EventStatus[] = ["draft", "open", "closed", "archived"];
