@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import type { Route } from "./+types/events";
 import { db } from "~/db/client.server";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
-import { GoldUnderline, Stamp } from "~/components/visual-grammar";
+import { GoldUnderline, ledgerStatusMeta, Stamp } from "~/components/visual-grammar";
 
 export function meta() {
   return [
@@ -114,23 +114,23 @@ function ArchiveRow({
     city: string;
     dateLabel: string;
     takeCount: number;
-    status: "up-next" | "sealed";
+    status: "up-next" | "scheduled" | "sealed";
     stopNumber: number;
   };
 }) {
-  const upNext = event.status === "up-next";
+  const status = ledgerStatusMeta(event.status);
   return (
     <Link
       to={`/events/${event.publicSlug}`}
       className={`grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-4 border-b border-foreground/10 px-0 py-4 sm:gap-8 ${
-        upNext ? "bg-card px-3" : ""
+        status.rowHighlight ? "bg-card px-3" : ""
       }`}
     >
       <span className="font-mono text-sm text-muted-foreground">
         {String(event.stopNumber).padStart(2, "0")}
       </span>
       <span
-        className={`text-sm ${upNext ? "font-semibold text-primary" : "text-muted-foreground"}`}
+        className={`text-sm ${status.rowHighlight ? "font-semibold text-primary" : "text-muted-foreground"}`}
       >
         {event.dateLabel}
       </span>
@@ -138,12 +138,10 @@ function ArchiveRow({
         {event.name} <span className="font-normal text-muted-tan">· {event.city}</span>
       </span>
       <span className="font-mono text-sm text-muted-foreground">
-        {upNext ? "up next" : `${event.takeCount} takes`}
+        {status.countLabel ?? `${event.takeCount} takes`}
       </span>
-      <span
-        className={`font-mono text-xs uppercase ${upNext ? "font-bold text-primary" : "text-muted-foreground"}`}
-      >
-        {upNext ? "Come find us" : "Sealed"}
+      <span className={`font-mono text-xs uppercase ${status.statusClassName}`}>
+        {status.statusLabel}
       </span>
     </Link>
   );

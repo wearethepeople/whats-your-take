@@ -13,6 +13,15 @@ fs.mkdirSync(path.dirname(databasePath), { recursive: true });
 
 const sqlite = new Database(databasePath);
 sqlite.pragma("journal_mode = WAL");
+// better-sqlite3 defaults foreign_keys ON. drizzle's migrator wraps every
+// migration statement in one transaction, and SQLite silently no-ops any
+// PRAGMA foreign_keys change made inside a transaction — so a migration's
+// own `PRAGMA foreign_keys=OFF` (emitted for SQLite table-rebuild
+// migrations, e.g. dropping a NOT NULL constraint) never actually takes
+// effect from inside the migration file. Has to be set here, before
+// migrate() opens its transaction.
+sqlite.pragma("foreign_keys = OFF");
 migrate(drizzle(sqlite), { migrationsFolder: "./drizzle" });
+sqlite.pragma("foreign_keys = ON");
 sqlite.close();
 console.log(`migrations applied to ${databasePath}`);

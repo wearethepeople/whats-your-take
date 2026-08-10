@@ -21,7 +21,12 @@ type Db = ReturnType<typeof freshDb>["db"];
 
 export function seedOpenEvent(
   db: Db,
-  overrides: { status?: "draft" | "open" | "closed" | "archived"; slug?: string } = {},
+  overrides: {
+    status?: "draft" | "scheduled" | "open" | "closed" | "archived";
+    slug?: string;
+    venue?: string | null;
+    zip?: string | null;
+  } = {},
 ) {
   // Reuse the db's already-active prompt rather than always inserting a
   // fresh one: at most one prompt may have retired_at IS NULL
@@ -41,8 +46,8 @@ export function seedOpenEvent(
       publicSlug: `2026-09-01-dallas-${overrides.slug ?? "event-one"}`,
       promptId: prompt.id,
       name: "Event One",
-      venue: "The Park",
-      zip: "75201",
+      venue: overrides.venue === undefined ? "The Park" : overrides.venue,
+      zip: overrides.zip === undefined ? "75201" : overrides.zip,
       city: "Dallas",
       startsAt: new Date("2026-09-01T15:00:00Z"),
       endsAt: new Date("2026-09-01T23:00:00Z"),

@@ -24,7 +24,7 @@ function toLocalInput(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-const STATUSES: EventStatus[] = ["draft", "open", "closed", "archived"];
+const STATUSES: EventStatus[] = ["draft", "scheduled", "open", "closed", "archived"];
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireHost(request);
@@ -192,8 +192,8 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
             required
           />
 
-          <label htmlFor="venue">Venue</label>
-          <input id="venue" name="venue" defaultValue={event.venue} required />
+          <label htmlFor="venue">Venue (required before the event can open)</label>
+          <input id="venue" name="venue" defaultValue={event.venue ?? ""} />
 
           <label htmlFor="address">Address (optional)</label>
           <input id="address" name="address" defaultValue={event.address ?? ""} />
@@ -201,8 +201,8 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
           <label htmlFor="city">City</label>
           <input id="city" name="city" defaultValue={event.city} required />
 
-          <label htmlFor="zip">ZIP</label>
-          <input id="zip" name="zip" defaultValue={event.zip} required />
+          <label htmlFor="zip">ZIP (required before the event can open)</label>
+          <input id="zip" name="zip" defaultValue={event.zip ?? ""} />
 
           <label htmlFor="startsAt">Starts</label>
           <input

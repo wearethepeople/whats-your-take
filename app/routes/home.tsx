@@ -4,7 +4,13 @@ import { db } from "~/db/client.server";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
-import { CircledStep, GoldUnderline, Stamp, offsetShadow } from "~/components/visual-grammar";
+import {
+  CircledStep,
+  GoldUnderline,
+  ledgerStatusMeta,
+  Stamp,
+  offsetShadow,
+} from "~/components/visual-grammar";
 
 export function meta() {
   return [
@@ -252,19 +258,19 @@ function LedgerRow({
     city: string;
     dateLabel: string;
     takeCount: number;
-    status: "up-next" | "sealed";
+    status: "up-next" | "scheduled" | "sealed";
   };
 }) {
-  const upNext = event.status === "up-next";
+  const status = ledgerStatusMeta(event.status);
   return (
     <Link
       to={`/events/${event.publicSlug}`}
       className={`grid grid-cols-[auto_1fr_auto_auto] items-center gap-4 border-b border-foreground/10 px-3 py-4 first:border-t sm:gap-8 ${
-        upNext ? "bg-card" : ""
+        status.rowHighlight ? "bg-card" : ""
       }`}
     >
       <span
-        className={`text-sm ${upNext ? "font-semibold text-primary" : "text-muted-foreground"}`}
+        className={`text-sm ${status.rowHighlight ? "font-semibold text-primary" : "text-muted-foreground"}`}
       >
         {event.dateLabel}
       </span>
@@ -272,12 +278,10 @@ function LedgerRow({
         {event.name} <span className="font-normal text-muted-tan">· {event.city}</span>
       </span>
       <span className="font-mono text-sm text-muted-foreground">
-        {upNext ? "up next" : `${event.takeCount} takes`}
+        {status.countLabel ?? `${event.takeCount} takes`}
       </span>
-      <span
-        className={`font-mono text-xs uppercase ${upNext ? "font-bold text-primary" : "text-muted-foreground"}`}
-      >
-        {upNext ? "Come find us" : "Sealed"}
+      <span className={`font-mono text-xs uppercase ${status.statusClassName}`}>
+        {status.statusLabel}
       </span>
     </Link>
   );

@@ -72,8 +72,8 @@ export default function HostEventsNew({ loaderData, actionData }: Route.Componen
           required
         />
 
-        <label htmlFor="venue">Venue</label>
-        <input id="venue" name="venue" defaultValue={values?.venue} required />
+        <label htmlFor="venue">Venue (optional for now — required before the event can open)</label>
+        <input id="venue" name="venue" defaultValue={values?.venue} />
 
         <label htmlFor="address">Address (optional)</label>
         <input id="address" name="address" defaultValue={values?.address} />
@@ -81,8 +81,8 @@ export default function HostEventsNew({ loaderData, actionData }: Route.Componen
         <label htmlFor="city">City</label>
         <input id="city" name="city" defaultValue={values?.city} required />
 
-        <label htmlFor="zip">ZIP</label>
-        <input id="zip" name="zip" defaultValue={values?.zip} required />
+        <label htmlFor="zip">ZIP (optional for now — required before the event can open)</label>
+        <input id="zip" name="zip" defaultValue={values?.zip} />
 
         <label htmlFor="startsAt">Starts</label>
         <input

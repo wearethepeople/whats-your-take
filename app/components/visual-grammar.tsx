@@ -45,6 +45,44 @@ export function Stamp({
   );
 }
 
+// Shared status treatment for public ledger rows (home, /events,
+// /find-the-table) — one place that decides what a stop's status reads as
+// and how loud it looks, so the three pages don't drift from each other.
+export type PublicLedgerStatus = "up-next" | "scheduled" | "sealed";
+
+export function ledgerStatusMeta(status: PublicLedgerStatus): {
+  // null means "no fixed label — show the real take count instead" (only
+  // true once a stop is sealed and has a final count).
+  countLabel: string | null;
+  statusLabel: string;
+  statusClassName: string;
+  rowHighlight: boolean;
+} {
+  switch (status) {
+    case "up-next":
+      return {
+        countLabel: "up next",
+        statusLabel: "Come find us",
+        statusClassName: "font-bold text-primary",
+        rowHighlight: true,
+      };
+    case "scheduled":
+      return {
+        countLabel: "—",
+        statusLabel: "Scheduled",
+        statusClassName: "font-semibold text-muted-tan",
+        rowHighlight: false,
+      };
+    case "sealed":
+      return {
+        countLabel: null,
+        statusLabel: "Sealed",
+        statusClassName: "text-muted-foreground",
+        rowHighlight: false,
+      };
+  }
+}
+
 // Circled step number used in "How it works" steps: 26px circle, 1.5px ink
 // border, bold number.
 export function CircledStep({ n, className }: { n: number; className?: string }) {

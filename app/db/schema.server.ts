@@ -47,9 +47,12 @@ export const events = sqliteTable("events", {
     .notNull()
     .references(() => prompts.id),
   name: text("name").notNull(),
-  venue: text("venue").notNull(),
+  // Nullable: a "scheduled" event may be public before logistics are
+  // locked down. Required before the event can transition to "open" (see
+  // transitionEvent's readiness gate in lifecycle.server.ts).
+  venue: text("venue"),
   address: text("address"),
-  zip: text("zip").notNull(),
+  zip: text("zip"),
   city: text("city").notNull(),
   startsAt: integer("starts_at", { mode: "timestamp" }).notNull(),
   endsAt: integer("ends_at", { mode: "timestamp" }).notNull(),
@@ -57,7 +60,7 @@ export const events = sqliteTable("events", {
   // (how the day went). Never response content; the page works fine
   // without it.
   narrative: text("narrative"),
-  status: text("status", { enum: ["draft", "open", "closed", "archived"] })
+  status: text("status", { enum: ["draft", "scheduled", "open", "closed", "archived"] })
     .notNull()
     .default("draft"),
   createdAt: integer("created_at", { mode: "timestamp" })

@@ -25,8 +25,15 @@ const FIELDS = {
   narrative: null,
 };
 
-const ALL: EventStatus[] = ["draft", "open", "closed", "archived"];
-const ALLOWED = new Set(["draft→open", "open→closed", "closed→open", "closed→archived"]);
+const ALL: EventStatus[] = ["draft", "scheduled", "open", "closed", "archived"];
+const ALLOWED = new Set([
+  "draft→scheduled",
+  "draft→open",
+  "scheduled→open",
+  "open→closed",
+  "closed→open",
+  "closed→archived",
+]);
 
 describe("transitionEvent", () => {
   it("enforces the full transition matrix", () => {
@@ -65,6 +72,25 @@ describe("transitionEvent", () => {
     const afterExpiry = new Date(NOW.getTime() + 16 * 60 * 1000);
     expect(transitionEvent(db, { id: event.id, to: "closed", now: afterExpiry }).ok).toBe(true);
     expect(db.select().from(stagedDrafts).all()).toHaveLength(0);
+  });
+
+  it("refuses to open a scheduled event missing venue or zip", () => {
+    const { db } = freshDb();
+    const { event } = seedOpenEvent(db, { status: "scheduled", venue: null, zip: null });
+    const result = transitionEvent(db, { id: event.id, to: "open", now: NOW });
+    expect(result).toMatchObject({ ok: false, error: "incomplete" });
+    const after = db.select().from(events).where(eq(events.id, event.id)).get();
+    expect(after?.status).toBe("scheduled");
+  });
+
+  it("opens a scheduled event once venue and zip are filled in", () => {
+    const { db } = freshDb();
+    const { event } = seedOpenEvent(db, { status: "scheduled", venue: null, zip: null });
+    updateEvent(db, {
+      id: event.id,
+      fields: { ...FIELDS, slug: event.slug, venue: "Guthrie Green", zip: "74103" },
+    });
+    expect(transitionEvent(db, { id: event.id, to: "open", now: NOW }).ok).toBe(true);
   });
 });
 
@@ -188,5 +214,22 @@ describe("eventFormSchema", () => {
     for (const slug of ["Tulsa", "tulsa table", "-tulsa"]) {
       expect(eventFormSchema.safeParse({ ...FIELDS, slug }).success, slug).toBe(false);
     }
+  });
+
+  it("blanks venue and zip to null, for a scheduled event without logistics yet", () => {
+    const parsed = eventFormSchema.safeParse({
+      slug: "fair-2026",
+      name: "State Fair",
+      venue: "",
+      address: "",
+      zip: "",
+      city: "Dallas",
+      startsAt: "2026-09-25T10:00",
+      endsAt: "2026-09-25T20:00",
+    });
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.venue).toBeNull();
+    expect(parsed.data.zip).toBeNull();
   });
 });

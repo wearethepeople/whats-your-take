@@ -173,6 +173,10 @@ body {
   color: seagreen;
 }
 
+.status-scheduled {
+  color: darkgoldenrod;
+}
+
 .status-archived,
 .status-closed {
   opacity: 0.65;

@@ -17,7 +17,7 @@ export const REVEAL_DATE = new Date("2027-07-04T00:00:00");
 
 // Event statuses that are real to the public — draft events don't exist
 // for anyone outside the host console.
-const PUBLIC_STATUSES = ["open", "closed", "archived"] as const;
+const PUBLIC_STATUSES = ["scheduled", "open", "closed", "archived"] as const;
 
 const ORDINAL_WORDS = [
   "One",
@@ -75,7 +75,16 @@ export function currentSeason(db: Db): Season | undefined {
   return { promptId: active.id, promptText: active.text, label };
 }
 
-export type LedgerStatus = "up-next" | "sealed";
+export type LedgerStatus = "scheduled" | "up-next" | "sealed";
+
+// The public status a raw event.status maps to: open → currently at the
+// table; scheduled → announced, not there yet; anything else (closed,
+// archived) → sealed, done for now.
+function publicStatus(status: string): LedgerStatus {
+  if (status === "open") return "up-next";
+  if (status === "scheduled") return "scheduled";
+  return "sealed";
+}
 
 export type LedgerEvent = {
   id: number;
@@ -150,7 +159,7 @@ export function seasonView(db: Db): SeasonView | undefined {
     city: event.city,
     dateLabel: formatDateLabel(event.startsAt),
     takeCount: takeCounts.get(event.id) ?? 0,
-    status: event.status === "open" ? "up-next" : "sealed",
+    status: publicStatus(event.status),
   }));
 
   const stats: SeasonStats = {
@@ -162,7 +171,14 @@ export function seasonView(db: Db): SeasonView | undefined {
   return { season, stats, ledger };
 }
 
-export type ArchiveEvent = LedgerEvent & { stopNumber: number; seasonLabel: string };
+export type ArchiveEvent = LedgerEvent & {
+  stopNumber: number;
+  seasonLabel: string;
+  // Kept (not just the formatted dateLabel) so callers can sort/range
+  // without re-querying — see archiveView()'s dateRangeLabel and
+  // upcomingLedger().
+  startsAt: Date;
+};
 
 export type ArchiveView = {
   events: ArchiveEvent[];
@@ -172,11 +188,11 @@ export type ArchiveView = {
   dateRangeLabel: string | null;
 };
 
-// The full public event history, across every season — not just the
-// current one. Unlike seasonView(), this never scopes to a single prompt:
-// "where the table has been" stays visible after a season closes and a new
-// one starts, which is the point of an archive page.
-export function archiveView(db: Db): ArchiveView {
+// Every public event across every season — not just the current one —
+// newest-first, with stopNumber/seasonLabel attached. Shared by
+// archiveView() ("where the table has been") and upcomingLedger() ("what's
+// coming up"): both read the same history, just sliced/ordered differently.
+function publicEventRows(db: Db): ArchiveEvent[] {
   const allEvents = db
     .select({
       id: events.id,
@@ -199,31 +215,49 @@ export function archiveView(db: Db): ArchiveView {
   const labels = seasonLabels(db);
   const total = allEvents.length;
 
-  const archiveEvents: ArchiveEvent[] = allEvents.map((event, index) => ({
+  return allEvents.map((event, index) => ({
     id: event.id,
     publicSlug: event.publicSlug,
     name: event.name,
     city: event.city,
     dateLabel: formatDateLabel(event.startsAt),
     takeCount: takeCounts.get(event.id) ?? 0,
-    status: event.status === "open" ? "up-next" : "sealed",
+    status: publicStatus(event.status),
     stopNumber: total - index,
     seasonLabel: labels.get(event.promptId) ?? "",
+    startsAt: event.startsAt,
   }));
+}
+
+// "What's coming up" — the up-next (open) and scheduled stops, soonest
+// first. Ascending stopNumber tracks ascending date (see
+// publicEventRows()), so no extra sort key is needed.
+export function upcomingLedger(db: Db): ArchiveEvent[] {
+  return publicEventRows(db)
+    .filter((event) => event.status === "up-next" || event.status === "scheduled")
+    .sort((a, b) => a.stopNumber - b.stopNumber);
+}
+
+// The full public event history, across every season — not just the
+// current one. Unlike seasonView(), this never scopes to a single prompt:
+// "where the table has been" stays visible after a season closes and a new
+// one starts, which is the point of an archive page.
+export function archiveView(db: Db): ArchiveView {
+  const archiveEvents = publicEventRows(db);
 
   let dateRangeLabel: string | null = null;
-  if (allEvents.length > 0) {
+  if (archiveEvents.length > 0) {
     const monthYear = (date: Date) =>
       new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
-    // allEvents is newest-first.
-    const earliest = monthYear(allEvents[allEvents.length - 1].startsAt);
-    const latest = monthYear(allEvents[0].startsAt);
+    // publicEventRows() is newest-first.
+    const earliest = monthYear(archiveEvents[archiveEvents.length - 1].startsAt);
+    const latest = monthYear(archiveEvents[0].startsAt);
     dateRangeLabel = earliest === latest ? earliest : `${earliest} — ${latest}`;
   }
 
   return {
     events: archiveEvents,
-    totalTakes: [...takeCounts.values()].reduce((sum, n) => sum + n, 0),
+    totalTakes: archiveEvents.reduce((sum, event) => sum + event.takeCount, 0),
     dateRangeLabel,
   };
 }
@@ -249,13 +283,20 @@ export type EventDetail = {
   id: number;
   publicSlug: string;
   name: string;
-  venue: string;
+  // Nullable: a scheduled event may not have logistics locked down yet
+  // (see the schema comment on events.venue).
+  venue: string | null;
   address: string | null;
   city: string;
-  zip: string;
+  zip: string | null;
   narrative: string | null;
   dayLabel: string;
   timeLabel: string;
+  // Kept alongside the formatted labels above so callers (e.g. the
+  // "add to calendar" .ics builder on /find-the-table) don't need to
+  // re-parse dayLabel/timeLabel back into real dates.
+  startsAt: Date;
+  endsAt: Date;
   status: LedgerStatus;
   stopNumber: number;
   seasonLabel: string;
@@ -265,18 +306,11 @@ export type EventDetail = {
   channelBreakdown: { card: number; screens: number };
 };
 
-// A single event's public detail page data, or undefined if the publicSlug
-// doesn't resolve to a real (non-draft) event. Deliberately looked up by
-// publicSlug, not the submission slug — see the schema comment on
-// events.slug for why the two must never be conflated.
-export function eventDetail(db: Db, publicSlug: string): EventDetail | undefined {
-  const event = db
-    .select()
-    .from(events)
-    .where(and(eq(events.publicSlug, publicSlug), inArray(events.status, PUBLIC_STATUSES)))
-    .get();
-  if (!event) return undefined;
+type PublicEventRow = typeof events.$inferSelect;
 
+// Shared by eventDetail() and nextStop() — both resolve one event row to
+// the full public detail shape, just via a different lookup.
+function buildEventDetail(db: Db, event: PublicEventRow): EventDetail {
   // Stop number: this event's 1-based position among all public events in
   // chronological order — computed the same way as archiveView() so the
   // numbers agree between the two pages.
@@ -311,10 +345,48 @@ export function eventDetail(db: Db, publicSlug: string): EventDetail | undefined
     narrative: event.narrative,
     dayLabel: formatDayLabel(event.startsAt),
     timeLabel: formatTimeLabel(event.startsAt, event.endsAt),
-    status: event.status === "open" ? "up-next" : "sealed",
+    startsAt: event.startsAt,
+    endsAt: event.endsAt,
+    status: publicStatus(event.status),
     stopNumber,
     seasonLabel: seasonLabels(db).get(event.promptId) ?? "",
     takeCount: channelBreakdown.card + channelBreakdown.screens,
     channelBreakdown,
   };
+}
+
+// A single event's public detail page data, or undefined if the publicSlug
+// doesn't resolve to a real (non-draft) event. Deliberately looked up by
+// publicSlug, not the submission slug — see the schema comment on
+// events.slug for why the two must never be conflated.
+export function eventDetail(db: Db, publicSlug: string): EventDetail | undefined {
+  const event = db
+    .select()
+    .from(events)
+    .where(and(eq(events.publicSlug, publicSlug), inArray(events.status, PUBLIC_STATUSES)))
+    .get();
+  if (!event) return undefined;
+  return buildEventDetail(db, event);
+}
+
+// The single featured stop for the Find the Table page: the earliest
+// currently-open event if one exists, else the soonest scheduled one, else
+// undefined (nothing confirmed right now).
+export function nextStop(db: Db): EventDetail | undefined {
+  const open = db
+    .select()
+    .from(events)
+    .where(eq(events.status, "open"))
+    .orderBy(asc(events.startsAt))
+    .get();
+  const event =
+    open ??
+    db
+      .select()
+      .from(events)
+      .where(eq(events.status, "scheduled"))
+      .orderBy(asc(events.startsAt))
+      .get();
+  if (!event) return undefined;
+  return buildEventDetail(db, event);
 }

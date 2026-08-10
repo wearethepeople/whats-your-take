@@ -46,6 +46,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
   const { event, revealDateIso, revealDateLabel } = loaderData;
   const daysToReveal = daysUntil(revealDateIso);
   const sealed = event.status === "sealed";
+  const scheduled = event.status === "scheduled";
 
   return (
     <div className="font-sans text-foreground">
@@ -80,6 +81,13 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
                 other stop on {revealDateLabel}, at the season premiere.
               </p>
             </div>
+          ) : scheduled ? (
+            <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
+              <Stamp className="border-primary text-primary">Scheduled</Stamp>
+              <p className="text-muted-foreground">
+                This stop is confirmed but not open yet — details firm up as the date gets closer.
+              </p>
+            </div>
           ) : (
             <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
               <Stamp className="border-primary text-primary">Up next</Stamp>
@@ -105,7 +113,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           <DashedDivider />
 
           <FactRow label="Place">
-            <p>{event.venue}</p>
+            <p>{event.venue ?? "Venue to be announced"}</p>
             <p>{event.address ? `${event.address}, ${event.city}` : event.city}</p>
           </FactRow>
           <DashedDivider />
@@ -119,6 +127,8 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
                   from screens
                 </p>
               </>
+            ) : scheduled ? (
+              <p className="text-sm text-muted-foreground">Not open yet.</p>
             ) : (
               // Mid-event, the tent whiteboard is the only live mirror
               // (I6) — the public page doesn't extend that count online
