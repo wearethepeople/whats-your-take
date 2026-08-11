@@ -7,7 +7,7 @@ import { eventDetail, REVEAL_DATE } from "~/features/events/services/season.serv
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return [
-    { title: loaderData ? `${loaderData.event.name} — What's Your Take?` : "What's Your Take?" },
+    { title: loaderData ? `${loaderData.event.name} · What's Your Take?` : "What's Your Take?" },
   ];
 }
 
@@ -85,7 +85,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
             <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
               <Stamp className="border-primary text-primary">Scheduled</Stamp>
               <p className="text-muted-foreground">
-                This stop is confirmed but not open yet — details firm up as the date gets closer.
+                This stop is confirmed but not open yet. Details firm up as the date gets closer.
               </p>
             </div>
           ) : (
@@ -95,7 +95,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
                   URL is printed on the table's QR and never published on
                   the marketing site (see events.slug's schema comment). */}
               <p className="text-muted-foreground">
-                This stop is open — come find the table and scan the QR there to add your take.
+                This stop is open. Come find the table and scan the QR there to add your take.
               </p>
             </div>
           )}
@@ -133,7 +133,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
               // Mid-event, the tent whiteboard is the only live mirror
               // (I6) — the public page doesn't extend that count online
               // while the table is still open.
-              <p className="text-sm text-muted-foreground">Recording now — count follows close.</p>
+              <p className="text-sm text-muted-foreground">Recording now. Count follows close.</p>
             )}
           </FactRow>
           <DashedDivider />

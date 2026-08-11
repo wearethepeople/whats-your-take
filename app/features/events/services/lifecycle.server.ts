@@ -140,7 +140,7 @@ export function createEvent(
         return {
           ok: false,
           error: "season-active",
-          message: "A season is already active — retire its prompt before starting a new one.",
+          message: "A season is already active. Retire its prompt before starting a new one.",
         };
       }
       // seasonLabel is optional — public copy falls back to an ordinal
@@ -191,7 +191,7 @@ export function updateEvent(db: Db, input: { id: number; fields: EventFields }):
     return {
       ok: false,
       error: "slug-locked",
-      message: "The slug can only change while the event is a draft — it's on the printed QR.",
+      message: "The slug can only change while the event is a draft. It's on the printed QR.",
     };
   }
   try {

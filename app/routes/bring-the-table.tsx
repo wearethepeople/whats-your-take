@@ -14,7 +14,7 @@ import {
 
 export function meta() {
   return [
-    { title: "Bring the table to your town — What's Your Take?" },
+    { title: "Bring the table to your town · What's Your Take?" },
     {
       name: "description",
       content: "Point us toward a ZIP code where the table should go next.",
@@ -36,7 +36,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (!checkRateLimit(getClientIp(request))) {
     return {
       ok: false as const,
-      error: "That's a lot of pointers at once — try again in a few minutes.",
+      error: "That's a lot of pointers at once. Try again in a few minutes.",
     };
   }
 
@@ -74,7 +74,7 @@ export default function BringTheTable({ actionData }: Route.ComponentProps) {
         <section className="px-6 py-14 sm:px-14">
           {submitted ? (
             <div className="max-w-lg border-[1.5px] border-foreground bg-card p-6">
-              <p className="text-lg font-semibold">Noted — thanks for the pointer.</p>
+              <p className="text-lg font-semibold">Noted. Thanks for the pointer.</p>
               <p className="mt-2 text-muted-foreground">
                 We watch where interest is concentrated when we&rsquo;re planning where to go next.
               </p>

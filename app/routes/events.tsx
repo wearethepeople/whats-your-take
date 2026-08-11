@@ -7,7 +7,7 @@ import { archiveView, currentSeason, REVEAL_DATE } from "~/features/events/servi
 
 export function meta() {
   return [
-    { title: "Where the table has been — What's Your Take?" },
+    { title: "Where the table has been · What's Your Take?" },
     {
       name: "description",
       content: "Every stop the table has made, and what's still sealed until the reveal.",
@@ -50,7 +50,7 @@ export default function Events({ loaderData }: Route.ComponentProps) {
             </h1>
             <p className="max-w-prose text-muted-foreground">
               Every stop gets a page: the day, the place, and how many people sat down. What they
-              wrote stays sealed with everything else — until the whole record opens on{" "}
+              wrote stays sealed with everything else, until the whole record opens on{" "}
               {revealDateLabel}.
             </p>
           </div>
@@ -83,7 +83,7 @@ export default function Events({ loaderData }: Route.ComponentProps) {
           </section>
         ) : (
           <section className="px-6 py-10 sm:px-14">
-            <p className="text-muted-foreground">No stops yet — check back soon.</p>
+            <p className="text-muted-foreground">No stops yet. Check back soon.</p>
           </section>
         )}
 

@@ -15,7 +15,7 @@ import { HostSection } from "~/host/section";
 import { promoteDraft } from "~/submissions/promote.server";
 
 export function meta() {
-  return [{ title: "Promote — What's Your Take?" }];
+  return [{ title: "Promote · What's Your Take?" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -43,7 +43,7 @@ export async function action({ request }: Route.ActionArgs) {
   // The code prefixes both outcomes: during a fast run of scans the banner
   // text can change before it's read, so it needs to say which code it's
   // about, not just what happened.
-  const prefix = code ? `${code} — ` : "";
+  const prefix = code ? `${code}: ` : "";
   // submittedAt keys the form so the input clears for the next code.
   if (result.ok) {
     return { ok: true as const, message: `${prefix}it's in the book.`, submittedAt: Date.now() };
@@ -98,7 +98,7 @@ export default function HostPromote({ loaderData, actionData }: Route.ComponentP
                 >
                   {event.name}
                 </Link>{" "}
-                — {event.total} in the book
+                · {event.total} in the book
               </span>
             ))}
           </>

@@ -4,11 +4,10 @@ import { DashedDivider, GoldUnderline } from "~/components/visual-grammar";
 
 export function meta() {
   return [
-    { title: "About — What's Your Take?" },
+    { title: "About · What's Your Take?" },
     {
       name: "description",
-      content:
-        "A guestbook for the country's 250th year — why it's in person, anonymous, and sealed.",
+      content: "A guestbook for the country's 250th year: in person, anonymous, and sealed.",
     },
   ];
 }
@@ -26,12 +25,12 @@ export default function About() {
           </h1>
           <p className="max-w-prose text-[17.5px] text-muted-foreground">
             What&rsquo;s Your Take? is one shaded table with one question, set up where people
-            already are — festivals, markets, park days. No stage, no debate, no sides to join. You
+            already are: festivals, markets, park days. No stage, no debate, no sides to join. You
             sit, you write, you drop it in the box. Two minutes, and you were part of it.
           </p>
           <p className="max-w-prose text-[17.5px] text-muted-foreground">
             Every answer is anonymous by design: there is nowhere to put your name. And every answer
-            stays sealed — no feed, no reactions, no running tally of what &ldquo;people like
+            stays sealed. No feed, no reactions, no running tally of what &ldquo;people like
             you&rdquo; think. The record opens once, all together, at the season premiere.
           </p>
         </section>
@@ -39,12 +38,12 @@ export default function About() {
         <section className="grid gap-10 px-6 py-14 sm:grid-cols-3 sm:divide-x sm:divide-dashed sm:divide-(--color-dashed) sm:px-14">
           <WhyColumn heading="Why in person?">
             Because a stranger&rsquo;s handwriting is harder to dismiss than a username. Every take
-            is scanned in by a host at the table — proof a real person was really here, on a real
+            is scanned in by a host at the table: proof a real person was really here, on a real
             day.
           </WhyColumn>
           <WhyColumn heading="Why anonymous?" className="sm:pl-10">
-            Names turn answers into positions. Without one, you&rsquo;re not performing for anyone —
-            you&rsquo;re just telling the truth to somebody fifty years away.
+            Names turn answers into positions. Without one, you&rsquo;re not performing for anyone.
+            You&rsquo;re just telling the truth to somebody fifty years away.
           </WhyColumn>
           <WhyColumn heading="Why sealed?" className="sm:pl-10">
             So no take can trend, and no take can lose. A year of answers read together says more
@@ -59,7 +58,7 @@ export default function About() {
             <h2 className="text-sm font-semibold text-foreground">Who&rsquo;s behind it</h2>
             <p className="max-w-prose text-muted-foreground">
               We (ARE) The People is a nonpartisan civic project from Dallas, Texas. We&rsquo;re not
-              red, we&rsquo;re not blue, and we&rsquo;re not selling anything — we build small ways
+              red, we&rsquo;re not blue, and we&rsquo;re not selling anything. We build small ways
               for people to be heard and to hear each other.
             </p>
             <a
@@ -73,7 +72,7 @@ export default function About() {
             <h2 className="font-semibold">Want the table at your event?</h2>
             <p className="text-muted-foreground">
               We travel with a canopy, a table, and a box. If your festival, market, or block party
-              has shade for us — or you just want to point us toward a town —{" "}
+              has shade for us, or you just want to point us toward a town,{" "}
               <Link to="/bring-the-table" className="text-primary underline underline-offset-4">
                 let us know
               </Link>

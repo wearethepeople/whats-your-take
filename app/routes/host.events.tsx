@@ -9,7 +9,7 @@ import { HostSection } from "~/host/section";
 import { sweepExpired } from "~/submissions/stage.server";
 
 export function meta() {
-  return [{ title: "Events — What's Your Take?" }];
+  return [{ title: "Events · What's Your Take?" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

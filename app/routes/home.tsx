@@ -63,7 +63,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     <div className="flex min-h-screen flex-col font-sans text-foreground">
       {nextStop ? (
         <div className="bg-primary px-4 py-2 text-center text-[13px] font-bold text-primary-foreground">
-          Next stop — {nextStop.name}, {nextStop.city} · {nextStop.dateLabel}
+          Next stop: {nextStop.name}, {nextStop.city} · {nextStop.dateLabel}
         </div>
       ) : null}
 
@@ -87,11 +87,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             )}
             <p className="max-w-prose text-[17.5px] text-muted-foreground">
               All through America&rsquo;s 250th year, a shaded table travels to festivals and
-              markets. People stop for two minutes and answer in their own words — anonymous,
+              markets. People stop for two minutes and answer in their own words: anonymous,
               unpolled, unedited.
             </p>
             <p className="max-w-prose text-[15px] text-muted-foreground">
-              You can&rsquo;t answer from here — the table only happens in person, one place at a
+              You can&rsquo;t answer from here. The table only happens in person, one place at a
               time. And no one reads the answers yet, not even us. Every take goes in sealed, until
               the whole record opens at once:{" "}
               <span className="bg-accent px-0.5 font-semibold">{revealDateLabel}</span>.
@@ -123,7 +123,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 <StatRow label="Days to the reveal" value={String(daysToReveal)} highlight />
               </dl>
               <p className="mt-3 text-xs text-muted-foreground">
-                No names, no accounts — one scan at the table is the whole system. The record stays
+                No names, no accounts. One scan at the table is the whole system. The record stays
                 sealed until it opens all at once.
               </p>
             </div>
@@ -140,7 +140,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               One year of answers, opened <GoldUnderline>all at once.</GoldUnderline>
             </h2>
             <p className="max-w-prose text-muted-foreground">
-              On {revealDateLabel}, the sealed record opens at a public premiere — every take from
+              On {revealDateLabel}, the sealed record opens at a public premiere: every take from
               every stop, read together for the first time. Until then the guestbook stays closed:
               what you write today carries the same weight as everything written before it.
             </p>
@@ -155,15 +155,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <p className="text-sm text-muted-tan">How it works</p>
             <ol className="flex flex-col gap-4">
               <Step n={1}>
-                Find the canopy. Nothing to sign up for, nothing to buy — watching counts too.
+                Find the canopy. Nothing to sign up for, nothing to buy. Watching counts too.
               </Step>
               <Step n={2}>
-                Write your take — card and marker, keyboard at the table, or your own phone. No
-                name, ever.
+                Write your take: card and marker, keyboard at the table, or your own phone. No name,
+                ever.
               </Step>
               <Step n={3}>
-                Your host scans it into the day&rsquo;s record — proof a real person was really
-                here.
+                Your host scans it into the day&rsquo;s record: proof a real person was really here.
               </Step>
             </ol>
           </div>
@@ -173,7 +172,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <section className="px-6 py-14 sm:px-14">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-sm text-muted-tan">
-                The season so far — and where it&rsquo;s going
+                The season so far, and where it&rsquo;s going
               </h2>
               <Link to="/events" className="text-sm underline underline-offset-4">
                 All stops
@@ -191,8 +190,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <div>
             <h2 className="font-serif text-2xl font-semibold">Hear where it&rsquo;s headed</h2>
             <p className="mt-2 max-w-prose text-muted-foreground">
-              An occasional letter from We (ARE) The People — where the table goes next, and what
-              the country has been writing. Easy to leave.
+              An occasional letter from We (ARE) The People: where the table goes next, and what the
+              country has been writing. Easy to leave.
             </p>
           </div>
           <div>

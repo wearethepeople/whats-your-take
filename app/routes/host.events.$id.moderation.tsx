@@ -9,7 +9,7 @@ import { HostSection } from "~/host/section";
 import { approveResponse, hideResponse, listForModeration } from "~/submissions/moderate.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  return [{ title: `Moderation — ${loaderData?.event.name ?? "Event"} — What's Your Take?` }];
+  return [{ title: `Moderation · ${loaderData?.event.name ?? "Event"} · What's Your Take?` }];
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -94,7 +94,7 @@ export default function HostModeration({ loaderData, actionData }: Route.Compone
     <main className="mx-auto max-w-2xl px-4 py-12">
       <HostNav />
       <h1 className="mt-4 mb-2 text-2xl font-semibold">
-        Moderation — {event.name}{" "}
+        Moderation · {event.name}{" "}
         <span className={`status-badge status-${event.status}`}>{event.status}</span>
       </h1>
       <p className="mb-4">
@@ -105,8 +105,8 @@ export default function HostModeration({ loaderData, actionData }: Route.Compone
 
       {event.status === "open" ? (
         <p className="banner banner-warn mb-4" role="alert">
-          This event is still open. The design says the host doesn&rsquo;t read responses mid-event
-          — the mirror waits for close. Proceed only if you must.
+          This event is still open. The design says the host doesn&rsquo;t read responses mid-event;
+          the mirror waits for close. Proceed only if you must.
         </p>
       ) : null}
 
@@ -129,7 +129,7 @@ export default function HostModeration({ loaderData, actionData }: Route.Compone
           <ResponseList rows={approved} actions={["hide"]} />
         </HostSection>
 
-        <HostSection title={`Hidden (${hidden.length}) — terminal, kept in the archive`}>
+        <HostSection title={`Hidden (${hidden.length}): terminal, kept in the archive`}>
           <ResponseList rows={hidden} actions={[]} />
         </HostSection>
       </div>

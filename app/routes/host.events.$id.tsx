@@ -19,7 +19,7 @@ import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  return [{ title: `${loaderData?.event.name ?? "Event"} — What's Your Take?` }];
+  return [{ title: `${loaderData?.event.name ?? "Event"} · What's Your Take?` }];
 }
 
 // datetime-local round-trip for the edit form (server-local time; the
@@ -63,7 +63,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       if (to === "archived" && String(form.get("confirmSlug") ?? "") !== event.slug) {
         return {
           ok: false as const,
-          message: "Archiving is one-way — type the event's slug to confirm.",
+          message: "Archiving is one-way. Type the event's slug to confirm.",
           submittedAt,
         };
       }
@@ -184,7 +184,7 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
 
         <HostSection title="Status">
           {legalTargets.length === 0 ? (
-            <p className="text-muted-foreground">Archived is terminal — this event is done.</p>
+            <p className="text-muted-foreground">Archived is terminal. This event is done.</p>
           ) : (
             <div className="flex flex-wrap items-end gap-3">
               {legalTargets.map((to) =>
@@ -272,7 +272,7 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
 
             <Field
               htmlFor="narrative"
-              label="Narrative (optional — how the day went, for the public event page)"
+              label="Narrative (optional: how the day went, for the public event page)"
             >
               <Textarea
                 id="narrative"

@@ -14,7 +14,7 @@ import { enterCard } from "~/submissions/card.server";
 import { MAX_BODY_LENGTH } from "~/submissions/constants";
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  return [{ title: `Card entry — ${loaderData?.event.name ?? "Event"} — What's Your Take?` }];
+  return [{ title: `Card entry · ${loaderData?.event.name ?? "Event"} · What's Your Take?` }];
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -37,7 +37,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   });
   const entered = Number(form.get("entered") ?? 0) + (result.ok ? 1 : 0);
   return result.ok
-    ? { ok: true as const, message: "In the book — next card.", entered, submittedAt: Date.now() }
+    ? { ok: true as const, message: "In the book. Next card.", entered, submittedAt: Date.now() }
     : { ok: false as const, message: result.message, entered, submittedAt: Date.now() };
 }
 
@@ -51,9 +51,9 @@ export default function HostCardEntry({ loaderData, actionData }: Route.Componen
         Card entry <span className={`status-badge status-${event.status}`}>{event.status}</span>
       </h1>
       <p className="mb-4 text-muted-foreground">
-        Typing into <strong className="text-foreground">{event.name}</strong> at {event.venue} —{" "}
+        Typing into <strong className="text-foreground">{event.name}</strong> at {event.venue}.{" "}
         <Link to={`/host/events/${event.id}`} className="text-primary underline underline-offset-4">
-          event page
+          Event page
         </Link>
         . {cardCount} cards in the book
         {actionData?.entered ? ` · ${actionData.entered} entered this session` : ""}.
@@ -88,7 +88,7 @@ function CardForm({ actionData }: { actionData: Route.ComponentProps["actionData
   return (
     <Form method="post" className="flex flex-col items-start gap-3" ref={formRef}>
       <input type="hidden" name="entered" value={actionData?.entered ?? 0} />
-      <Field htmlFor="body" label="Card text (one card per entry — Ctrl/Cmd+Enter to submit)">
+      <Field htmlFor="body" label="Card text (one card per entry; Ctrl/Cmd+Enter to submit)">
         <Textarea id="body" name="body" rows={6} maxLength={MAX_BODY_LENGTH} autoFocus required />
       </Field>
       {actionData ? (

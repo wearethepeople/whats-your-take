@@ -14,7 +14,7 @@ import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 
 export function meta() {
-  return [{ title: "New event — What's Your Take?" }];
+  return [{ title: "New event · What's Your Take?" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -69,7 +69,7 @@ export default function HostEventsNew({ loaderData, actionData }: Route.Componen
             <Input id="name" name="name" defaultValue={values?.name} required />
           </Field>
 
-          <Field htmlFor="slug" label="Slug (goes on the printed QR — lowercase, digits, dashes)">
+          <Field htmlFor="slug" label="Slug (goes on the printed QR: lowercase, digits, dashes)">
             <Input
               id="slug"
               name="slug"
@@ -81,7 +81,7 @@ export default function HostEventsNew({ loaderData, actionData }: Route.Componen
 
           <Field
             htmlFor="venue"
-            label="Venue (optional for now — required before the event can open)"
+            label="Venue (optional for now, required before the event can open)"
           >
             <Input id="venue" name="venue" defaultValue={values?.venue} />
           </Field>
@@ -94,7 +94,7 @@ export default function HostEventsNew({ loaderData, actionData }: Route.Componen
             <Input id="city" name="city" defaultValue={values?.city} required />
           </Field>
 
-          <Field htmlFor="zip" label="ZIP (optional for now — required before the event can open)">
+          <Field htmlFor="zip" label="ZIP (optional for now, required before the event can open)">
             <Input id="zip" name="zip" defaultValue={values?.zip} />
           </Field>
 
@@ -125,7 +125,7 @@ export default function HostEventsNew({ loaderData, actionData }: Route.Componen
               defaultValue={values?.promptId ?? ""}
               className={selectClassName}
             >
-              <option value="">— pick a prompt —</option>
+              <option value="">Pick a prompt</option>
               {loaderData.prompts.map((prompt) => (
                 <option key={prompt.id} value={prompt.id}>
                   {prompt.text}
@@ -141,7 +141,7 @@ export default function HostEventsNew({ loaderData, actionData }: Route.Componen
           <Field
             htmlFor="newPromptSeasonLabel"
             label={
-              'Season label for the new prompt (optional — e.g. "Season One"; falls back to an ordinal label if left blank)'
+              'Season label for the new prompt (optional, e.g. "Season One"; falls back to an ordinal label if left blank)'
             }
           >
             <Input

@@ -8,10 +8,10 @@ import { nextStop, upcomingLedger } from "~/features/events/services/season.serv
 
 export function meta() {
   return [
-    { title: "Find the table — What's Your Take?" },
+    { title: "Find the table · What's Your Take?" },
     {
       name: "description",
-      content: "No tickets, no signup — just show up. Where the table is headed next.",
+      content: "No tickets, no signup, just show up. Where the table is headed next.",
     },
   ];
 }
@@ -52,7 +52,7 @@ function buildIcsDataUrl(event: {
     `DTSTAMP:${icsTimestamp(new Date())}`,
     `DTSTART:${icsTimestamp(event.startsAt)}`,
     `DTEND:${icsTimestamp(event.endsAt)}`,
-    `SUMMARY:${escapeIcsText(`${event.name} — What's Your Take?`)}`,
+    `SUMMARY:${escapeIcsText(`${event.name} · What's Your Take?`)}`,
     `LOCATION:${escapeIcsText(location)}`,
     "END:VEVENT",
     "END:VCALENDAR",
@@ -93,13 +93,13 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
 
       <main className="flex-1">
         <section className="flex flex-col gap-6 border-b border-dashed border-(--color-dashed) px-6 py-14 sm:px-14 sm:py-16">
-          <p className="text-sm text-muted-tan">No tickets, no signup — just show up</p>
+          <p className="text-sm text-muted-tan">No tickets, no signup, just show up</p>
           <h1 className="max-w-2xl font-serif text-4xl leading-tight font-semibold text-balance sm:text-5xl">
             Come find <GoldUnderline>the table.</GoldUnderline>
           </h1>
           <p className="max-w-prose text-[17.5px] text-muted-foreground">
             Look for the canopy and the long table. Sitting down takes two minutes; watching is
-            welcome too. Answering happens only here — it&rsquo;s the whole point.
+            welcome too. Answering happens only here. It&rsquo;s the whole point.
           </p>
         </section>
 
@@ -157,7 +157,7 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
           ) : (
             <div className="flex flex-col gap-4">
               <p className="max-w-prose text-muted-foreground">
-                No stop is confirmed right now — check back soon.
+                No stop is confirmed right now. Check back soon.
               </p>
               <BringTheTableCallout />
             </div>

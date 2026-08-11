@@ -18,7 +18,7 @@ import { stageDraft } from "~/submissions/stage.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return [
-    { title: loaderData ? `${loaderData.eventName} — What's Your Take?` : "What's Your Take?" },
+    { title: loaderData ? `${loaderData.eventName} · What's Your Take?` : "What's Your Take?" },
   ];
 }
 
@@ -198,8 +198,8 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
         <ManifestTags slug={slug} />
         <h1 className="text-2xl font-bold">{eventName}</h1>
         <p className="mt-3 text-muted-foreground">
-          This table has closed. What was said here stays sealed with every other stop — the
-          portrait and the full corpus open together at the season premiere, not before.
+          This table has closed. What was said here stays sealed with every other stop. The portrait
+          and the full corpus open together at the season premiere, not before.
         </p>
       </SubmissionShell>
     );
@@ -300,7 +300,7 @@ function ComposeForm({
       </h1>
 
       <p className="text-sm text-muted-foreground">
-        Two minutes, no audience, no sides to join. It&rsquo;s anonymous — no names, please.
+        Two minutes, no audience, no sides to join. It&rsquo;s anonymous, no names, please.
       </p>
 
       <Form
@@ -329,7 +329,7 @@ function ComposeForm({
         ) : null}
         <p className="consent">
           All responses are anonymous. By submitting, you give We (ARE) the People permission to
-          share, display, and publish your response in any medium — online, in exhibits, and in
+          share, display, and publish your response in any medium: online, in exhibits, and in
           print. No names, please.
         </p>
         <button
@@ -435,8 +435,8 @@ function CodeScreen({
         </Stamp>
         <h1 className="text-2xl font-bold">You&rsquo;re in the book.</h1>
         <p className="text-muted-foreground">
-          Thanks — your take joins the day&rsquo;s corpus. It stays sealed with everything else
-          until the season premiere, when the whole record opens at once at whatsyourtake.us.
+          Thanks. Your take joins the day&rsquo;s corpus. It stays sealed with everything else until
+          the season premiere, when the whole record opens at once at whatsyourtake.us.
         </p>
         <div className="flex size-[72px] items-center justify-center rounded-full bg-accent">
           <Check className="size-9 text-foreground" strokeWidth={3} aria-hidden="true" />
@@ -456,11 +456,11 @@ function CodeScreen({
         <h1 className="text-2xl font-bold">That code expired.</h1>
         {kiosk ? (
           <p className="text-muted-foreground">
-            Head back and submit again — the host is right there.
+            Head back and submit again. The host is right there.
           </p>
         ) : (
           <p className="text-muted-foreground">
-            Your draft is still saved on this device — head back and resubmit for a fresh code.
+            Your draft is still saved on this device. Head back and resubmit for a fresh code.
           </p>
         )}
         <Link to={formUrl} replace className="text-primary underline underline-offset-4">
