@@ -3,6 +3,7 @@ import type { Route } from "./+types/events.$publicSlug";
 import { db } from "~/db/client.server";
 import { SiteFooter } from "~/components/site-chrome";
 import { DashedDivider, GoldUnderline, Stamp } from "~/components/visual-grammar";
+import { eventDetail, REVEAL_DATE } from "~/features/events/services/season.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return [
@@ -11,7 +12,6 @@ export function meta({ loaderData }: Route.MetaArgs) {
 }
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const { REVEAL_DATE, eventDetail } = await import("~/features/events/services/season.server");
   const event = eventDetail(db, params.publicSlug);
   if (!event) throw data(null, { status: 404 });
   return {
@@ -49,7 +49,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
   const scheduled = event.status === "scheduled";
 
   return (
-    <div className="font-sans text-foreground">
+    <div className="flex min-h-screen flex-col font-sans text-foreground">
       <header className="flex items-center justify-between border-b-2 border-foreground px-6 py-5 sm:px-14">
         <Link to="/" className="text-[17px] font-bold">
           What&rsquo;s your take?
@@ -59,7 +59,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
         </Link>
       </header>
 
-      <main className="grid gap-10 px-6 py-14 sm:grid-cols-[1fr_320px] sm:items-start sm:px-14">
+      <main className="flex-1 grid gap-10 px-6 py-14 sm:grid-cols-[1fr_320px] sm:items-start sm:px-14">
         <div className="flex flex-col gap-5">
           <p className="font-mono text-xs text-primary uppercase">
             Stop № {String(event.stopNumber).padStart(2, "0")}

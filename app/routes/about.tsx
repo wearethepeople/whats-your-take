@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { DashedDivider, GoldUnderline } from "~/components/visual-grammar";
 
@@ -14,10 +15,10 @@ export function meta() {
 
 export default function About() {
   return (
-    <div className="font-sans text-foreground">
+    <div className="flex min-h-screen flex-col font-sans text-foreground">
       <SiteHeader active="about" />
 
-      <main>
+      <main className="flex-1">
         <section className="flex flex-col gap-6 border-b border-dashed border-(--color-dashed) px-6 py-14 sm:px-14 sm:py-16">
           <p className="text-sm text-muted-tan">About the project</p>
           <h1 className="max-w-2xl font-serif text-4xl leading-tight font-semibold text-balance sm:text-5xl">
@@ -72,14 +73,36 @@ export default function About() {
             <h2 className="font-semibold">Want the table at your event?</h2>
             <p className="text-muted-foreground">
               We travel with a canopy, a table, and a box. If your festival, market, or block party
-              has shade for us, write to{" "}
-              <a href="mailto:table@wrtp.us" className="text-primary underline underline-offset-4">
-                table@wrtp.us
-              </a>
+              has shade for us — or you just want to point us toward a town —{" "}
+              <Link to="/bring-the-table" className="text-primary underline underline-offset-4">
+                let us know
+              </Link>
               .
             </p>
           </div>
         </section>
+
+        <p className="px-6 pb-10 text-xs text-muted-foreground sm:px-14">
+          ZIP lookups for the &ldquo;bring the table to your town&rdquo; form use postal data from{" "}
+          <a
+            href="https://www.geonames.org"
+            className="underline underline-offset-4"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GeoNames.org
+          </a>
+          , licensed{" "}
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            className="underline underline-offset-4"
+            target="_blank"
+            rel="noreferrer"
+          >
+            CC BY 4.0
+          </a>
+          .
+        </p>
       </main>
 
       <SiteFooter />

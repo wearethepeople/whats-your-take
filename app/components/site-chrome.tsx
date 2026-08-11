@@ -24,7 +24,7 @@ export function SiteHeader({ active }: { active?: NavKey }) {
     <header className="flex items-center justify-between gap-6 border-b-2 border-foreground px-6 py-5 sm:px-14">
       <div className="flex items-baseline gap-2">
         <Link to="/" className="text-[17px] font-bold">
-          What&rsquo;s your take?
+          What&rsquo;s Your Take?
         </Link>
         <span className="text-[12.5px] text-muted-tan">A civic mirror project</span>
       </div>
@@ -57,8 +57,14 @@ export function SiteHeader({ active }: { active?: NavKey }) {
 export function SiteFooter() {
   return (
     <footer className="flex flex-col gap-1 bg-footer px-6 py-6 text-sm text-footer-foreground sm:flex-row sm:items-center sm:justify-between sm:px-14">
-      <p>What&rsquo;s Your Take? · a We (ARE) The People project · Dallas, Texas</p>
-      <p className="text-muted-foreground">wearethepeople.us · wrtp.us</p>
+      <p>
+        What&rsquo;s Your Take? · A{" "}
+        <a href="https://wearethepeople.us" style={{ textDecoration: "underline" }}>
+          We (ARE) The People
+        </a>{" "}
+        project
+      </p>
+      <p className="text-muted-foreground">&copy; 2026 We (ARE) the People</p>
     </footer>
   );
 }

@@ -3,6 +3,7 @@ import type { Route } from "./+types/events";
 import { db } from "~/db/client.server";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { GoldUnderline, ledgerStatusMeta, Stamp } from "~/components/visual-grammar";
+import { archiveView, currentSeason, REVEAL_DATE } from "~/features/events/services/season.server";
 
 export function meta() {
   return [
@@ -15,8 +16,6 @@ export function meta() {
 }
 
 export async function loader() {
-  const { REVEAL_DATE, archiveView, currentSeason } =
-    await import("~/features/events/services/season.server");
   return {
     archive: archiveView(db),
     season: currentSeason(db),
@@ -39,10 +38,10 @@ export default function Events({ loaderData }: Route.ComponentProps) {
   const eyebrow = [season?.label, archive.dateRangeLabel].filter(Boolean).join(" · ");
 
   return (
-    <div className="font-sans text-foreground">
+    <div className="flex min-h-screen flex-col font-sans text-foreground">
       <SiteHeader active="events" />
 
-      <main>
+      <main className="flex-1">
         <section className="grid gap-10 border-b border-dashed border-(--color-dashed) px-6 py-14 sm:grid-cols-[1fr_auto] sm:items-start sm:px-14">
           <div className="flex flex-col gap-4">
             {eyebrow ? <p className="text-sm text-muted-tan">{eyebrow}</p> : null}

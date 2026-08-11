@@ -138,3 +138,35 @@ export const presenceWindows = sqliteTable(
     uniqueIndex("presence_windows_event_window").on(table.eventId, table.windowStart),
   ],
 );
+
+// Anonymous "bring the table to your town" pointers — a general area, not
+// a specific event (WrTP finds the actual events to attend). No contact
+// info collected, matching the anonymity posture used everywhere else on
+// the site, even though this persona (someone suggesting a town) isn't
+// the "participant" I1 governs. Real timestamps (unlike responses.createdAt):
+// I4's hour-truncation exists to stop a participant's on-site presence
+// from being correlated with photos/video of who was at the table, which
+// doesn't apply to a remote area suggestion, and this data is host-facing
+// only, never public.
+export const tableRequests = sqliteTable("table_requests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  // Raw, as typed — city name or ZIP, no validation beyond non-empty.
+  area: text("area").notNull(),
+  // Optional context: a specific venue/event offer, timing, whatever's
+  // relevant. Where "want the table at your event" (a specific-venue
+  // offer) lands when someone has a specific place in mind, vs. just a
+  // general area.
+  note: text("note"),
+  // Resolved synchronously at insert time from a bundled offline dataset
+  // (see resolve-area.server.ts) — no live geocoding call. Null forever
+  // if the dataset has no match and no host has manually resolved it.
+  resolvedCity: text("resolved_city"),
+  resolvedState: text("resolved_state"),
+  resolvedCounty: text("resolved_county"),
+  // "geonames" (resolved from the bundled file) or "manual" (a host typed
+  // it in by hand after the automatic lookup came up empty).
+  resolvedSource: text("resolved_source", { enum: ["geonames", "manual"] }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});

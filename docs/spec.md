@@ -243,6 +243,27 @@ ShowcaseCard                               -- host-CURATED publication media:
                                            -- pipeline (that stays manual and
                                            -- imageless); small by design,
                                            -- reviewed like any publication.
+
+TableRequest                               -- added 2026-08: anonymous "bring
+  id, area, note (nullable),               -- the table to your town" pointer
+  resolved_city (nullable),                -- (a general area, not a specific
+  resolved_state (nullable),               -- event). No contact info
+  resolved_county (nullable),              -- collected. area/note as typed;
+  resolved_source: geonames | manual,      -- resolved_* populated
+  created_at                               -- synchronously at insert from a
+                                           -- bundled offline GeoNames postal
+                                           -- dataset (no live geocoding call —
+                                           -- USPS's Address API began
+                                           -- requiring a paid license
+                                           -- 2026-08-01, ruled out on cost).
+                                           -- resolved_source is "manual" when
+                                           -- a host fills in a row the
+                                           -- dataset couldn't match. Real
+                                           -- (non-bucketed) created_at: I4's
+                                           -- hour-truncation exists to guard
+                                           -- participant presence-correlation,
+                                           -- which doesn't apply here, and
+                                           -- this data is host-facing only.
 ```
 
 No users table for participants. Admin auth is a single host account (passkey

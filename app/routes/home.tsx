@@ -11,6 +11,7 @@ import {
   Stamp,
   offsetShadow,
 } from "~/components/visual-grammar";
+import { REVEAL_DATE, seasonView } from "~/features/events/services/season.server";
 
 export function meta() {
   return [
@@ -24,10 +25,6 @@ export function meta() {
 }
 
 export async function loader() {
-  // Import kept inside the loader — REVEAL_DATE lives in a .server module,
-  // and a module-scope import here would pull that server module into the
-  // client bundle for any other named export this route uses in render.
-  const { REVEAL_DATE, seasonView } = await import("~/features/events/services/season.server");
   const view = seasonView(db);
   return {
     view,
@@ -63,7 +60,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const nextStop = view?.ledger.find((event) => event.status === "up-next");
 
   return (
-    <div className="font-sans text-foreground">
+    <div className="flex min-h-screen flex-col font-sans text-foreground">
       {nextStop ? (
         <div className="bg-primary px-4 py-2 text-center text-[13px] font-bold text-primary-foreground">
           Next stop — {nextStop.name}, {nextStop.city} · {nextStop.dateLabel}
@@ -72,7 +69,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       <SiteHeader active="question" />
 
-      <main>
+      <main className="flex-1">
         <section
           id="question"
           className="grid gap-10 border-b border-dashed border-(--color-dashed) px-6 py-14 sm:grid-cols-[1fr_300px] sm:px-14 sm:py-16"

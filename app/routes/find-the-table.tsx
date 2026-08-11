@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { GoldUnderline, ledgerStatusMeta, offsetShadow, Stamp } from "~/components/visual-grammar";
 import { db } from "~/db/client.server";
+import { nextStop, upcomingLedger } from "~/features/events/services/season.server";
 
 export function meta() {
   return [
@@ -16,7 +17,6 @@ export function meta() {
 }
 
 export async function loader() {
-  const { nextStop, upcomingLedger } = await import("~/features/events/services/season.server");
   const featured = nextStop(db);
   const upcoming = upcomingLedger(db).filter((event) => event.id !== featured?.id);
   return { featured, upcoming };
@@ -77,9 +77,9 @@ function BringTheTableCallout() {
         Have shade at your festival, market, or block party?{" "}
         <span className="font-semibold text-foreground">Bring the table to your town.</span>
       </p>
-      <a href="mailto:table@wrtp.us" className="text-primary underline underline-offset-4">
-        table@wrtp.us
-      </a>
+      <Link to="/bring-the-table" className="text-primary underline underline-offset-4">
+        Point us there
+      </Link>
     </div>
   );
 }
@@ -88,10 +88,10 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
   const { featured, upcoming } = loaderData;
 
   return (
-    <div className="font-sans text-foreground">
+    <div className="flex min-h-screen flex-col font-sans text-foreground">
       <SiteHeader active="find-the-table" />
 
-      <main>
+      <main className="flex-1">
         <section className="flex flex-col gap-6 border-b border-dashed border-(--color-dashed) px-6 py-14 sm:px-14 sm:py-16">
           <p className="text-sm text-muted-tan">No tickets, no signup — just show up</p>
           <h1 className="max-w-2xl font-serif text-4xl leading-tight font-semibold text-balance sm:text-5xl">
