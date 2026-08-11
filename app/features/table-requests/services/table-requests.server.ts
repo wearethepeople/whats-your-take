@@ -12,13 +12,15 @@ import type { Db } from "~/db/types.server";
 import { resolveArea } from "./resolve-area.server";
 
 export const requestFormSchema = z.object({
-  // ZIP-only, exactly 5 digits — the public form's field is numeric-input
-  // (inputMode, not type="number", to avoid the leading-zero bug) so this
-  // should already be clean, but the server never trusts client input.
+  // ZIP or city name, as typed — the public field is a combobox suggesting
+  // matches from the bundled GeoNames data, but the server never trusts
+  // client input, so this only enforces non-empty; resolveArea() at insert
+  // time is what actually validates/resolves it (or leaves it unresolved).
   area: z
     .string()
     .trim()
-    .regex(/^\d{5}$/, "Enter a 5-digit ZIP code."),
+    .min(1, "Enter a ZIP code or city.")
+    .max(120, "That's too long for a ZIP or city name."),
   note: z
     .string()
     .trim()

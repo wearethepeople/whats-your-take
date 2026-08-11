@@ -8,6 +8,7 @@ export default [
   route("find-the-table", "routes/find-the-table.tsx"),
   route("bring-the-table", "routes/bring-the-table.tsx"),
   route("resources/healthcheck", "routes/resources.healthcheck.ts"),
+  route("resources/area-suggestions", "routes/resources.area-suggestions.ts"),
   route("e/:slug", "routes/e.$slug.tsx"),
   route("e/:slug/status/:code", "routes/e.$slug.status.$code.ts"),
   route("e/:slug/manifest.webmanifest", "routes/e.$slug.manifest.ts"),

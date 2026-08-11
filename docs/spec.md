@@ -379,7 +379,8 @@ accepted, stated here so it stays a decision and not a surprise.)
 - Moderation: everything is `pending` until approved; only `approved` responses
   enter the synthesis export. `hidden` is a terminal state, not deletion —
   append-only habit. The queue is available mid-event behind a prominent
-  warning (discipline, not a lock — see open items).
+  warning — discipline, not a lock, by deliberate choice (2026-08-11): if
+  a host reads early it's a norm violation, not a system failure to fix.
 - Corpus export: `approved` responses for an event as JSON/CSV (body, channel,
   created_bucket, showcase only). Rows are ordered (created_at, body) so row
   order never reconstructs intra-hour submission sequence — the same rule
@@ -492,10 +493,6 @@ synthesis is announced.
 
 ### Open items
 
-- **Moderation queue mid-event:** shipped allow-with-warning (slice 3).
-  Revisit post-weekend whether the queue should be gated instead — one idea
-  is local-dev only, making mid-event reading structurally impossible rather
-  than disciplined.
 - **In-between-seasons state (added 2026-08-06):** a season closes (its
   prompt is retired) before the next prompt exists, and separately before
   its own premiere — the site has no way to represent either gap yet.
@@ -509,6 +506,15 @@ synthesis is announced.
   nothing has ever happened, and (3) deciding whether a multi-season
   future needs a per-season reveal date rather than the single global
   `REVEAL_DATE` constant `season.server.ts` uses today.
+- **No prompt management interface (added 2026-08-10):** no route lets a
+  host view, retire, or edit a prompt — the only operation today is
+  create, and only as a side effect of the "…or write a new prompt" field
+  on the new-event form (no separate prompt admin exists, as noted under
+  "Admin surface" above). Dovetails with "In-between-seasons state" above
+  but is broader than that item's need (1): a real prompt admin would add
+  a list view (active + retired, which events used which prompt) and an
+  edit path for `seasonLabel`, not just the retire action that item
+  already calls for.
 
 ### Open items — resolved 2026-07-19
 

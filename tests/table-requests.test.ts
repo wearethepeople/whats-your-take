@@ -10,6 +10,7 @@ import {
 import {
   buildPostalIndexes,
   resolveAreaWithIndexes,
+  suggestAreasWithIndexes,
   type PostalRow,
 } from "~/features/table-requests/services/resolve-area.server";
 import {
@@ -30,16 +31,22 @@ describe("requestFormSchema", () => {
     expect(parsed.data.note).toBeNull();
   });
 
-  it("rejects empty, whitespace-only, non-numeric, or wrong-length area", () => {
+  it("rejects empty or whitespace-only area, but accepts a city name", () => {
     expect(requestFormSchema.safeParse({ area: "", note: "" }).success).toBe(false);
     expect(requestFormSchema.safeParse({ area: "   ", note: "" }).success).toBe(false);
-    expect(requestFormSchema.safeParse({ area: "Dallas", note: "" }).success).toBe(false);
-    expect(requestFormSchema.safeParse({ area: "1234", note: "" }).success).toBe(false);
-    expect(requestFormSchema.safeParse({ area: "123456", note: "" }).success).toBe(false);
+    expect(requestFormSchema.safeParse({ area: "Dallas", note: "" }).success).toBe(true);
+    // Not 5 digits, but resolveArea() at insert time is what actually
+    // validates a ZIP — the schema only enforces non-empty.
+    expect(requestFormSchema.safeParse({ area: "1234", note: "" }).success).toBe(true);
+    expect(requestFormSchema.safeParse({ area: "123456", note: "" }).success).toBe(true);
   });
 
   it("accepts a valid 5-digit ZIP", () => {
     expect(requestFormSchema.safeParse({ area: "76102", note: "" }).success).toBe(true);
+  });
+
+  it("rejects an area over 120 characters", () => {
+    expect(requestFormSchema.safeParse({ area: "a".repeat(121), note: "" }).success).toBe(false);
   });
 
   // The public field is a text input (inputMode="numeric" + pattern), not
@@ -162,8 +169,24 @@ describe("resolveAreaWithIndexes", () => {
   const fixture: PostalRow[] = [
     ["12345", "Testville", "TS", "Test County"],
     ["54321", "No County Town", "NC", null],
+    // Same city name, different state — exercises the "City, ST" lookup's
+    // disambiguation, which the bare-name index can't do.
+    ["67890", "Testville", "OT", "Other County"],
   ];
   const indexes = buildPostalIndexes(fixture);
+
+  it("resolves a 'City, ST' input — what the combobox submits on selection — via the label index", () => {
+    expect(resolveAreaWithIndexes("Testville, OT", indexes)).toEqual({
+      city: "Testville",
+      state: "OT",
+      county: "Other County",
+    });
+    expect(resolveAreaWithIndexes("testville, ts", indexes)).toEqual({
+      city: "Testville",
+      state: "TS",
+      county: "Test County",
+    });
+  });
 
   it("resolves a ZIP-shaped input via the ZIP index", () => {
     expect(resolveAreaWithIndexes("12345", indexes)).toEqual({
@@ -192,6 +215,56 @@ describe("resolveAreaWithIndexes", () => {
       state: "NC",
       county: null,
     });
+  });
+});
+
+describe("suggestAreasWithIndexes", () => {
+  const fixture: PostalRow[] = [
+    ["12345", "Testville", "TS", "Test County"],
+    ["12346", "Testville East", "TS", "Test County"],
+    ["54321", "No County Town", "NC", null],
+    // Same city, three ZIPs — exercises the ZIP-prefix branch's dedupe.
+    ["70001", "Bigcity", "BC", "Big County"],
+    ["70002", "Bigcity", "BC", "Big County"],
+    ["70003", "Bigcity", "BC", "Big County"],
+  ];
+  const indexes = buildPostalIndexes(fixture);
+
+  it("lists a city once even when several matching ZIPs share it", () => {
+    expect(suggestAreasWithIndexes("700", indexes)).toEqual([
+      { label: "Bigcity, BC", city: "Bigcity", state: "BC" },
+    ]);
+  });
+
+  it("returns nothing for an empty or whitespace-only query", () => {
+    expect(suggestAreasWithIndexes("", indexes)).toEqual([]);
+    expect(suggestAreasWithIndexes("   ", indexes)).toEqual([]);
+  });
+
+  it("prefix-matches ZIPs against the ZIP index", () => {
+    expect(suggestAreasWithIndexes("1234", indexes)).toEqual([
+      { label: "Testville, TS", city: "Testville", state: "TS" },
+      { label: "Testville East, TS", city: "Testville East", state: "TS" },
+    ]);
+  });
+
+  it("prefix-matches city names case-insensitively", () => {
+    // Sorted by label ("Testville East, TS" < "Testville, TS" — space
+    // sorts before comma).
+    expect(suggestAreasWithIndexes("testville", indexes)).toEqual([
+      { label: "Testville East, TS", city: "Testville East", state: "TS" },
+      { label: "Testville, TS", city: "Testville", state: "TS" },
+    ]);
+  });
+
+  it("does not substring-match mid-word", () => {
+    expect(suggestAreasWithIndexes("ville", indexes)).toEqual([]);
+  });
+
+  it("caps results at the given limit", () => {
+    expect(suggestAreasWithIndexes("testville", indexes, 1)).toEqual([
+      { label: "Testville East, TS", city: "Testville East", state: "TS" },
+    ]);
   });
 });
 
