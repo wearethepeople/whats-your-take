@@ -15,6 +15,7 @@ export default [
   route("host/login", "routes/host.login.tsx"),
   route("host/promote", "routes/host.promote.tsx"),
   route("host/table-requests", "routes/host.table-requests.tsx"),
+  route("host/prompts", "routes/host.prompts.tsx"),
   route("host/events", "routes/host.events.tsx"),
   route("host/events/new", "routes/host.events.new.tsx"),
   route("host/events/:id", "routes/host.events.$id.tsx"),

@@ -42,7 +42,7 @@ function ordinalSeasonLabel(ordinal: number): string {
 // (id order tracks autoincrement/creation order) when unset. One query
 // covers every prompt at once so callers needing more than one label (the
 // full-history ledger) don't do it per-row.
-function seasonLabels(db: Db): Map<number, string> {
+export function seasonLabels(db: Db): Map<number, string> {
   const all = db
     .select({ id: prompts.id, seasonLabel: prompts.seasonLabel })
     .from(prompts)
@@ -174,6 +174,11 @@ export function seasonView(db: Db): SeasonView | undefined {
 export type ArchiveEvent = LedgerEvent & {
   stopNumber: number;
   seasonLabel: string;
+  // The prompt this event's season is scoped to — lets a caller (the
+  // archive page) group events by season without a second query, and
+  // without one flat list needing a header when there's only ever been
+  // one season.
+  promptId: number;
   // Kept (not just the formatted dateLabel) so callers can sort/range
   // without re-querying — see archiveView()'s dateRangeLabel and
   // upcomingLedger().
@@ -225,6 +230,7 @@ function publicEventRows(db: Db): ArchiveEvent[] {
     status: publicStatus(event.status),
     stopNumber: total - index,
     seasonLabel: labels.get(event.promptId) ?? "",
+    promptId: event.promptId,
     startsAt: event.startsAt,
   }));
 }

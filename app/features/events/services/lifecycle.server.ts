@@ -3,11 +3,12 @@
 // closes"). Responses never appear in this module; counts live in
 // counts.server.ts and the responses lifecycle stays in app/submissions/.
 
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { isUniqueViolation } from "~/db/errors.server";
-import { events, prompts } from "~/db/schema.server";
+import { events, prompts, responses } from "~/db/schema.server";
 import type { Db, Tx } from "~/db/types.server";
+import { seasonLabels } from "./season.server";
 import { sweepExpired } from "~/submissions/stage.server";
 
 export type EventStatus = "draft" | "scheduled" | "open" | "closed" | "archived";
@@ -278,4 +279,130 @@ export function listActivePrompts(db: Db): { id: number; text: string }[] {
     .where(isNull(prompts.retiredAt))
     .orderBy(desc(prompts.createdAt), desc(prompts.id))
     .all();
+}
+
+export type PromptAdminRow = {
+  id: number;
+  text: string;
+  seasonLabel: string | null;
+  // The label public copy actually renders — seasonLabel, or the ordinal
+  // fallback (see seasonLabels() in season.server.ts) when unset. Shown as
+  // the field's placeholder so an empty label doesn't read as blank.
+  resolvedLabel: string;
+  createdAt: Date;
+  retiredAt: Date | null;
+  eventCount: number;
+  // Every response on every one of the prompt's events, all statuses — a
+  // host participation total, same "all statuses" posture as liveCount()
+  // (counts.server.ts), not the public/approved-only corpus count.
+  takeCount: number;
+  // "May 2026 — July 2026" (or a single month if all events land in one),
+  // derived from event startsAt the same way archiveView()'s
+  // dateRangeLabel is — null when the prompt has no events yet.
+  dateRangeLabel: string | null;
+};
+
+function monthYear(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
+}
+
+// Every prompt (active + retired), newest-first, each with the season-level
+// stats a host admin needs: how many events, how many takes across all of
+// them, and the date range they span. The list view the "no prompt
+// management interface" open item calls for (docs/spec.md, "Open items").
+export function listPromptsAdmin(db: Db): PromptAdminRow[] {
+  const rows = db.select().from(prompts).orderBy(desc(prompts.createdAt), desc(prompts.id)).all();
+
+  const eventRows = db
+    .select({ id: events.id, promptId: events.promptId, startsAt: events.startsAt })
+    .from(events)
+    .all();
+  const eventsByPrompt = new Map<number, { id: number; startsAt: Date }[]>();
+  for (const row of eventRows) {
+    const list = eventsByPrompt.get(row.promptId) ?? [];
+    list.push({ id: row.id, startsAt: row.startsAt });
+    eventsByPrompt.set(row.promptId, list);
+  }
+
+  const takeRows = db
+    .select({ eventId: responses.eventId, n: count() })
+    .from(responses)
+    .groupBy(responses.eventId)
+    .all();
+  const takesByEvent = new Map(takeRows.map((row) => [row.eventId, row.n]));
+
+  const labels = seasonLabels(db);
+
+  return rows.map((prompt) => {
+    const promptEvents = eventsByPrompt.get(prompt.id) ?? [];
+    const takeCount = promptEvents.reduce(
+      (sum, event) => sum + (takesByEvent.get(event.id) ?? 0),
+      0,
+    );
+    let dateRangeLabel: string | null = null;
+    if (promptEvents.length > 0) {
+      const sorted = [...promptEvents].sort(
+        (a, b) => a.startsAt.getTime() - b.startsAt.getTime(),
+      );
+      const earliest = monthYear(sorted[0].startsAt);
+      const latest = monthYear(sorted[sorted.length - 1].startsAt);
+      dateRangeLabel = earliest === latest ? earliest : `${earliest} — ${latest}`;
+    }
+    return {
+      id: prompt.id,
+      text: prompt.text,
+      seasonLabel: prompt.seasonLabel,
+      resolvedLabel: labels.get(prompt.id) ?? "",
+      createdAt: prompt.createdAt,
+      retiredAt: prompt.retiredAt,
+      eventCount: promptEvents.length,
+      takeCount,
+      dateRangeLabel,
+    };
+  });
+}
+
+export type RetirePromptError = "not-found" | "already-retired" | "events-active";
+export type RetirePromptResult =
+  | { ok: true }
+  | { ok: false; error: RetirePromptError; message: string };
+
+// Retiring closes a season. Blocked while any of the prompt's events is
+// still open/scheduled — submissions are gated on event.status, not
+// retiredAt (see app/submissions/), so retiring underneath a live table
+// wouldn't stop it from taking responses; it would just make the season
+// state lie.
+export function retirePrompt(db: Db, id: number): RetirePromptResult {
+  const prompt = db.select().from(prompts).where(eq(prompts.id, id)).get();
+  if (!prompt) return { ok: false, error: "not-found", message: "No such prompt." };
+  if (prompt.retiredAt) {
+    return { ok: false, error: "already-retired", message: "That prompt is already retired." };
+  }
+  const liveEvent = db
+    .select({ id: events.id })
+    .from(events)
+    .where(and(eq(events.promptId, id), inArray(events.status, ["open", "scheduled"])))
+    .get();
+  if (liveEvent) {
+    return {
+      ok: false,
+      error: "events-active",
+      message: "Close or archive this season's open/scheduled events before retiring its prompt.",
+    };
+  }
+  db.update(prompts).set({ retiredAt: new Date() }).where(eq(prompts.id, id)).run();
+  return { ok: true };
+}
+
+export type UpdatePromptSeasonLabelResult = { ok: true } | { ok: false; message: string };
+
+export function updatePromptSeasonLabel(
+  db: Db,
+  id: number,
+  seasonLabel: string | null,
+): UpdatePromptSeasonLabelResult {
+  const prompt = db.select({ id: prompts.id }).from(prompts).where(eq(prompts.id, id)).get();
+  if (!prompt) return { ok: false, message: "No such prompt." };
+  db.update(prompts).set({ seasonLabel }).where(eq(prompts.id, id)).run();
+  return { ok: true };
 }
