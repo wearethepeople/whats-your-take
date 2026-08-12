@@ -18,6 +18,15 @@ export const prompts = sqliteTable(
     // season stamp) falls back to an ordinal label ("Season One", "Season
     // Two", ...) derived from creation order when this is unset.
     seasonLabel: text("season_label"),
+    // When this season's corpus opens to the public. Host-settable,
+    // nullable — a season can run with no announced date yet. Cadence
+    // between seasons is deliberately undecided (docs/spec.md), so this is
+    // per-prompt, not a single site-wide constant.
+    revealDate: integer("reveal_date", { mode: "timestamp" }),
+    // "day" once the date is locked, "month" while the host only wants to
+    // commit to e.g. "July 2027". Only meaningful when revealDate is set;
+    // month precision stores the 1st and is never rendered with a day.
+    revealPrecision: text("reveal_precision", { enum: ["day", "month"] }),
   },
   (table) => [
     // At most one row may have retired_at IS NULL: "the current season" is

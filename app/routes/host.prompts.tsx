@@ -6,12 +6,19 @@ import { db } from "~/db/client.server";
 import {
   listPromptsAdmin,
   retirePrompt,
+  updatePromptRevealDate,
   updatePromptSeasonLabel,
 } from "~/features/events/services/lifecycle.server";
+import { formatRevealDate, type RevealDate } from "~/features/events/reveal-date";
 import { requireHost } from "~/host/auth.server";
 import { Field } from "~/host/field";
 import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
+
+function toDateInput(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
 
 export function meta() {
   return [{ title: "Prompts · What's Your Take?" }];
@@ -38,6 +45,26 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "label") {
     const seasonLabel = String(form.get("seasonLabel") ?? "").trim() || null;
     const result = updatePromptSeasonLabel(db, id, seasonLabel);
+    return result.ok
+      ? { ok: true as const, message: "Saved." }
+      : { ok: false as const, message: result.message };
+  }
+
+  if (intent === "reveal") {
+    const dateStr = String(form.get("revealDate") ?? "").trim();
+    const monthOnly = form.get("revealMonthOnly") === "on";
+    // Blank clears back to "not yet announced" (see
+    // updatePromptRevealDate's null-clears contract). Month precision
+    // normalizes to the 1st — the day is never rendered anyway (see
+    // formatRevealDate).
+    let revealDate: RevealDate | null = null;
+    if (dateStr) {
+      const parsed = new Date(`${dateStr}T00:00:00`);
+      revealDate = monthOnly
+        ? { date: new Date(parsed.getFullYear(), parsed.getMonth(), 1), precision: "month" }
+        : { date: parsed, precision: "day" };
+    }
+    const result = updatePromptRevealDate(db, id, revealDate);
     return result.ok
       ? { ok: true as const, message: "Saved." }
       : { ok: false as const, message: result.message };
@@ -82,36 +109,74 @@ export default function HostPrompts({ loaderData, actionData }: Route.ComponentP
                   {prompt.retiredAt ? ` · retired ${prompt.retiredAt.toLocaleDateString()}` : ""} ·{" "}
                   {prompt.eventCount} {prompt.eventCount === 1 ? "event" : "events"} ·{" "}
                   {prompt.takeCount} {prompt.takeCount === 1 ? "take" : "takes"}
-                  {prompt.dateRangeLabel ? ` · ${prompt.dateRangeLabel}` : ""}
+                  {prompt.dateRangeLabel ? ` · ${prompt.dateRangeLabel}` : ""} · Reveals{" "}
+                  {prompt.revealDate ? formatRevealDate(prompt.revealDate) : "date TBD"}
                 </p>
 
-                <Form method="post" className="mt-3 flex flex-wrap items-end gap-2">
-                  <input type="hidden" name="id" value={prompt.id} />
-                  <Field htmlFor={`label-${prompt.id}`} label="Season label">
-                    <Input
-                      id={`label-${prompt.id}`}
-                      name="seasonLabel"
-                      defaultValue={prompt.seasonLabel ?? ""}
-                      placeholder={prompt.resolvedLabel}
-                      className="w-40"
-                    />
-                  </Field>
-                  <Button type="submit" size="sm" variant="outline" name="intent" value="label">
-                    Save label
-                  </Button>
-                  {!prompt.retiredAt ? (
-                    <Button
-                      type="submit"
-                      size="sm"
-                      variant="destructive"
-                      name="intent"
-                      value="retire"
-                      formNoValidate
-                    >
-                      Retire
+                <div className="mt-3 flex flex-col divide-y divide-border sm:flex-row sm:divide-x sm:divide-y-0">
+                  <Form
+                    method="post"
+                    className="flex flex-wrap items-end gap-2 pb-3 sm:flex-1 sm:pb-0 sm:pr-6"
+                  >
+                    <input type="hidden" name="id" value={prompt.id} />
+                    <Field htmlFor={`label-${prompt.id}`} label="Season label">
+                      <Input
+                        id={`label-${prompt.id}`}
+                        name="seasonLabel"
+                        defaultValue={prompt.seasonLabel ?? ""}
+                        placeholder={prompt.resolvedLabel}
+                        className="w-40"
+                      />
+                    </Field>
+                    <Button type="submit" size="sm" variant="outline" name="intent" value="label">
+                      Save label
                     </Button>
-                  ) : null}
-                </Form>
+                    {!prompt.retiredAt ? (
+                      <Button
+                        type="submit"
+                        size="sm"
+                        variant="destructive"
+                        name="intent"
+                        value="retire"
+                        formNoValidate
+                      >
+                        Retire
+                      </Button>
+                    ) : null}
+                  </Form>
+
+                  <Form
+                    method="post"
+                    className="flex flex-wrap items-end gap-2 pt-3 sm:flex-1 sm:pt-0 sm:pl-6"
+                  >
+                    <input type="hidden" name="id" value={prompt.id} />
+                    <Field htmlFor={`reveal-${prompt.id}`} label="Reveal date">
+                      <Input
+                        id={`reveal-${prompt.id}`}
+                        name="revealDate"
+                        type="date"
+                        defaultValue={prompt.revealDate ? toDateInput(prompt.revealDate.date) : ""}
+                        className="w-40"
+                      />
+                    </Field>
+                    <label
+                      htmlFor={`reveal-month-only-${prompt.id}`}
+                      className="mb-1.5 flex items-center gap-1.5 text-sm text-muted-foreground"
+                    >
+                      <input
+                        id={`reveal-month-only-${prompt.id}`}
+                        name="revealMonthOnly"
+                        type="checkbox"
+                        defaultChecked={prompt.revealDate?.precision === "month"}
+                        className="size-4"
+                      />
+                      Month only
+                    </label>
+                    <Button type="submit" size="sm" variant="outline" name="intent" value="reveal">
+                      Save reveal date
+                    </Button>
+                  </Form>
+                </div>
               </li>
             ))}
           </ul>

@@ -8,7 +8,7 @@ import { z } from "zod";
 import { isUniqueViolation } from "~/db/errors.server";
 import { events, prompts, responses } from "~/db/schema.server";
 import type { Db, Tx } from "~/db/types.server";
-import { seasonLabels } from "./season.server";
+import { seasonLabels, type RevealDate } from "./season.server";
 import { sweepExpired } from "~/submissions/stage.server";
 
 export type EventStatus = "draft" | "scheduled" | "open" | "closed" | "archived";
@@ -300,6 +300,7 @@ export type PromptAdminRow = {
   // derived from event startsAt the same way archiveView()'s
   // dateRangeLabel is — null when the prompt has no events yet.
   dateRangeLabel: string | null;
+  revealDate: RevealDate | null;
 };
 
 function monthYear(date: Date): string {
@@ -358,6 +359,9 @@ export function listPromptsAdmin(db: Db): PromptAdminRow[] {
       eventCount: promptEvents.length,
       takeCount,
       dateRangeLabel,
+      revealDate: prompt.revealDate
+        ? { date: prompt.revealDate, precision: prompt.revealPrecision ?? "day" }
+        : null,
     };
   });
 }
@@ -404,5 +408,23 @@ export function updatePromptSeasonLabel(
   const prompt = db.select({ id: prompts.id }).from(prompts).where(eq(prompts.id, id)).get();
   if (!prompt) return { ok: false, message: "No such prompt." };
   db.update(prompts).set({ seasonLabel }).where(eq(prompts.id, id)).run();
+  return { ok: true };
+}
+
+export type UpdatePromptRevealDateResult = { ok: true } | { ok: false; message: string };
+
+// input null clears the reveal date entirely (both columns) — a season can
+// go back to "not yet announced" if a host needs to walk a date back.
+export function updatePromptRevealDate(
+  db: Db,
+  id: number,
+  input: RevealDate | null,
+): UpdatePromptRevealDateResult {
+  const prompt = db.select({ id: prompts.id }).from(prompts).where(eq(prompts.id, id)).get();
+  if (!prompt) return { ok: false, message: "No such prompt." };
+  db.update(prompts)
+    .set({ revealDate: input?.date ?? null, revealPrecision: input?.precision ?? null })
+    .where(eq(prompts.id, id))
+    .run();
   return { ok: true };
 }

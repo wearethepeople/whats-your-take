@@ -3,10 +3,10 @@ import type { Route } from "./+types/events";
 import { db } from "~/db/client.server";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { GoldUnderline, ledgerStatusMeta, Stamp } from "~/components/visual-grammar";
+import { formatRevealDate } from "~/features/events/reveal-date";
 import {
   archiveView,
-  currentSeason,
-  REVEAL_DATE,
+  currentOrClosedSeason,
   type ArchiveEvent,
 } from "~/features/events/services/season.server";
 
@@ -23,18 +23,12 @@ export function meta() {
 export async function loader() {
   return {
     archive: archiveView(db),
-    season: currentSeason(db),
-    revealDateIso: REVEAL_DATE.toISOString(),
-    revealDateLabel: REVEAL_DATE.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }),
+    season: currentOrClosedSeason(db),
   };
 }
 
-function daysUntil(iso: string): number {
-  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
+function daysUntil(date: Date): number {
+  return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86_400_000));
 }
 
 type SeasonGroup = { promptId: number; seasonLabel: string; events: ArchiveEvent[] };
@@ -56,8 +50,10 @@ function groupBySeason(events: ArchiveEvent[]): SeasonGroup[] {
 }
 
 export default function Events({ loaderData }: Route.ComponentProps) {
-  const { archive, season, revealDateIso, revealDateLabel } = loaderData;
-  const daysToReveal = daysUntil(revealDateIso);
+  const { archive, season } = loaderData;
+  const reveal = season?.revealDate ?? null;
+  const revealDateLabel = reveal ? formatRevealDate(reveal) : null;
+  const daysToReveal = reveal ? daysUntil(reveal.date) : null;
   const eyebrow = [season?.label, archive.dateRangeLabel].filter(Boolean).join(" · ");
   const seasons = groupBySeason(archive.events);
   // A header per season only earns its place once there's more than one —
@@ -78,8 +74,8 @@ export default function Events({ loaderData }: Route.ComponentProps) {
             </h1>
             <p className="max-w-prose text-muted-foreground">
               Every stop gets a page: the day, the place, and how many people sat down. What they
-              wrote stays sealed with everything else, until the whole record opens on{" "}
-              {revealDateLabel}.
+              wrote stays sealed with everything else, until the whole record opens
+              {revealDateLabel ? ` on ${revealDateLabel}` : ", on a date to be announced"}.
             </p>
           </div>
           <dl className="flex gap-8 sm:flex-col sm:gap-2 sm:text-right">
@@ -87,10 +83,12 @@ export default function Events({ loaderData }: Route.ComponentProps) {
               <dt className="text-sm text-muted-foreground">Takes recorded</dt>
               <dd className="font-serif text-2xl">{archive.totalTakes}</dd>
             </div>
-            <div>
-              <dt className="text-sm text-muted-foreground">Days to the reveal</dt>
-              <dd className="font-serif text-2xl text-primary">{daysToReveal}</dd>
-            </div>
+            {daysToReveal != null ? (
+              <div>
+                <dt className="text-sm text-muted-foreground">Days to the reveal</dt>
+                <dd className="font-serif text-2xl text-primary">{daysToReveal}</dd>
+              </div>
+            ) : null}
           </dl>
         </section>
 
@@ -124,7 +122,9 @@ export default function Events({ loaderData }: Route.ComponentProps) {
 
         <section className="px-6 py-10 sm:px-14">
           <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
-            <Stamp className="border-primary text-primary">{revealDateLabel}</Stamp>
+            <Stamp className="border-primary text-primary">
+              {revealDateLabel ?? "Date TBD"}
+            </Stamp>
             <p className="text-muted-foreground">
               Every sealed stop opens at once, at the season premiere. Until then, the count is the
               story.

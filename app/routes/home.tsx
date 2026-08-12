@@ -12,11 +12,8 @@ import {
   Stamp,
   offsetShadow,
 } from "~/components/visual-grammar";
-import {
-  closedSeasonView,
-  REVEAL_DATE,
-  seasonView,
-} from "~/features/events/services/season.server";
+import { formatRevealDate } from "~/features/events/reveal-date";
+import { closedSeasonView, seasonView } from "~/features/events/services/season.server";
 import { checkRateLimit, getClientIp } from "~/newsletter/rate-limit.server";
 import { newsletterFormSchema } from "~/newsletter/schema";
 import { subscribe } from "~/newsletter/subscribe.server";
@@ -40,16 +37,7 @@ export async function loader() {
   const live = seasonView(db);
   const view = live ?? closedSeasonView(db);
   const sealed = !live && view != null;
-  return {
-    view,
-    sealed,
-    revealDateIso: REVEAL_DATE.toISOString(),
-    revealDateLabel: REVEAL_DATE.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }),
-  };
+  return { view, sealed };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -103,13 +91,15 @@ function PromptHeadline({ text }: { text: string }) {
   );
 }
 
-function daysUntil(iso: string): number {
-  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
+function daysUntil(date: Date): number {
+  return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86_400_000));
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
-  const { view, sealed, revealDateIso, revealDateLabel } = loaderData;
-  const daysToReveal = daysUntil(revealDateIso);
+  const { view, sealed } = loaderData;
+  const reveal = view?.season.revealDate ?? null;
+  const revealDateLabel = reveal ? formatRevealDate(reveal) : null;
+  const daysToReveal = reveal ? daysUntil(reveal.date) : null;
   const subscribed = actionData?.ok === true;
   const nextStop = view?.ledger.find((event) => event.status === "up-next");
 
@@ -164,8 +154,15 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             </p>
             <p className="max-w-prose text-[15px] text-muted-foreground">
               You can&rsquo;t answer from here. The table only happens in person, one place at a
-              time. Nothing is published or shared until the whole record opens at once:{" "}
-              <span className="bg-accent px-0.5 font-semibold">{revealDateLabel}</span>.
+              time. Nothing is published or shared until the whole record opens at once
+              {revealDateLabel ? (
+                <>
+                  : <span className="bg-accent px-0.5 font-semibold">{revealDateLabel}</span>
+                </>
+              ) : (
+                ", on a date to be announced"
+              )}
+              .
             </p>
             <div className="flex flex-wrap items-center gap-5">
               <Button
@@ -193,7 +190,9 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 <StatRow label="Stops so far" value={String(view.stats.stopCount)} />
                 <StatRow label="Takes recorded" value={String(view.stats.totalTakes)} />
                 <StatRow label="Towns" value={String(view.stats.townCount)} />
-                <StatRow label="Days to the reveal" value={String(daysToReveal)} highlight />
+                {daysToReveal != null ? (
+                  <StatRow label="Days to the reveal" value={String(daysToReveal)} highlight />
+                ) : null}
               </dl>
               <p className="mt-3 text-xs text-muted-foreground">
                 No names, no accounts. One scan at the table is the whole system. The record stays
@@ -213,12 +212,19 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               One year of answers, opened <GoldUnderline>all at once.</GoldUnderline>
             </h2>
             <p className="max-w-prose text-muted-foreground">
-              On {revealDateLabel}, the sealed record opens at a public premiere: every take from
-              every stop, read together for the first time. Until then the guestbook stays closed:
-              what you write today carries the same weight as everything written before it.
+              {revealDateLabel ? (
+                <>On {revealDateLabel}, the</>
+              ) : (
+                "The"
+              )}{" "}
+              sealed record opens at a public premiere: every take from every stop, read together
+              for the first time. Until then the guestbook stays closed: what you write today
+              carries the same weight as everything written before it.
             </p>
             <p className="font-mono text-sm text-primary">
-              {revealDateLabel.toUpperCase()}{" "}
+              {revealDateLabel ? (
+                <>{revealDateLabel.toUpperCase()} </>
+              ) : null}
               <span className="font-sans font-normal text-muted-foreground">
                 premiere details as the season closes
               </span>

@@ -9,11 +9,19 @@
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { events, prompts, responses } from "~/db/schema.server";
 import type { Db } from "~/db/types.server";
+import type { RevealDate } from "../reveal-date";
 
-// Not locked to any specific date — the announced premiere date is a
-// season-level decision, not fixed in code. Update when the date is
-// set/changes.
-export const REVEAL_DATE = new Date("2027-07-04T00:00:00");
+// Re-exported so existing callers (routes, lifecycle.server.ts) don't need
+// a second import — the type itself lives in reveal-date.ts (not a .server
+// module) since route components format reveal dates too, not just loaders.
+export type { RevealDate };
+
+function revealDateFrom(
+  date: Date | null,
+  precision: "day" | "month" | null,
+): RevealDate | null {
+  return date ? { date, precision: precision ?? "day" } : null;
+}
 
 // Event statuses that are real to the public — draft events don't exist
 // for anyone outside the host console.
@@ -57,6 +65,7 @@ export type Season = {
   promptId: number;
   promptText: string;
   label: string;
+  revealDate: RevealDate | null;
 };
 
 // The active (non-retired) prompt IS the current season (a prompt is a
@@ -65,14 +74,24 @@ export type Season = {
 // Falls back to an ordinal label when the host hasn't set one.
 export function currentSeason(db: Db): Season | undefined {
   const active = db
-    .select({ id: prompts.id, text: prompts.text })
+    .select({
+      id: prompts.id,
+      text: prompts.text,
+      revealDate: prompts.revealDate,
+      revealPrecision: prompts.revealPrecision,
+    })
     .from(prompts)
     .where(isNull(prompts.retiredAt))
     .get();
   if (!active) return undefined;
 
   const label = seasonLabels(db).get(active.id) ?? "";
-  return { promptId: active.id, promptText: active.text, label };
+  return {
+    promptId: active.id,
+    promptText: active.text,
+    label,
+    revealDate: revealDateFrom(active.revealDate, active.revealPrecision),
+  };
 }
 
 // The most recently retired prompt, or undefined if none has ever been
@@ -81,7 +100,12 @@ export function currentSeason(db: Db): Season | undefined {
 // starting (see docs/spec.md's "In-between-seasons state").
 export function mostRecentlyClosedSeason(db: Db): Season | undefined {
   const closed = db
-    .select({ id: prompts.id, text: prompts.text })
+    .select({
+      id: prompts.id,
+      text: prompts.text,
+      revealDate: prompts.revealDate,
+      revealPrecision: prompts.revealPrecision,
+    })
     .from(prompts)
     .where(isNotNull(prompts.retiredAt))
     .orderBy(desc(prompts.retiredAt))
@@ -89,7 +113,20 @@ export function mostRecentlyClosedSeason(db: Db): Season | undefined {
   if (!closed) return undefined;
 
   const label = seasonLabels(db).get(closed.id) ?? "";
-  return { promptId: closed.id, promptText: closed.text, label };
+  return {
+    promptId: closed.id,
+    promptText: closed.text,
+    label,
+    revealDate: revealDateFrom(closed.revealDate, closed.revealPrecision),
+  };
+}
+
+// currentSeason() if a season is live, else the most recently closed one —
+// "the season whose reveal date is currently relevant." Used by pages that
+// need a single reveal date to reference (the archive page) rather than a
+// full SeasonView.
+export function currentOrClosedSeason(db: Db): Season | undefined {
+  return currentSeason(db) ?? mostRecentlyClosedSeason(db);
 }
 
 export type LedgerStatus = "scheduled" | "up-next" | "sealed";
@@ -337,6 +374,7 @@ export type EventDetail = {
   status: LedgerStatus;
   stopNumber: number;
   seasonLabel: string;
+  revealDate: RevealDate | null;
   takeCount: number;
   // "screens" combines site + kiosk — the public distinction that matters
   // is handwritten-in-person vs. typed, not the device.
@@ -344,6 +382,18 @@ export type EventDetail = {
 };
 
 type PublicEventRow = typeof events.$inferSelect;
+
+// A single prompt's reveal date, for buildEventDetail() — an event page
+// needs only its own season's date, not every prompt's (unlike
+// seasonLabels(), which the archive's full-history views need in bulk).
+function promptRevealDate(db: Db, promptId: number): RevealDate | null {
+  const row = db
+    .select({ revealDate: prompts.revealDate, revealPrecision: prompts.revealPrecision })
+    .from(prompts)
+    .where(eq(prompts.id, promptId))
+    .get();
+  return row ? revealDateFrom(row.revealDate, row.revealPrecision) : null;
+}
 
 // Shared by eventDetail() and nextStop() — both resolve one event row to
 // the full public detail shape, just via a different lookup.
@@ -387,6 +437,7 @@ function buildEventDetail(db: Db, event: PublicEventRow): EventDetail {
     status: publicStatus(event.status),
     stopNumber,
     seasonLabel: seasonLabels(db).get(event.promptId) ?? "",
+    revealDate: promptRevealDate(db, event.promptId),
     takeCount: channelBreakdown.card + channelBreakdown.screens,
     channelBreakdown,
   };

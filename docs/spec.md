@@ -172,11 +172,21 @@ Build the pipeline after the format survives contact with a real crowd.
 Prompt                                  -- a prompt IS a season: one question
   id, text, created_at,                 -- reused across events/geographies
   retired_at (nullable),                -- until retired
-  season_label (nullable)               -- host-settable ("Season One");
+  season_label (nullable),              -- host-settable ("Season One");
                                          -- unset falls back to an ordinal
                                          -- label derived from creation
                                          -- order (added 2026-08-06 for the
                                          -- living-seasons homepage)
+  reveal_date (nullable),               -- when this season's corpus opens;
+                                         -- per-season, not a site-wide
+                                         -- constant — cadence between
+                                         -- seasons is undecided (added
+                                         -- 2026-08-11)
+  reveal_precision (nullable,           -- "day" once locked, "month" while
+    enum: day | month)                  -- still working out timing; only
+                                         -- meaningful when reveal_date is
+                                         -- set, month stores the 1st and is
+                                         -- never rendered with a day
 
 Event
   id, slug, prompt_id, name, venue, address (nullable), zip, city,
@@ -491,33 +501,27 @@ Slices 1–4 are the weekend target; a table can run on 1–4 plus a phone
 camera and manual transcription, with the public page following before the
 synthesis is announced.
 
-### Open items
-
-- **Per-season reveal date (added 2026-08-11, split from "In-between-seasons
-  state"):** `season.server.ts` exports a single global `REVEAL_DATE`
-  constant, imported directly by `home.tsx`, `events.tsx`, and
-  `events.$publicSlug.tsx`. `docs/concept-the-ritual.md` frames the reveal
-  as annual and recurring — each season gets its own announced premiere —
-  which a global constant can't represent once a second season exists.
-  Decision (2026-08-11): reveal date becomes per-season, not global.
-  Scope: add nullable `prompts.reveal_date` (migration, backfilling
-  today's constant onto the current active prompt); drop the exported
-  `REVEAL_DATE` constant in favor of a `revealDate: Date | null` surfaced
-  by `currentSeason()`/`seasonView()`/`eventDetail()` off the owning
-  prompt row; the three routes above read it from loaded data instead of
-  importing a constant, falling back to the existing "premiere details as
-  the season closes" copy when null; the Prompts admin page
-  (`host.prompts.tsx`) gets a host-settable reveal-date field alongside
-  `seasonLabel`. Not yet implemented.
-
 ### Open items — resolved 2026-08-11
 
 - **In-between-seasons state:** needs (1) and (2) shipped — a retire
   action exists (`retirePrompt()`, blocked while any of the season's
   events is open/scheduled), and the homepage now distinguishes a live
   season, a closed season awaiting the next one (sealed stats/ledger,
-  no "on its way" copy), and true pre-launch. Need (3), the per-season
-  reveal date, split out above — still open.
+  no "on its way" copy), and true pre-launch. Need (3), per-season reveal
+  date, split out as its own item below and now also resolved.
+- **Per-season reveal date (split from "In-between-seasons state";
+  refined once, then implemented, all 2026-08-11):** `prompts.reveal_date`
+  (nullable timestamp) + `prompts.reveal_precision` (`"day" | "month"`,
+  month stores the 1st and is never rendered with a day) replace the old
+  global `REVEAL_DATE` constant — no backfill; a host sets each season's
+  date via the Prompts admin page
+  (`host.prompts.tsx`, a date input and a month input, whichever is
+  filled wins). `currentSeason()`/`seasonView()`/`closedSeasonView()`/
+  `eventDetail()` surface a `revealDate: { date, precision } | null` off
+  the owning prompt; `formatRevealDate()` in `season.server.ts` is the one
+  place that turns it into `"July 2027"` or `"July 4, 2027"`. `home.tsx`,
+  `events.tsx`, and `events.$publicSlug.tsx` all fall back to "date to be
+  announced" copy when null.
 - **No prompt management interface:** `host.prompts.tsx` — list view
   (active + retired, event/take counts, date range), retire action, and
   `seasonLabel` edit.
