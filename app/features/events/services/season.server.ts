@@ -6,7 +6,7 @@
 // is fine to expose — it's a count, not the corpus — but no per-event page
 // built on this data may render response bodies before the season premiere.
 
-import { and, asc, count, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { events, prompts, responses } from "~/db/schema.server";
 import type { Db } from "~/db/types.server";
 
@@ -75,6 +75,23 @@ export function currentSeason(db: Db): Season | undefined {
   return { promptId: active.id, promptText: active.text, label };
 }
 
+// The most recently retired prompt, or undefined if none has ever been
+// retired. Distinct from currentSeason(): this is "the season that just
+// closed," used to fill the gap between a season ending and the next one
+// starting (see docs/spec.md's "In-between-seasons state").
+export function mostRecentlyClosedSeason(db: Db): Season | undefined {
+  const closed = db
+    .select({ id: prompts.id, text: prompts.text })
+    .from(prompts)
+    .where(isNotNull(prompts.retiredAt))
+    .orderBy(desc(prompts.retiredAt))
+    .get();
+  if (!closed) return undefined;
+
+  const label = seasonLabels(db).get(closed.id) ?? "";
+  return { promptId: closed.id, promptText: closed.text, label };
+}
+
 export type LedgerStatus = "scheduled" | "up-next" | "sealed";
 
 // The public status a raw event.status maps to: open → currently at the
@@ -127,12 +144,10 @@ function eventTakeCounts(db: Db, eventIds: number[]): Map<number, number> {
   return new Map(rows.map((row) => [row.eventId, row.n]));
 }
 
-// The current season's aggregates + public ledger, or undefined if no
-// season is active yet (nothing to show).
-export function seasonView(db: Db): SeasonView | undefined {
-  const season = currentSeason(db);
-  if (!season) return undefined;
-
+// Shared by seasonView() and closedSeasonView(): a season's aggregates +
+// public ledger, given the season already resolved (currentSeason() or
+// mostRecentlyClosedSeason()).
+function seasonViewFor(db: Db, season: Season): SeasonView {
   const seasonEvents = db
     .select({
       id: events.id,
@@ -169,6 +184,22 @@ export function seasonView(db: Db): SeasonView | undefined {
   };
 
   return { season, stats, ledger };
+}
+
+// The current season's aggregates + public ledger, or undefined if no
+// season is active yet (nothing to show).
+export function seasonView(db: Db): SeasonView | undefined {
+  const season = currentSeason(db);
+  return season ? seasonViewFor(db, season) : undefined;
+}
+
+// The most recently closed season's final aggregates + ledger (all-sealed
+// — a closed season has no "up next" stop), or undefined if no season has
+// ever closed. Fills the homepage's in-between-seasons gap: a season that
+// closed before the next one started is not "on its way," it already ran.
+export function closedSeasonView(db: Db): SeasonView | undefined {
+  const season = mostRecentlyClosedSeason(db);
+  return season ? seasonViewFor(db, season) : undefined;
 }
 
 export type ArchiveEvent = LedgerEvent & {

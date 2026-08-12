@@ -493,28 +493,34 @@ synthesis is announced.
 
 ### Open items
 
-- **In-between-seasons state (added 2026-08-06):** a season closes (its
-  prompt is retired) before the next prompt exists, and separately before
-  its own premiere — the site has no way to represent either gap yet.
-  Nothing today even retires a prompt (no host route/action sets
-  `retired_at`), so the state is currently unreachable, not just
-  unhandled. Needs: (1) a retire action, (2) splitting "the active
-  season" (`currentSeason()`, now guaranteed unique by the
-  `prompts_single_active_season` index) from "the most recently closed
-  season" so the homepage can show a closed season's sealed stats/ledger
-  instead of falling back to pre-launch ("on its way") copy that assumes
-  nothing has ever happened, and (3) deciding whether a multi-season
-  future needs a per-season reveal date rather than the single global
-  `REVEAL_DATE` constant `season.server.ts` uses today.
-- **No prompt management interface (added 2026-08-10):** no route lets a
-  host view, retire, or edit a prompt — the only operation today is
-  create, and only as a side effect of the "…or write a new prompt" field
-  on the new-event form (no separate prompt admin exists, as noted under
-  "Admin surface" above). Dovetails with "In-between-seasons state" above
-  but is broader than that item's need (1): a real prompt admin would add
-  a list view (active + retired, which events used which prompt) and an
-  edit path for `seasonLabel`, not just the retire action that item
-  already calls for.
+- **Per-season reveal date (added 2026-08-11, split from "In-between-seasons
+  state"):** `season.server.ts` exports a single global `REVEAL_DATE`
+  constant, imported directly by `home.tsx`, `events.tsx`, and
+  `events.$publicSlug.tsx`. `docs/concept-the-ritual.md` frames the reveal
+  as annual and recurring — each season gets its own announced premiere —
+  which a global constant can't represent once a second season exists.
+  Decision (2026-08-11): reveal date becomes per-season, not global.
+  Scope: add nullable `prompts.reveal_date` (migration, backfilling
+  today's constant onto the current active prompt); drop the exported
+  `REVEAL_DATE` constant in favor of a `revealDate: Date | null` surfaced
+  by `currentSeason()`/`seasonView()`/`eventDetail()` off the owning
+  prompt row; the three routes above read it from loaded data instead of
+  importing a constant, falling back to the existing "premiere details as
+  the season closes" copy when null; the Prompts admin page
+  (`host.prompts.tsx`) gets a host-settable reveal-date field alongside
+  `seasonLabel`. Not yet implemented.
+
+### Open items — resolved 2026-08-11
+
+- **In-between-seasons state:** needs (1) and (2) shipped — a retire
+  action exists (`retirePrompt()`, blocked while any of the season's
+  events is open/scheduled), and the homepage now distinguishes a live
+  season, a closed season awaiting the next one (sealed stats/ledger,
+  no "on its way" copy), and true pre-launch. Need (3), the per-season
+  reveal date, split out above — still open.
+- **No prompt management interface:** `host.prompts.tsx` — list view
+  (active + retired, event/take counts, date range), retire action, and
+  `seasonLabel` edit.
 
 ### Open items — resolved 2026-07-19
 
