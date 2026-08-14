@@ -9,7 +9,7 @@ export function truncateToHour(date: Date): Date {
 
 export type CreatedBucket = "morning" | "midday" | "afternoon" | "evening";
 
-const DEFAULT_TIME_ZONE = "America/Chicago";
+export const DEFAULT_TIME_ZONE = "America/Chicago";
 
 export function bucketFor(date: Date, timeZone: string = DEFAULT_TIME_ZONE): CreatedBucket {
   const hour = Number(

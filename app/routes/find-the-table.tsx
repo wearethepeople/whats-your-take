@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { GoldUnderline, ledgerStatusMeta, offsetShadow, Stamp } from "~/components/visual-grammar";
 import { db } from "~/db/client.server";
+import { DEFAULT_TIME_ZONE } from "~/db/time.server";
 import { nextStop, upcomingLedger } from "~/features/events/services/season.server";
 
 export function meta() {
@@ -22,10 +23,42 @@ export async function loader() {
   return { featured, upcoming };
 }
 
-// Basic UTC "YYYYMMDDTHHMMSSZ" stamp — the format .ics requires.
-function icsTimestamp(date: Date): string {
+// Real UTC instant, for DTSTAMP only — "YYYYMMDDTHHMMSSZ".
+function icsUtcTimestamp(date: Date): string {
   return `${date.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
 }
+
+// event.startsAt/endsAt hold the host's entered wall-clock time (see
+// host.events forms) with no real timezone attached — the server runs with
+// no TZ set, so `date.getUTC*()` reads back the same numbers the host typed.
+// Format those as a floating "YYYYMMDDTHHMMSS" local to TZID=America/Chicago
+// below; tagging them "Z" (as before) would let calendar apps re-convert
+// through UTC and shift the event by the Central offset.
+function icsLocalTimestamp(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}T${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())}`;
+}
+
+// Standard VTIMEZONE block for America/Chicago (US DST rules since 2007).
+const CHICAGO_VTIMEZONE = [
+  "BEGIN:VTIMEZONE",
+  `TZID:${DEFAULT_TIME_ZONE}`,
+  "BEGIN:DAYLIGHT",
+  "TZOFFSETFROM:-0600",
+  "TZOFFSETTO:-0500",
+  "TZNAME:CDT",
+  "DTSTART:19700308T020000",
+  "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU",
+  "END:DAYLIGHT",
+  "BEGIN:STANDARD",
+  "TZOFFSETFROM:-0500",
+  "TZOFFSETTO:-0600",
+  "TZNAME:CST",
+  "DTSTART:19701101T020000",
+  "RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU",
+  "END:STANDARD",
+  "END:VTIMEZONE",
+];
 
 function escapeIcsText(text: string): string {
   return text.replace(/[\\,;]/g, (match) => `\\${match}`).replace(/\n/g, "\\n");
@@ -47,11 +80,12 @@ function buildIcsDataUrl(event: {
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//What's Your Take?//EN",
+    ...CHICAGO_VTIMEZONE,
     "BEGIN:VEVENT",
     `UID:${event.publicSlug}@wrtp.us`,
-    `DTSTAMP:${icsTimestamp(new Date())}`,
-    `DTSTART:${icsTimestamp(event.startsAt)}`,
-    `DTEND:${icsTimestamp(event.endsAt)}`,
+    `DTSTAMP:${icsUtcTimestamp(new Date())}`,
+    `DTSTART;TZID=${DEFAULT_TIME_ZONE}:${icsLocalTimestamp(event.startsAt)}`,
+    `DTEND;TZID=${DEFAULT_TIME_ZONE}:${icsLocalTimestamp(event.endsAt)}`,
     `SUMMARY:${escapeIcsText(`${event.name} · What's Your Take?`)}`,
     `LOCATION:${escapeIcsText(location)}`,
     "END:VEVENT",
