@@ -342,9 +342,7 @@ export function listPromptsAdmin(db: Db): PromptAdminRow[] {
     );
     let dateRangeLabel: string | null = null;
     if (promptEvents.length > 0) {
-      const sorted = [...promptEvents].sort(
-        (a, b) => a.startsAt.getTime() - b.startsAt.getTime(),
-      );
+      const sorted = [...promptEvents].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
       const earliest = monthYear(sorted[0].startsAt);
       const latest = monthYear(sorted[sorted.length - 1].startsAt);
       dateRangeLabel = earliest === latest ? earliest : `${earliest} — ${latest}`;

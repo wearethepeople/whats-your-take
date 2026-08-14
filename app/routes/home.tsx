@@ -212,19 +212,13 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               One year of answers, opened <GoldUnderline>all at once.</GoldUnderline>
             </h2>
             <p className="max-w-prose text-muted-foreground">
-              {revealDateLabel ? (
-                <>On {revealDateLabel}, the</>
-              ) : (
-                "The"
-              )}{" "}
-              sealed record opens at a public premiere: every take from every stop, read together
-              for the first time. Until then the guestbook stays closed: what you write today
-              carries the same weight as everything written before it.
+              {revealDateLabel ? <>On {revealDateLabel}, the</> : "The"} sealed record opens at a
+              public premiere: every take from every stop, read together for the first time. Until
+              then the guestbook stays closed: what you write today carries the same weight as
+              everything written before it.
             </p>
             <p className="font-mono text-sm text-primary">
-              {revealDateLabel ? (
-                <>{revealDateLabel.toUpperCase()} </>
-              ) : null}
+              {revealDateLabel ? <>{revealDateLabel.toUpperCase()} </> : null}
               <span className="font-sans font-normal text-muted-foreground">
                 premiere details as the season closes
               </span>
@@ -251,9 +245,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           <section className="px-6 py-14 sm:px-14">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-sm text-muted-tan">
-                {sealed
-                  ? "Where the table went"
-                  : "The season so far, and where it's going"}
+                {sealed ? "Where the table went" : "The season so far, and where it's going"}
               </h2>
               <Link to="/events" className="text-sm underline underline-offset-4">
                 All stops

@@ -122,9 +122,7 @@ export default function Events({ loaderData }: Route.ComponentProps) {
 
         <section className="px-6 py-10 sm:px-14">
           <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
-            <Stamp className="border-primary text-primary">
-              {revealDateLabel ?? "Date TBD"}
-            </Stamp>
+            <Stamp className="border-primary text-primary">{revealDateLabel ?? "Date TBD"}</Stamp>
             <p className="text-muted-foreground">
               Every sealed stop opens at once, at the season premiere. Until then, the count is the
               story.

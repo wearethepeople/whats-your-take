@@ -100,13 +100,17 @@ export default function HostPrompts({ loaderData, actionData }: Route.ComponentP
               <li key={prompt.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
                 <div className="flex items-baseline justify-between gap-4">
                   <p className="font-medium">&ldquo;{prompt.text}&rdquo;</p>
-                  <span className={`status-badge ${prompt.retiredAt ? "status-closed" : "status-open"}`}>
+                  <span
+                    className={`status-badge ${prompt.retiredAt ? "status-closed" : "status-open"}`}
+                  >
                     {prompt.retiredAt ? "retired" : "active"}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Created {prompt.createdAt.toLocaleDateString()}
-                  {prompt.retiredAt ? ` · retired ${prompt.retiredAt.toLocaleDateString()}` : ""} ·{" "}
+                  {prompt.retiredAt
+                    ? ` · retired ${prompt.retiredAt.toLocaleDateString()}`
+                    : ""} ·{" "}
                   {prompt.eventCount} {prompt.eventCount === 1 ? "event" : "events"} ·{" "}
                   {prompt.takeCount} {prompt.takeCount === 1 ? "take" : "takes"}
                   {prompt.dateRangeLabel ? ` · ${prompt.dateRangeLabel}` : ""} · Reveals{" "}

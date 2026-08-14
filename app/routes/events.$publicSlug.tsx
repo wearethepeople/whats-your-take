@@ -72,8 +72,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
               <Stamp className="border-primary text-primary">Sealed</Stamp>
               <p className="text-muted-foreground">
                 This day&rsquo;s {event.takeCount} takes are in the record. They open with every
-                other stop{revealDateLabel ? ` on ${revealDateLabel}` : ""}, at the season
-                premiere.
+                other stop{revealDateLabel ? ` on ${revealDateLabel}` : ""}, at the season premiere.
               </p>
             </div>
           ) : scheduled ? (

@@ -16,10 +16,7 @@ import type { RevealDate } from "../reveal-date";
 // module) since route components format reveal dates too, not just loaders.
 export type { RevealDate };
 
-function revealDateFrom(
-  date: Date | null,
-  precision: "day" | "month" | null,
-): RevealDate | null {
+function revealDateFrom(date: Date | null, precision: "day" | "month" | null): RevealDate | null {
   return date ? { date, precision: precision ?? "day" } : null;
 }
 
