@@ -1,6 +1,8 @@
 // I4: the only place response timestamps are produced. Sub-hour submission
 // timing must never be stored — every insert path goes through these.
 
+import { DEFAULT_TIME_ZONE } from "~/lib/timezone";
+
 export function truncateToHour(date: Date): Date {
   const truncated = new Date(date);
   truncated.setUTCMinutes(0, 0, 0);
@@ -8,8 +10,6 @@ export function truncateToHour(date: Date): Date {
 }
 
 export type CreatedBucket = "morning" | "midday" | "afternoon" | "evening";
-
-export const DEFAULT_TIME_ZONE = "America/Chicago";
 
 export function bucketFor(date: Date, timeZone: string = DEFAULT_TIME_ZONE): CreatedBucket {
   const hour = Number(

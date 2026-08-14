@@ -4,8 +4,8 @@ import { Button } from "~/components/ui/button";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { GoldUnderline, ledgerStatusMeta, offsetShadow, Stamp } from "~/components/visual-grammar";
 import { db } from "~/db/client.server";
-import { DEFAULT_TIME_ZONE } from "~/db/time.server";
 import { nextStop, upcomingLedger } from "~/features/events/services/season.server";
+import { DEFAULT_TIME_ZONE } from "~/lib/timezone";
 
 export function meta() {
   return [
