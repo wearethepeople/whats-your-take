@@ -15,9 +15,12 @@ import { Field } from "~/host/field";
 import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 
+// revealDate is a calendar date, not an instant — read/write its components
+// in UTC throughout (see the parse below and formatRevealDate) so the date
+// the host typed is the date that renders, regardless of server/viewer TZ.
 function toDateInput(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
 }
 
 export function meta() {
@@ -59,9 +62,12 @@ export async function action({ request }: Route.ActionArgs) {
     // formatRevealDate).
     let revealDate: RevealDate | null = null;
     if (dateStr) {
-      const parsed = new Date(`${dateStr}T00:00:00`);
+      const parsed = new Date(`${dateStr}T00:00:00Z`);
       revealDate = monthOnly
-        ? { date: new Date(parsed.getFullYear(), parsed.getMonth(), 1), precision: "month" }
+        ? {
+            date: new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), 1)),
+            precision: "month",
+          }
         : { date: parsed, precision: "day" };
     }
     const result = updatePromptRevealDate(db, id, revealDate);

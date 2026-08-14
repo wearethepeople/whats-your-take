@@ -11,6 +11,7 @@ export type RevealDate = { date: Date; precision: "day" | "month" };
 
 export function formatRevealDate(reveal: RevealDate): string {
   return new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
     month: "long",
     day: reveal.precision === "day" ? "numeric" : undefined,
     year: "numeric",
