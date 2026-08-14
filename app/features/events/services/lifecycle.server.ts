@@ -7,18 +7,20 @@ import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { isUniqueViolation } from "~/db/errors.server";
 import { events, prompts } from "~/db/schema.server";
-import type { Db } from "~/db/types.server";
+import type { Db, Tx } from "~/db/types.server";
 import { sweepExpired } from "~/submissions/stage.server";
 
-export type EventStatus = "draft" | "open" | "closed" | "archived";
+export type EventStatus = "draft" | "scheduled" | "open" | "closed" | "archived";
 export type EventRow = typeof events.$inferSelect;
 
 // Allowed transitions, keyed by target: which source states may reach it.
-// closed→open reopen is allowed (a table that closes early can resume);
-// archived is the one-way terminal gate; nothing returns to draft.
+// draft→open direct path stays (impromptu events skip announcing ahead of
+// time); closed→open reopen is allowed (a table that closes early can
+// resume); archived is the one-way terminal gate; nothing returns to draft.
 export const TRANSITION_SOURCES: Record<EventStatus, EventStatus[]> = {
   draft: [],
-  open: ["draft", "closed"],
+  scheduled: ["draft"],
+  open: ["draft", "scheduled", "closed"],
   closed: ["open"],
   archived: ["closed"],
 };
@@ -31,28 +33,84 @@ export const eventFormSchema = z.object({
     .trim()
     .regex(/^[a-z0-9][a-z0-9-]*$/, "Slug is lowercase letters, digits, and dashes."),
   name: z.string().trim().min(1, "Name the event."),
-  venue: z.string().trim().min(1, "Name the venue."),
+  // Nullable: a scheduled event may be public before venue/zip are locked
+  // down. Required before the event can transition to "open" — see
+  // transitionEvent's readiness gate below.
+  venue: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ? value : null)),
   address: z
     .string()
     .trim()
     .optional()
     .transform((value) => (value ? value : null)),
-  zip: z.string().trim().min(1, "ZIP is required."),
+  zip: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ? value : null)),
   city: z.string().trim().min(1, "City is required."),
   startsAt: z.coerce.date({ message: "Start time is required." }),
   endsAt: z.coerce.date({ message: "End time is required." }),
+  narrative: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ? value : null)),
 });
 
 export type EventFields = z.output<typeof eventFormSchema>;
 
-export type CreateEventError = "slug-taken" | "prompt-required" | "prompt-not-found";
+function slugifyCity(city: string): string {
+  return city
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function dateKebab(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+// date+city composite for the public URL, generated once at creation and
+// never touched again (see the schema comment on events.publicSlug) — a
+// suffix is appended only on the rare collision (two stops, same city,
+// same day).
+function generatePublicSlug(tx: Tx, city: string, startsAt: Date): string {
+  const base = `${dateKebab(startsAt)}-${slugifyCity(city)}`;
+  let candidate = base;
+  for (let suffix = 2; ; suffix++) {
+    const taken = tx
+      .select({ id: events.id })
+      .from(events)
+      .where(eq(events.publicSlug, candidate))
+      .get();
+    if (!taken) return candidate;
+    candidate = `${base}-${suffix}`;
+  }
+}
+
+export type CreateEventError =
+  | "slug-taken"
+  | "prompt-required"
+  | "prompt-not-found"
+  | "season-active";
 export type CreateEventResult =
   | { ok: true; event: EventRow }
   | { ok: false; error: CreateEventError; message: string };
 
 export function createEvent(
   db: Db,
-  input: { fields: EventFields; promptId?: number; newPromptText?: string },
+  input: {
+    fields: EventFields;
+    promptId?: number;
+    newPromptText?: string;
+    newPromptSeasonLabel?: string;
+  },
 ): CreateEventResult {
   return db.transaction((tx): CreateEventResult => {
     // Slug check by select, not by catching the unique violation: the inline
@@ -70,7 +128,30 @@ export function createEvent(
     let promptId: number;
     const newPromptText = input.newPromptText?.trim();
     if (newPromptText) {
-      promptId = tx.insert(prompts).values({ text: newPromptText }).returning().get().id;
+      // At most one prompt may be active (retired_at IS NULL) at a time —
+      // enforced by the prompts_single_active_season index, checked here
+      // by select first for the same reason as the slug check above.
+      const active = tx
+        .select({ id: prompts.id })
+        .from(prompts)
+        .where(isNull(prompts.retiredAt))
+        .get();
+      if (active) {
+        return {
+          ok: false,
+          error: "season-active",
+          message: "A season is already active. Retire its prompt before starting a new one.",
+        };
+      }
+      // seasonLabel is optional — public copy falls back to an ordinal
+      // label derived from creation order when unset (see
+      // currentSeason() in season.server.ts).
+      const seasonLabel = input.newPromptSeasonLabel?.trim() || null;
+      promptId = tx
+        .insert(prompts)
+        .values({ text: newPromptText, seasonLabel })
+        .returning()
+        .get().id;
     } else if (input.promptId != null) {
       const prompt = tx
         .select({ id: prompts.id })
@@ -85,9 +166,10 @@ export function createEvent(
       return { ok: false, error: "prompt-required", message: "Pick a prompt or write a new one." };
     }
 
+    const publicSlug = generatePublicSlug(tx, input.fields.city, input.fields.startsAt);
     const event = tx
       .insert(events)
-      .values({ ...input.fields, promptId })
+      .values({ ...input.fields, promptId, publicSlug })
       .returning()
       .get();
     return { ok: true, event };
@@ -109,7 +191,7 @@ export function updateEvent(db: Db, input: { id: number; fields: EventFields }):
     return {
       ok: false,
       error: "slug-locked",
-      message: "The slug can only change while the event is a draft — it's on the printed QR.",
+      message: "The slug can only change while the event is a draft. It's on the printed QR.",
     };
   }
   try {
@@ -128,7 +210,7 @@ export function updateEvent(db: Db, input: { id: number; fields: EventFields }):
   }
 }
 
-export type TransitionError = "invalid-transition";
+export type TransitionError = "invalid-transition" | "incomplete";
 export type TransitionResult =
   | { ok: true }
   | { ok: false; error: TransitionError; message: string };
@@ -137,6 +219,23 @@ export function transitionEvent(
   db: Db,
   input: { id: number; to: EventStatus; now: Date },
 ): TransitionResult {
+  if (input.to === "open") {
+    // Pre-check, not part of the guarded UPDATE below: this can't be raced
+    // by two hosts against a single-writer SQLite instance the way the
+    // legal-source transition race is guarded against.
+    const current = db
+      .select({ venue: events.venue, zip: events.zip })
+      .from(events)
+      .where(eq(events.id, input.id))
+      .get();
+    if (current && (!current.venue || !current.zip)) {
+      return {
+        ok: false,
+        error: "incomplete",
+        message: "Add a venue and ZIP before opening.",
+      };
+    }
+  }
   const sources = TRANSITION_SOURCES[input.to];
   // Guarded UPDATE: the legal-source check lives in the WHERE clause, so
   // terminality (archived, and hidden-style dead ends) is atomic — no

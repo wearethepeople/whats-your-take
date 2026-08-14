@@ -35,7 +35,7 @@ export function approveResponse(db: Db, id: number): ModerateResult {
     return {
       ok: false,
       error: "invalid-transition",
-      message: "Only a pending response can be approved — hidden is terminal.",
+      message: "Only a pending response can be approved. Hidden is terminal.",
     };
   }
   return { ok: true };

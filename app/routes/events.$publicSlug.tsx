@@ -1,0 +1,164 @@
+import { data, Link } from "react-router";
+import type { Route } from "./+types/events.$publicSlug";
+import { db } from "~/db/client.server";
+import { SiteFooter } from "~/components/site-chrome";
+import { DashedDivider, GoldUnderline, Stamp } from "~/components/visual-grammar";
+import { eventDetail, REVEAL_DATE } from "~/features/events/services/season.server";
+
+export function meta({ loaderData }: Route.MetaArgs) {
+  return [
+    { title: loaderData ? `${loaderData.event.name} · What's Your Take?` : "What's Your Take?" },
+  ];
+}
+
+export async function loader({ params }: Route.LoaderArgs) {
+  const event = eventDetail(db, params.publicSlug);
+  if (!event) throw data(null, { status: 404 });
+  return {
+    event,
+    revealDateIso: REVEAL_DATE.toISOString(),
+    revealDateLabel: REVEAL_DATE.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }),
+  };
+}
+
+function daysUntil(iso: string): number {
+  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
+}
+
+// Same "underline the last word" simplification as the homepage's
+// PromptHeadline — event names are host-authored, no reliable clause
+// boundary to detect.
+function EventHeadline({ text }: { text: string }) {
+  const words = text.trim().split(/\s+/);
+  const last = words.pop();
+  return (
+    <h1 className="font-serif text-4xl font-semibold sm:text-5xl">
+      {words.join(" ")} {last ? <GoldUnderline>{last}</GoldUnderline> : null}
+    </h1>
+  );
+}
+
+export default function EventDetail({ loaderData }: Route.ComponentProps) {
+  const { event, revealDateIso, revealDateLabel } = loaderData;
+  const daysToReveal = daysUntil(revealDateIso);
+  const sealed = event.status === "sealed";
+  const scheduled = event.status === "scheduled";
+
+  return (
+    <div className="flex min-h-screen flex-col font-sans text-foreground">
+      <header className="flex items-center justify-between border-b-2 border-foreground px-6 py-5 sm:px-14">
+        <Link to="/" className="text-[17px] font-bold">
+          What&rsquo;s your take?
+        </Link>
+        <Link to="/events" className="text-sm text-primary underline underline-offset-4">
+          ← All stops
+        </Link>
+      </header>
+
+      <main className="flex-1 grid gap-10 px-6 py-14 sm:grid-cols-[1fr_320px] sm:items-start sm:px-14">
+        <div className="flex flex-col gap-5">
+          <p className="font-mono text-xs text-primary uppercase">
+            Stop № {String(event.stopNumber).padStart(2, "0")}
+            {event.seasonLabel ? ` · ${event.seasonLabel}` : ""}
+          </p>
+          <EventHeadline text={event.name} />
+
+          {event.narrative ? (
+            <p className="max-w-prose whitespace-pre-wrap text-muted-foreground">
+              {event.narrative}
+            </p>
+          ) : null}
+
+          {sealed ? (
+            <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
+              <Stamp className="border-primary text-primary">Sealed</Stamp>
+              <p className="text-muted-foreground">
+                This day&rsquo;s {event.takeCount} takes are in the record. They open with every
+                other stop on {revealDateLabel}, at the season premiere.
+              </p>
+            </div>
+          ) : scheduled ? (
+            <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
+              <Stamp className="border-primary text-primary">Scheduled</Stamp>
+              <p className="text-muted-foreground">
+                This stop is confirmed but not open yet. Details firm up as the date gets closer.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
+              <Stamp className="border-primary text-primary">Up next</Stamp>
+              {/* Deliberately no link to the submission flow here: that
+                  URL is printed on the table's QR and never published on
+                  the marketing site (see events.slug's schema comment). */}
+              <p className="text-muted-foreground">
+                This stop is open. Come find the table and scan the QR there to add your take.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="relative border-[1.5px] border-foreground bg-card p-5">
+          <Stamp className="absolute -top-3 right-4 bg-primary text-primary-foreground">
+            Stop № {String(event.stopNumber).padStart(2, "0")}
+          </Stamp>
+
+          <FactRow label="Day">
+            <p>{event.dayLabel}</p>
+            <p>{event.timeLabel}</p>
+          </FactRow>
+          <DashedDivider />
+
+          <FactRow label="Place">
+            <p>{event.venue ?? "Venue to be announced"}</p>
+            <p>{event.address ? `${event.address}, ${event.city}` : event.city}</p>
+          </FactRow>
+          <DashedDivider />
+
+          <FactRow label="Entries recorded">
+            {sealed ? (
+              <>
+                <p className="font-serif text-2xl">{event.takeCount}</p>
+                <p className="text-sm text-muted-foreground">
+                  {event.channelBreakdown.card} handwritten cards · {event.channelBreakdown.screens}{" "}
+                  from screens
+                </p>
+              </>
+            ) : scheduled ? (
+              <p className="text-sm text-muted-foreground">Not open yet.</p>
+            ) : (
+              // Mid-event, the tent whiteboard is the only live mirror
+              // (I6) — the public page doesn't extend that count online
+              // while the table is still open.
+              <p className="text-sm text-muted-foreground">Recording now. Count follows close.</p>
+            )}
+          </FactRow>
+          <DashedDivider />
+
+          <FactRow label="Hosted by">
+            <p>We (ARE) The People</p>
+          </FactRow>
+
+          <div className="mt-3 flex items-baseline justify-between">
+            <span className="text-sm text-muted-foreground">Opens in</span>
+            <span className="font-serif text-xl text-primary">{daysToReveal} days</span>
+          </div>
+        </div>
+      </main>
+
+      <SiteFooter />
+    </div>
+  );
+}
+
+function FactRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="py-3 first:pt-0">
+      <p className="text-xs text-muted-foreground uppercase">{label}</p>
+      <div className="mt-1">{children}</div>
+    </div>
+  );
+}

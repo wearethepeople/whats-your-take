@@ -7,7 +7,7 @@ import {
   transitionEvent,
   updateEvent,
   type EventStatus,
-} from "~/events/manage.server";
+} from "~/features/events/services/lifecycle.server";
 import { stageDraft } from "~/submissions/stage.server";
 import { freshDb, seedOpenEvent } from "./helpers";
 
@@ -22,10 +22,18 @@ const FIELDS = {
   city: "Tulsa",
   startsAt: new Date("2026-09-05T15:00:00Z"),
   endsAt: new Date("2026-09-05T23:00:00Z"),
+  narrative: null,
 };
 
-const ALL: EventStatus[] = ["draft", "open", "closed", "archived"];
-const ALLOWED = new Set(["draft→open", "open→closed", "closed→open", "closed→archived"]);
+const ALL: EventStatus[] = ["draft", "scheduled", "open", "closed", "archived"];
+const ALLOWED = new Set([
+  "draft→scheduled",
+  "draft→open",
+  "scheduled→open",
+  "open→closed",
+  "closed→open",
+  "closed→archived",
+]);
 
 describe("transitionEvent", () => {
   it("enforces the full transition matrix", () => {
@@ -65,6 +73,25 @@ describe("transitionEvent", () => {
     expect(transitionEvent(db, { id: event.id, to: "closed", now: afterExpiry }).ok).toBe(true);
     expect(db.select().from(stagedDrafts).all()).toHaveLength(0);
   });
+
+  it("refuses to open a scheduled event missing venue or zip", () => {
+    const { db } = freshDb();
+    const { event } = seedOpenEvent(db, { status: "scheduled", venue: null, zip: null });
+    const result = transitionEvent(db, { id: event.id, to: "open", now: NOW });
+    expect(result).toMatchObject({ ok: false, error: "incomplete" });
+    const after = db.select().from(events).where(eq(events.id, event.id)).get();
+    expect(after?.status).toBe("scheduled");
+  });
+
+  it("opens a scheduled event once venue and zip are filled in", () => {
+    const { db } = freshDb();
+    const { event } = seedOpenEvent(db, { status: "scheduled", venue: null, zip: null });
+    updateEvent(db, {
+      id: event.id,
+      fields: { ...FIELDS, slug: event.slug, venue: "Guthrie Green", zip: "74103" },
+    });
+    expect(transitionEvent(db, { id: event.id, to: "open", now: NOW }).ok).toBe(true);
+  });
 });
 
 describe("createEvent", () => {
@@ -88,6 +115,25 @@ describe("createEvent", () => {
     if (!result.ok) return;
     const prompt = db.select().from(prompts).where(eq(prompts.id, result.event.promptId)).get();
     expect(prompt?.text).toBe("What do you owe a stranger?");
+  });
+
+  it("refuses a new prompt while one is already active", () => {
+    const { db } = freshDb();
+    const { prompt: active } = seedOpenEvent(db);
+    const result = createEvent(db, {
+      fields: { ...FIELDS, slug: "second-season" },
+      newPromptText: "A second question",
+    });
+    expect(result).toMatchObject({ ok: false, error: "season-active" });
+    expect(db.select().from(prompts).all()).toHaveLength(1);
+
+    // Retiring the active prompt clears the way for a new one.
+    db.update(prompts).set({ retiredAt: NOW }).where(eq(prompts.id, active.id)).run();
+    const retried = createEvent(db, {
+      fields: { ...FIELDS, slug: "second-season" },
+      newPromptText: "A second question",
+    });
+    expect(retried.ok).toBe(true);
   });
 
   it("refuses a duplicate slug without leaking a stray prompt row", () => {
@@ -168,5 +214,22 @@ describe("eventFormSchema", () => {
     for (const slug of ["Tulsa", "tulsa table", "-tulsa"]) {
       expect(eventFormSchema.safeParse({ ...FIELDS, slug }).success, slug).toBe(false);
     }
+  });
+
+  it("blanks venue and zip to null, for a scheduled event without logistics yet", () => {
+    const parsed = eventFormSchema.safeParse({
+      slug: "fair-2026",
+      name: "State Fair",
+      venue: "",
+      address: "",
+      zip: "",
+      city: "Dallas",
+      startsAt: "2026-09-25T10:00",
+      endsAt: "2026-09-25T20:00",
+    });
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.venue).toBeNull();
+    expect(parsed.data.zip).toBeNull();
   });
 });

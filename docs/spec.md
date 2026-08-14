@@ -171,11 +171,28 @@ Build the pipeline after the format survives contact with a real crowd.
 ```
 Prompt                                  -- a prompt IS a season: one question
   id, text, created_at,                 -- reused across events/geographies
-  retired_at (nullable)                 -- until retired
+  retired_at (nullable),                -- until retired
+  season_label (nullable)               -- host-settable ("Season One");
+                                         -- unset falls back to an ordinal
+                                         -- label derived from creation
+                                         -- order (added 2026-08-06 for the
+                                         -- living-seasons homepage)
 
 Event
   id, slug, prompt_id, name, venue, address (nullable), zip, city,
+  public_slug                           -- added 2026-08-07: date+city
+                                         -- composite, generated once at
+                                         -- creation, immutable. The public
+                                         -- identifier (/events/:publicSlug)
+                                         -- — slug (the submission URL/QR
+                                         -- address) is never exposed on a
+                                         -- public page; see "Site flow"
+                                         -- above
   starts_at, ends_at,
+  narrative (nullable)                  -- host-authored, added 2026-08-07
+                                         -- for the public event detail
+                                         -- page ("how the day went");
+                                         -- never response content
   status: draft | open | closed | archived,
   created_at
 
@@ -226,6 +243,27 @@ ShowcaseCard                               -- host-CURATED publication media:
                                            -- pipeline (that stays manual and
                                            -- imageless); small by design,
                                            -- reviewed like any publication.
+
+TableRequest                               -- added 2026-08: anonymous "bring
+  id, area, note (nullable),               -- the table to your town" pointer
+  resolved_city (nullable),                -- (a general area, not a specific
+  resolved_state (nullable),               -- event). No contact info
+  resolved_county (nullable),              -- collected. area/note as typed;
+  resolved_source: geonames | manual,      -- resolved_* populated
+  created_at                               -- synchronously at insert from a
+                                           -- bundled offline GeoNames postal
+                                           -- dataset (no live geocoding call —
+                                           -- USPS's Address API began
+                                           -- requiring a paid license
+                                           -- 2026-08-01, ruled out on cost).
+                                           -- resolved_source is "manual" when
+                                           -- a host fills in a row the
+                                           -- dataset couldn't match. Real
+                                           -- (non-bucketed) created_at: I4's
+                                           -- hour-truncation exists to guard
+                                           -- participant presence-correlation,
+                                           -- which doesn't apply here, and
+                                           -- this data is host-facing only.
 ```
 
 No users table for participants. Admin auth is a single host account (passkey
@@ -252,6 +290,16 @@ queue, and the token + OTP machinery is deleted outright):
 1. Participant reaches the form (printed URL/QR at the table — this QR is just
    the address, not a credential), writes their response. Draft persists in
    localStorage so festival connectivity can't eat it.
+   (Amended 2026-08-07: "not a credential" governs the promotion handshake,
+   not distribution — the `Event.slug` this URL is built from is still kept
+   off every public marketing page, and never appears in a public
+   loader/response. Not because it's secret in a security sense, but
+   because the repo is public on GitHub and there's no reason to make the
+   submission URL crawlable from the site when it's meant to reach people
+   only via the printed QR. Public pages (event listing, event detail)
+   reference events by a separate `publicSlug` — a date+location composite,
+   generated once at creation and immutable — so the two identifiers can
+   never be conflated.)
 2. On submit, the server **stages** the draft — an ephemeral `StagedDraft`
    (~15 min TTL), not a response — and the participant's screen shows a short
    **claim code** (6 digits, large type; rendered as a QR in slice 4).
@@ -344,6 +392,23 @@ accepted, stated here so it stays a decision and not a surprise.)
 
 ### Publication posture
 
+**Superseded 2026-08-06.** The per-event publication model below —
+each event getting its own public page (synthesis, showcase, browsable/
+exportable corpus) as soon as it closes and is reviewed — is superseded by
+the sealed-until-reveal model in `docs/concept-the-ritual.md`: the corpus
+stays sealed across the whole season and opens only at the announced
+premiere, not per event. Post-close host review still happens on the same
+schedule described below, but it makes a response *eligible* for the
+premiere publish, not published immediately — showing responses before the
+reveal risks turning takes into replies, which the ritual is designed to
+prevent (see `docs/concept-the-ritual.md`, "The Civic Mirror," and
+`INVARIANTS.md` I3/I6/I7). Until a season's reveal ships, per-event public
+pages carry aggregate counts and status only — no browsable corpus, no
+export, no showcase of individual responses. The design work below (data
+shape, moderation gate, export format) still applies to the *premiere*
+surface when it's built; it just isn't per-event or immediate anymore. Left
+in place for that reason, not deleted.
+
 **The corpus is public — honestly public.** After an event closes and the host
 reviews, each event gets a public page ordered for the afterglow visitor:
 the synthesis (themes) on top, then the **showcase panel** — curated
@@ -408,11 +473,15 @@ submission path.
    list, export.
 4. **Claim-code QR:** participant screen renders the code as a QR; host
    console gets the in-page camera scan.
-5. *(Post-weekend)* Public pages: per-event page (synthesis → showcase panel
-   of quotes + curated card images → corpus explorer + JSON/CSV download) and
-   the **prompt-level rollup** — same question, many places, one growing
-   corpus. The rollup is the season's true mirror and the projection/book
-   source material. Public GETs go behind edge caching — post-close pages
+5. *(Post-weekend, superseded 2026-08-06 — see "Publication posture" above)*
+   Public pages: per-event page (synthesis → showcase panel of quotes +
+   curated card images → corpus explorer + JSON/CSV download) and the
+   **prompt-level rollup** — same question, many places, one growing
+   corpus. Under the sealed-until-reveal model this ships as the season
+   premiere feature, not a per-event page; marketing/event pages before the
+   reveal carry aggregate counts and status only. The rollup is the
+   season's true mirror and the projection source material. Public
+   GETs go behind edge caching — post-close pages
    are practically static, and a cache absorbs traffic spikes (availability
    posture: a site outage never botches a table; cards are the primary mode
    and nothing physical depends on the server).
@@ -427,6 +496,19 @@ synthesis is announced.
   Revisit post-weekend whether the queue should be gated instead — one idea
   is local-dev only, making mid-event reading structurally impossible rather
   than disciplined.
+- **In-between-seasons state (added 2026-08-06):** a season closes (its
+  prompt is retired) before the next prompt exists, and separately before
+  its own premiere — the site has no way to represent either gap yet.
+  Nothing today even retires a prompt (no host route/action sets
+  `retired_at`), so the state is currently unreachable, not just
+  unhandled. Needs: (1) a retire action, (2) splitting "the active
+  season" (`currentSeason()`, now guaranteed unique by the
+  `prompts_single_active_season` index) from "the most recently closed
+  season" so the homepage can show a closed season's sealed stats/ledger
+  instead of falling back to pre-launch ("on its way") copy that assumes
+  nothing has ever happened, and (3) deciding whether a multi-season
+  future needs a per-season reveal date rather than the single global
+  `REVEAL_DATE` constant `season.server.ts` uses today.
 
 ### Open items — resolved 2026-07-19
 

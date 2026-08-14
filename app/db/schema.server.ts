@@ -1,33 +1,66 @@
-import { sql } from "drizzle-orm";
+import { isNull, sql } from "drizzle-orm";
 import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Schema source of truth is docs/spec.md Part II; changes land there first.
 
 // A prompt IS a season: one question reused across events/geographies until
 // retired.
-export const prompts = sqliteTable("prompts", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  text: text("text").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  retiredAt: integer("retired_at", { mode: "timestamp" }),
-});
+export const prompts = sqliteTable(
+  "prompts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    text: text("text").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    retiredAt: integer("retired_at", { mode: "timestamp" }),
+    // Host-settable, not host-required: public copy (e.g. the homepage's
+    // season stamp) falls back to an ordinal label ("Season One", "Season
+    // Two", ...) derived from creation order when this is unset.
+    seasonLabel: text("season_label"),
+  },
+  (table) => [
+    // At most one row may have retired_at IS NULL: "the current season" is
+    // an enforced invariant, not a query heuristic (currentSeason() in
+    // season.server.ts relies on this uniqueness). Partial unique index —
+    // every qualifying row indexes the same constant, so a second one
+    // collides.
+    uniqueIndex("prompts_single_active_season")
+      .on(sql`1`)
+      .where(isNull(table.retiredAt)),
+  ],
+);
 
 export const events = sqliteTable("events", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  // Submission-only — printed on the physical QR, resolved by the /e/:slug
+  // flow. Never selected by a public marketing-site query/loader (the repo
+  // is public on GitHub and this value is meant to reach people only via
+  // the printed QR, not be crawlable from the site). Public pages use
+  // publicSlug instead.
   slug: text("slug").notNull().unique(),
+  // date+city composite, auto-generated once at creation and immutable
+  // after (see generatePublicSlug in lifecycle.server.ts) — the identifier
+  // for public URLs (/events/:publicSlug), deliberately unrelated to slug.
+  publicSlug: text("public_slug").notNull().unique(),
   promptId: integer("prompt_id")
     .notNull()
     .references(() => prompts.id),
   name: text("name").notNull(),
-  venue: text("venue").notNull(),
+  // Nullable: a "scheduled" event may be public before logistics are
+  // locked down. Required before the event can transition to "open" (see
+  // transitionEvent's readiness gate in lifecycle.server.ts).
+  venue: text("venue"),
   address: text("address"),
-  zip: text("zip").notNull(),
+  zip: text("zip"),
   city: text("city").notNull(),
   startsAt: integer("starts_at", { mode: "timestamp" }).notNull(),
   endsAt: integer("ends_at", { mode: "timestamp" }).notNull(),
-  status: text("status", { enum: ["draft", "open", "closed", "archived"] })
+  // Host-authored, optional — free text for the public event detail page
+  // (how the day went). Never response content; the page works fine
+  // without it.
+  narrative: text("narrative"),
+  status: text("status", { enum: ["draft", "scheduled", "open", "closed", "archived"] })
     .notNull()
     .default("draft"),
   createdAt: integer("created_at", { mode: "timestamp" })
@@ -105,3 +138,35 @@ export const presenceWindows = sqliteTable(
     uniqueIndex("presence_windows_event_window").on(table.eventId, table.windowStart),
   ],
 );
+
+// Anonymous "bring the table to your town" pointers — a general area, not
+// a specific event (WrTP finds the actual events to attend). No contact
+// info collected, matching the anonymity posture used everywhere else on
+// the site, even though this persona (someone suggesting a town) isn't
+// the "participant" I1 governs. Real timestamps (unlike responses.createdAt):
+// I4's hour-truncation exists to stop a participant's on-site presence
+// from being correlated with photos/video of who was at the table, which
+// doesn't apply to a remote area suggestion, and this data is host-facing
+// only, never public.
+export const tableRequests = sqliteTable("table_requests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  // Raw, as typed — city name or ZIP, no validation beyond non-empty.
+  area: text("area").notNull(),
+  // Optional context: a specific venue/event offer, timing, whatever's
+  // relevant. Where "want the table at your event" (a specific-venue
+  // offer) lands when someone has a specific place in mind, vs. just a
+  // general area.
+  note: text("note"),
+  // Resolved synchronously at insert time from a bundled offline dataset
+  // (see resolve-area.server.ts) — no live geocoding call. Null forever
+  // if the dataset has no match and no host has manually resolved it.
+  resolvedCity: text("resolved_city"),
+  resolvedState: text("resolved_state"),
+  resolvedCounty: text("resolved_county"),
+  // "geonames" (resolved from the bundled file) or "manual" (a host typed
+  // it in by hand after the automatic lookup came up empty).
+  resolvedSource: text("resolved_source", { enum: ["geonames", "manual"] }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});

@@ -25,6 +25,7 @@ test("status defaults: event draft, response pending, showcase false", () => {
     .insert(schema.events)
     .values({
       slug: "event-one",
+      publicSlug: "2026-09-01-dallas",
       promptId: prompt.id,
       name: "Event One",
       venue: "The Park",

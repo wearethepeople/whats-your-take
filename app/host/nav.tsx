@@ -8,6 +8,7 @@ export function HostNav() {
     <nav className="host-nav" aria-label="Host console">
       <NavLink to="/host/events">Events</NavLink>
       <NavLink to="/host/promote">Promote</NavLink>
+      <NavLink to="/host/table-requests">Table requests</NavLink>
     </nav>
   );
 }

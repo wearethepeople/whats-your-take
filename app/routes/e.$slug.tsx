@@ -4,19 +4,21 @@
 // (I1/I6). The only per-participant state is their own draft, kept in their
 // own browser's localStorage.
 
+import { Check } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { data, Form, Link, useNavigate } from "react-router";
 import type { Route } from "./+types/e.$slug";
 import { db } from "~/db/client.server";
 import { events, prompts } from "~/db/schema.server";
 import { eq } from "drizzle-orm";
+import { DashedDivider, GoldUnderline, Stamp } from "~/components/visual-grammar";
 import { claimCodeQr } from "~/submissions/qr.server";
 import { MAX_BODY_LENGTH } from "~/submissions/constants";
 import { stageDraft } from "~/submissions/stage.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return [
-    { title: loaderData ? `${loaderData.eventName} — What's Your Take?` : "What's Your Take?" },
+    { title: loaderData ? `${loaderData.eventName} · What's Your Take?` : "What's Your Take?" },
   ];
 }
 
@@ -24,6 +26,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const row = db
     .select({
       eventName: events.name,
+      city: events.city,
       status: events.status,
       promptText: prompts.text,
     })
@@ -36,6 +39,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   return {
     slug: params.slug,
     eventName: row.eventName,
+    city: row.city,
     promptText: row.promptText,
     open: row.status === "open",
     kiosk: url.searchParams.has("kiosk"),
@@ -146,8 +150,36 @@ function IdleResetGuard({
   );
 }
 
+// Rounded-card treatment (24px radius) on a tan backdrop — deliberately
+// distinct from the marketing site's square/hard-shadow grammar, since
+// this screen is used phone-in-hand at the table, not browsed. Every
+// state of the flow renders inside this same shell so there's no
+// card-less plain-text screen anywhere in the route.
+function SubmissionShell({ kiosk, children }: { kiosk: boolean; children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-(--submission-backdrop) px-4 py-8">
+      <main
+        className={`w-full rounded-[24px] bg-background p-6 shadow-[0_2px_8px_rgba(150,90,40,0.12)] sm:p-8 ${
+          kiosk ? "kiosk max-w-2xl" : "max-w-[440px]"
+        }`}
+      >
+        {children}
+      </main>
+    </div>
+  );
+}
+
+// Mono-caps event label used at the foot of the Recorded/Added states.
+function EventLabel({ eventName, city }: { eventName: string; city: string }) {
+  return (
+    <p className="text-center font-mono text-xs tracking-wide text-muted-tan uppercase">
+      {eventName} · {city}
+    </p>
+  );
+}
+
 export default function EventSubmit({ loaderData, actionData }: Route.ComponentProps) {
-  const { slug, eventName, promptText, open, kiosk } = loaderData;
+  const { slug, eventName, city, promptText, open, kiosk } = loaderData;
   const navigate = useNavigate();
   const [resetEpoch, setResetEpoch] = useState(0);
   const formUrl = kiosk ? `/e/${slug}?kiosk=1` : `/e/${slug}`;
@@ -162,35 +194,37 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
 
   if (!open) {
     return (
-      <main className={kiosk ? "container kiosk" : "container"}>
+      <SubmissionShell kiosk={kiosk}>
         <ManifestTags slug={slug} />
-        <h1>{eventName}</h1>
-        <p>
-          This table has closed. After the host&rsquo;s review, everything said here — the portrait
-          and the full corpus — will be public on this site.
+        <h1 className="text-2xl font-bold">{eventName}</h1>
+        <p className="mt-3 text-muted-foreground">
+          This table has closed. What was said here stays sealed with every other stop. The portrait
+          and the full corpus open together at the season premiere, not before.
         </p>
-      </main>
+      </SubmissionShell>
     );
   }
 
   const staged = actionData && "staged" in actionData ? actionData.staged : undefined;
   if (staged) {
     return (
-      <main className={kiosk ? "container kiosk" : "container"}>
+      <SubmissionShell kiosk={kiosk}>
         <ManifestTags slug={slug} />
         <CodeScreen
           slug={slug}
           kiosk={kiosk}
+          eventName={eventName}
+          city={city}
           claimCode={staged.claimCode}
           qrModules={staged.qrModules}
           onIdleReset={handleIdleReset}
         />
-      </main>
+      </SubmissionShell>
     );
   }
 
   return (
-    <main className={kiosk ? "container kiosk" : "container"}>
+    <SubmissionShell kiosk={kiosk}>
       <ManifestTags slug={slug} />
       <IdleResetGuard enabled={kiosk} idleMs={KIOSK_IDLE_COMPOSE_MS} onReset={handleIdleReset} />
       <ComposeForm
@@ -201,7 +235,7 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
         initialBody={(actionData && "body" in actionData ? actionData.body : "") ?? ""}
         error={(actionData && "error" in actionData ? actionData.error : null) ?? null}
       />
-    </main>
+    </SubmissionShell>
   );
 }
 
@@ -249,14 +283,31 @@ function ComposeForm({
     }
   }
 
+  const words = promptText.trim().split(/\s+/);
+  const lastWord = words.pop();
+
   return (
-    <>
-      <h1>{promptText}</h1>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <span className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+          ?
+        </span>
+        <span className="text-[15px] font-bold text-muted-tan">What&rsquo;s your take?</span>
+      </div>
+
+      <h1 className="text-[27px] leading-tight font-bold">
+        {words.join(" ")} {lastWord ? <GoldUnderline>{lastWord}</GoldUnderline> : null}
+      </h1>
+
+      <p className="text-sm text-muted-foreground">
+        Two minutes, no audience, no sides to join. It&rsquo;s anonymous, no names, please.
+      </p>
+
       <Form
         method="post"
         action={kiosk ? `/e/${slug}?kiosk=1` : `/e/${slug}`}
         replace
-        className="stack"
+        className="flex flex-col gap-4"
       >
         <label htmlFor="body" className="visually-hidden">
           Your take
@@ -268,7 +319,8 @@ function ComposeForm({
           onChange={(event) => handleChange(event.target.value)}
           maxLength={MAX_BODY_LENGTH}
           rows={kiosk ? 8 : 6}
-          placeholder="Your take…"
+          placeholder="Say it plainly. They’ll get it."
+          className="w-full rounded-2xl border-2 border-[#e6cfa8] p-4 text-base outline-none focus:border-primary"
         />
         {error ? (
           <p className="banner banner-error" role="alert">
@@ -277,12 +329,17 @@ function ComposeForm({
         ) : null}
         <p className="consent">
           All responses are anonymous. By submitting, you give We (ARE) the People permission to
-          share, display, and publish your response in any medium — online, in exhibits, and in
+          share, display, and publish your response in any medium: online, in exhibits, and in
           print. No names, please.
         </p>
-        <button type="submit">Submit</button>
+        <button
+          type="submit"
+          className="min-h-[52px] w-full rounded-full bg-primary text-[15px] font-bold text-primary-foreground transition-colors hover:bg-[#a8552e]"
+        >
+          Add your voice
+        </button>
       </Form>
-    </>
+    </div>
   );
 }
 
@@ -308,12 +365,16 @@ function ClaimCodeQr({ modules }: { modules: boolean[][] }) {
 function CodeScreen({
   slug,
   kiosk,
+  eventName,
+  city,
   claimCode,
   qrModules,
   onIdleReset,
 }: {
   slug: string;
   kiosk: boolean;
+  eventName: string;
+  city: string;
   claimCode: string;
   qrModules: boolean[][];
   onIdleReset: () => void;
@@ -368,65 +429,89 @@ function CodeScreen({
 
   if (status === "promoted") {
     return (
-      <>
-        <h1>It&rsquo;s in the book.</h1>
-        <p>
-          Thanks — your take joins the day&rsquo;s corpus. After the table closes and the host
-          reviews, see what everyone said at whatsyourtake.us.
+      <div className="flex flex-col items-center gap-4 text-center">
+        <Stamp rotate="3deg" className="border-primary bg-primary text-primary-foreground">
+          Added
+        </Stamp>
+        <h1 className="text-2xl font-bold">You&rsquo;re in the book.</h1>
+        <p className="text-muted-foreground">
+          Thanks. Your take joins the day&rsquo;s corpus. It stays sealed with everything else until
+          the season premiere, when the whole record opens at once at whatsyourtake.us.
         </p>
-        <Link to={formUrl} replace>
+        <div className="flex size-[72px] items-center justify-center rounded-full bg-accent">
+          <Check className="size-9 text-foreground" strokeWidth={3} aria-hidden="true" />
+        </div>
+        <Link to={formUrl} replace className="text-primary underline underline-offset-4">
           Write another
         </Link>
-      </>
+        <EventLabel eventName={eventName} city={city} />
+      </div>
     );
   }
 
   if (status === "gone") {
     return (
-      <>
+      <div className="flex flex-col items-center gap-4 text-center">
         {idleGuard}
-        <h1>That code expired.</h1>
+        <h1 className="text-2xl font-bold">That code expired.</h1>
         {kiosk ? (
-          <p>Head back and submit again — the host is right there.</p>
+          <p className="text-muted-foreground">
+            Head back and submit again. The host is right there.
+          </p>
         ) : (
-          <p>Your draft is still saved on this device — head back and resubmit for a fresh code.</p>
+          <p className="text-muted-foreground">
+            Your draft is still saved on this device. Head back and resubmit for a fresh code.
+          </p>
         )}
-        <Link to={formUrl} replace>
+        <Link to={formUrl} replace className="text-primary underline underline-offset-4">
           {kiosk ? "Back to the form" : "Back to your draft"}
         </Link>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="flex flex-col items-center gap-4 text-center">
       {idleGuard}
-      <h1>Show this to the host</h1>
-      <button
-        type="button"
-        className="qr-trigger"
-        onClick={() => setPulseCount((count) => count + 1)}
-        aria-label="Tap to light up the code for the host"
-      >
-        <span className="qr-frame">
-          <span
-            key={pulseCount}
-            className={pulseCount > 0 ? "qr-ring is-pulsing" : "qr-ring"}
-            aria-hidden="true"
-          />
-          <ClaimCodeQr modules={qrModules} />
-        </span>
-      </button>
-      <p className="claim-code" aria-label="Your claim code">
-        {claimCode}
+      <Stamp rotate="-4deg" className="border-primary text-primary">
+        Recorded
+      </Stamp>
+      <h1 className="text-2xl font-bold">Now find your host.</h1>
+      <p className="text-muted-foreground">
+        One scan adds your take to everything this place said today.
       </p>
-      <p>
+
+      <div className="flex w-full flex-col items-center gap-3 rounded-2xl bg-white p-6">
+        <button
+          type="button"
+          className="qr-trigger"
+          onClick={() => setPulseCount((count) => count + 1)}
+          aria-label="Tap to light up the code for the host"
+        >
+          <span className="qr-frame">
+            <span
+              key={pulseCount}
+              className={pulseCount > 0 ? "qr-ring is-pulsing" : "qr-ring"}
+              aria-hidden="true"
+            />
+            <ClaimCodeQr modules={qrModules} />
+          </span>
+        </button>
+        <DashedDivider className="w-full" />
+        <p className="claim-code" aria-label="Your claim code">
+          {claimCode}
+        </p>
+        <p className="text-sm text-muted-tan">Scan won&rsquo;t take? Your host can type this in.</p>
+      </div>
+
+      <p className="text-muted-foreground">
         The host enters this code to put your take in the book. It expires in 15 minutes
         {kiosk ? "." : "; your draft stays saved on this device."}
       </p>
-      <Link to={formUrl} replace>
+      <Link to={formUrl} replace className="text-primary underline underline-offset-4">
         Back to the form
       </Link>
-    </>
+      <EventLabel eventName={eventName} city={city} />
+    </div>
   );
 }

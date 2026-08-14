@@ -21,7 +21,7 @@ const CODE_RETRY_LIMIT = 5;
 export const bodySchema = z
   .string()
   .trim()
-  .min(1, "Write something first — the card is blank.")
+  .min(1, "Write something first. The card is blank.")
   .max(MAX_BODY_LENGTH, `Keep it under ${MAX_BODY_LENGTH} characters.`);
 
 export function currentWindowStart(now: Date): Date {
@@ -61,7 +61,7 @@ export function stageDraft(
     return err("not-found", "There's no table at this address.");
   }
   if (event.status !== "open") {
-    return err("event-closed", "This table has closed — submissions ended with the event.");
+    return err("event-closed", "This table has closed. Submissions ended with the event.");
   }
 
   const parsed = bodySchema.safeParse(input.body);
@@ -89,7 +89,7 @@ export function stageDraft(
       .get();
 
     if (window.submissionCount > CIRCUIT_BREAKER_PER_WINDOW) {
-      return err("table-busy", "The table is flooded right now — wait a minute and try again.");
+      return err("table-busy", "The table is flooded right now. Wait a minute and try again.");
     }
 
     for (let attempt = 0; attempt < CODE_RETRY_LIMIT; attempt++) {

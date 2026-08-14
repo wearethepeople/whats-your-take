@@ -1,13 +1,15 @@
 import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/host.events.$id.moderation";
+import { Button } from "~/components/ui/button";
 import { db } from "~/db/client.server";
-import { getEvent } from "~/events/manage.server";
+import { getEvent } from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
 import { HostNav } from "~/host/nav";
+import { HostSection } from "~/host/section";
 import { approveResponse, hideResponse, listForModeration } from "~/submissions/moderate.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  return [{ title: `Moderation — ${loaderData?.event.name ?? "Event"} — What's Your Take?` }];
+  return [{ title: `Moderation · ${loaderData?.event.name ?? "Event"} · What's Your Take?` }];
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -54,22 +56,32 @@ function ResponseList({
   rows: { id: number; body: string; channel: string; createdBucket: string }[];
   actions: ("approve" | "hide")[];
 }) {
-  if (rows.length === 0) return <p>None.</p>;
+  if (rows.length === 0) return <p className="text-muted-foreground">None.</p>;
   return (
-    <ul className="moderation-list">
+    <ul className="flex flex-col gap-4">
       {rows.map((row) => (
-        <li key={row.id}>
-          <blockquote>{row.body}</blockquote>
-          <p className="event-meta">
+        <li key={row.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+          <blockquote className="m-0 border-l-2 border-border py-0 pl-3 whitespace-pre-wrap">
+            {row.body}
+          </blockquote>
+          <p className="mt-1 mb-2 text-sm text-muted-foreground">
             {row.channel} · {row.createdBucket}
           </p>
-          {actions.map((intent) => (
-            <Form method="post" className="inline-form" key={intent}>
-              <input type="hidden" name="intent" value={intent} />
-              <input type="hidden" name="responseId" value={row.id} />
-              <button type="submit">{intent === "approve" ? "Approve" : "Hide"}</button>
-            </Form>
-          ))}
+          <div className="flex gap-2">
+            {actions.map((intent) => (
+              <Form method="post" key={intent}>
+                <input type="hidden" name="intent" value={intent} />
+                <input type="hidden" name="responseId" value={row.id} />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant={intent === "hide" ? "destructive" : "outline"}
+                >
+                  {intent === "approve" ? "Approve" : "Hide"}
+                </Button>
+              </Form>
+            ))}
+          </div>
         </li>
       ))}
     </ul>
@@ -79,26 +91,28 @@ function ResponseList({
 export default function HostModeration({ loaderData, actionData }: Route.ComponentProps) {
   const { event, pending, approved, hidden } = loaderData;
   return (
-    <main className="container">
+    <main className="mx-auto max-w-2xl px-4 py-12">
       <HostNav />
-      <h1>
-        Moderation — {event.name}{" "}
+      <h1 className="mt-4 mb-2 text-2xl font-semibold">
+        Moderation · {event.name}{" "}
         <span className={`status-badge status-${event.status}`}>{event.status}</span>
       </h1>
-      <p>
-        <Link to={`/host/events/${event.id}`}>Back to the event</Link>
+      <p className="mb-4">
+        <Link to={`/host/events/${event.id}`} className="text-primary underline underline-offset-4">
+          Back to the event
+        </Link>
       </p>
 
       {event.status === "open" ? (
-        <p className="banner banner-warn" role="alert">
-          This event is still open. The design says the host doesn&rsquo;t read responses mid-event
-          — the mirror waits for close. Proceed only if you must.
+        <p className="banner banner-warn mb-4" role="alert">
+          This event is still open. The design says the host doesn&rsquo;t read responses mid-event;
+          the mirror waits for close. Proceed only if you must.
         </p>
       ) : null}
 
       {actionData ? (
         <p
-          className={`banner ${actionData.ok ? "banner-ok" : "banner-error"}`}
+          className={`banner mb-4 ${actionData.ok ? "banner-ok" : "banner-error"}`}
           role="status"
           aria-live="polite"
         >
@@ -106,20 +120,19 @@ export default function HostModeration({ loaderData, actionData }: Route.Compone
         </p>
       ) : null}
 
-      <section aria-labelledby="pending-heading">
-        <h2 id="pending-heading">Pending ({pending.length})</h2>
-        <ResponseList rows={pending} actions={["approve", "hide"]} />
-      </section>
+      <div className="flex flex-col gap-4">
+        <HostSection title={`Pending (${pending.length})`}>
+          <ResponseList rows={pending} actions={["approve", "hide"]} />
+        </HostSection>
 
-      <section aria-labelledby="approved-heading">
-        <h2 id="approved-heading">Approved ({approved.length})</h2>
-        <ResponseList rows={approved} actions={["hide"]} />
-      </section>
+        <HostSection title={`Approved (${approved.length})`}>
+          <ResponseList rows={approved} actions={["hide"]} />
+        </HostSection>
 
-      <section aria-labelledby="hidden-heading">
-        <h2 id="hidden-heading">Hidden ({hidden.length}) — terminal, kept in the archive</h2>
-        <ResponseList rows={hidden} actions={[]} />
-      </section>
+        <HostSection title={`Hidden (${hidden.length}): terminal, kept in the archive`}>
+          <ResponseList rows={hidden} actions={[]} />
+        </HostSection>
+      </div>
     </main>
   );
 }

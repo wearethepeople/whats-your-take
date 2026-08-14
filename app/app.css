@@ -1,42 +1,112 @@
+@import "tailwindcss";
+
+@import "@fontsource/source-serif-4/400.css";
+@import "@fontsource/source-serif-4/600.css";
+@import "@fontsource/public-sans/400.css";
+@import "@fontsource/public-sans/500.css";
+@import "@fontsource/public-sans/600.css";
+@import "@fontsource/public-sans/700.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  color-scheme: light dark;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
-  line-height: 1.5;
+  color-scheme: light;
+
+  /* Design tokens from the Claude Design handoff (docs/ design-handoff
+     package), assigned to shadcn/BaseUI's semantic variable names so
+     generated components pick these up with zero overrides. Brand
+     name/hex noted alongside for anyone reading this without shadcn
+     context; the @theme inline block below maps these into Tailwind's
+     --color-* utility namespace. */
+  --background: #fdf6ec; /* paper */
+  --foreground: #3c2a1a; /* ink */
+  --card: #fffdf8; /* cream-white — stat card / highlighted ledger row */
+  --card-foreground: #3c2a1a;
+  --popover: #fffdf8;
+  --popover-foreground: #3c2a1a;
+  --primary: #c56a3d; /* terracotta */
+  --primary-foreground: #fdf6ec;
+  --secondary: #f7e9d2; /* paper-alt — newsletter band surface */
+  --secondary-foreground: #3c2a1a;
+  --muted: #f7e9d2;
+  --muted-foreground: #6b5138; /* muted-brown */
+  --accent: #f0b653; /* gold */
+  --accent-foreground: #3c2a1a;
+  --destructive: oklch(0.577 0.245 27.325); /* not brand-specified; shadcn default red */
+  --border: #b59573; /* hairline-tan */
+  --input: #b59573;
+  --ring: #c56a3d;
+  --radius: 0.5rem;
+
+  /* Outside shadcn's default token set. */
+  --footer: #3c2a1a; /* ink used as an inverted surface (footer band) */
+  --footer-foreground: #fdf6ec;
+  --dashed: #d8c4a4; /* section-divider rule, distinct from --border */
+  --muted-tan: #8a5a34; /* eyebrow labels, homepage tagline */
+  --black: #231f20; /* true near-black neutral, alongside warm --foreground */
+  /* Submission-flow-only backdrop — the rounded card floating on top of it
+     uses --background directly (per the design handoff, the card is the
+     usual paper color; only the surrounding page is this deeper tan). */
+  --submission-backdrop: #f3e4cf;
+}
+
+@theme inline {
+  --font-serif: "Source Serif 4", serif;
+  --font-sans: "Public Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --color-footer: var(--footer);
+  --color-footer-foreground: var(--footer-foreground);
+  --color-dashed: var(--dashed);
+  --color-muted-tan: var(--muted-tan);
+  --color-black: var(--black);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }
 
 body {
   margin: 0;
-}
-
-.container {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 3rem 1rem;
-}
-
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.stack textarea,
-.stack input {
-  width: 100%;
-  box-sizing: border-box;
-  font: inherit;
-  padding: 0.75rem;
-}
-
-.stack button {
-  font: inherit;
-  padding: 0.75rem 2rem;
-  min-height: 44px;
+  line-height: 1.5;
 }
 
 .banner {
@@ -80,58 +150,18 @@ body {
   color: seagreen;
 }
 
+.status-scheduled {
+  color: darkgoldenrod;
+}
+
 .status-archived,
 .status-closed {
   opacity: 0.65;
 }
 
-.event-list {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.event-meta {
-  opacity: 0.8;
-  font-size: 0.9rem;
-  margin-left: 0.5rem;
-}
-
 .live-count strong {
   font-size: 2rem;
   font-variant-numeric: tabular-nums;
-}
-
-.inline-form {
-  display: inline-block;
-  margin: 0 0.5rem 0.5rem 0;
-}
-
-.moderation-list {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.moderation-list blockquote {
-  margin: 0 0 0.25rem;
-  padding-left: 1rem;
-  border-left: 3px solid currentColor;
-  white-space: pre-wrap;
-}
-
-.moderation-list .event-meta {
-  margin: 0 0 0.5rem;
-}
-
-.inline-form button {
-  font: inherit;
-  padding: 0.5rem 1.25rem;
-  min-height: 44px;
 }
 
 .consent {
@@ -376,12 +406,12 @@ body {
   min-height: 44px;
 }
 
-/* Kiosk rendering: full-screen, large touch targets, nothing but the form.
-   Kiosk mode is presentation only — same claim-code handshake as a phone,
-   and no draft persistence (shared device). Hardening is device config
-   (home-screen standalone install + Guided Access), not server state. */
+/* Kiosk rendering: large touch targets, nothing but the form. Kiosk mode is
+   presentation only — same claim-code handshake as a phone, and no draft
+   persistence (shared device). Hardening is device config (home-screen
+   standalone install + Guided Access), not server state. Card width is set
+   by SubmissionShell's Tailwind classes in e.$slug.tsx, not here. */
 .kiosk {
-  max-width: 48rem;
   font-size: 1.25rem;
 }
 
@@ -398,3 +428,9 @@ body {
   padding: 1rem 3rem;
   font-size: 1.25rem;
 }
+
+/* No .dark {} block: this project has no dark-mode design (the handoff is
+   entirely light/paper-themed). @custom-variant dark above stays only
+   because shadcn-generated components reference dark: utility variants
+   syntactically — without a .dark class ever applied, they're simply
+   inert. */

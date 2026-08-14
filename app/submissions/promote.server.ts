@@ -22,20 +22,20 @@ export function promoteDraft(db: Db, input: { code: string; now: Date }): Promot
   const draft = db.select().from(stagedDrafts).where(eq(stagedDrafts.code, code)).get();
 
   if (!draft) {
-    return err("unknown", "No draft matches that code — ask them to re-check their screen.");
+    return err("unknown", "No draft matches that code. Ask them to re-check their screen.");
   }
   if (draft.promotedAt) {
-    return err("already-promoted", "Already in — that code was promoted earlier.");
+    return err("already-promoted", "Already in. That code was promoted earlier.");
   }
   if (draft.expiresAt <= input.now || draft.body === null) {
     return err(
       "expired",
-      "That code expired. Their draft is saved on their phone — ask them to resubmit.",
+      "That code expired. Their draft is saved on their phone. Ask them to resubmit.",
     );
   }
   const event = db.select().from(events).where(eq(events.id, draft.eventId)).get();
   if (!event || event.status !== "open") {
-    return err("event-closed", "This event is no longer open — promotion stopped at close.");
+    return err("event-closed", "This event is no longer open. Promotion stopped at close.");
   }
 
   const body = draft.body;

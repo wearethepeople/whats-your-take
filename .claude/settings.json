@@ -6,12 +6,16 @@
       "Bash(npm run lint)",
       "Bash(npm view *)",
       "Bash(npm run format:check)",
+      "Bash(npm run test)",
       "Bash(npx oxfmt --check *)",
       "Bash(npx vitest run *)",
       "mcp__Claude_Browser__get_page_text",
       "mcp__Claude_Browser__read_page",
       "mcp__Claude_Browser__read_network_requests",
-      "mcp__Claude_Browser__read_console_messages"
+      "mcp__Claude_Browser__read_console_messages",
+      "mcp__Claude_Browser__preview_logs",
+      "mcp__Claude_Browser__find",
+      "mcp__Claude_Preview__preview_snapshot"
     ]
   }
 }

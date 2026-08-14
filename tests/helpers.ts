@@ -2,6 +2,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "~/db/schema.server";
@@ -20,21 +21,33 @@ type Db = ReturnType<typeof freshDb>["db"];
 
 export function seedOpenEvent(
   db: Db,
-  overrides: { status?: "draft" | "open" | "closed" | "archived"; slug?: string } = {},
+  overrides: {
+    status?: "draft" | "scheduled" | "open" | "closed" | "archived";
+    slug?: string;
+    venue?: string | null;
+    zip?: string | null;
+  } = {},
 ) {
-  const prompt = db
-    .insert(schema.prompts)
-    .values({ text: "What would you remind an American in 2075?" })
-    .returning()
-    .get();
+  // Reuse the db's already-active prompt rather than always inserting a
+  // fresh one: at most one prompt may have retired_at IS NULL
+  // (prompts_single_active_season), and most tests calling this twice on
+  // the same db want two events in one season, not two seasons.
+  const prompt =
+    db.select().from(schema.prompts).where(isNull(schema.prompts.retiredAt)).get() ??
+    db
+      .insert(schema.prompts)
+      .values({ text: "What would you remind an American in 2075?" })
+      .returning()
+      .get();
   const event = db
     .insert(schema.events)
     .values({
       slug: overrides.slug ?? "event-one",
+      publicSlug: `2026-09-01-dallas-${overrides.slug ?? "event-one"}`,
       promptId: prompt.id,
       name: "Event One",
-      venue: "The Park",
-      zip: "75201",
+      venue: overrides.venue === undefined ? "The Park" : overrides.venue,
+      zip: overrides.zip === undefined ? "75201" : overrides.zip,
       city: "Dallas",
       startsAt: new Date("2026-09-01T15:00:00Z"),
       endsAt: new Date("2026-09-01T23:00:00Z"),
