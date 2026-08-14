@@ -5,6 +5,7 @@
 
 import { Link } from "react-router";
 import { Button } from "~/components/ui/button";
+import { WrtpIcon } from "~/components/wrtp-icon";
 import { cn } from "~/lib/utils";
 
 export type NavKey = "question" | "events" | "about" | "find-the-table";
@@ -58,9 +59,9 @@ export function SiteFooter() {
   return (
     <footer className="flex flex-col gap-1 bg-footer px-6 py-6 text-sm text-footer-foreground sm:flex-row sm:items-center sm:justify-between sm:px-14">
       <p>
-        What&rsquo;s Your Take? · A{" "}
+        <WrtpIcon className="size-5 text-wrtp-brand-orange inline" /> A{" "}
         <a href="https://wearethepeople.us" style={{ textDecoration: "underline" }}>
-          We (ARE) The People
+          We (ARE) the People
         </a>{" "}
         project
       </p>

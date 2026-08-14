@@ -139,7 +139,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           <DashedDivider />
 
           <FactRow label="Hosted by">
-            <p>We (ARE) The People</p>
+            <p>We (ARE) the People</p>
           </FactRow>
 
           <div className="mt-3 flex items-baseline justify-between">

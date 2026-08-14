@@ -57,7 +57,7 @@ export default function About() {
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold text-foreground">Who&rsquo;s behind it</h2>
             <p className="max-w-prose text-muted-foreground">
-              We (ARE) The People is a nonpartisan civic project from Dallas, Texas. We&rsquo;re not
+              We (ARE) the People is a nonpartisan civic project from Dallas, Texas. We&rsquo;re not
               red, we&rsquo;re not blue, and we&rsquo;re not selling anything. We build small ways
               for people to be heard and to hear each other.
             </p>

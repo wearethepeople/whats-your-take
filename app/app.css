@@ -52,6 +52,8 @@
      uses --background directly (per the design handoff, the card is the
      usual paper color; only the surrounding page is this deeper tan). */
   --submission-backdrop: #f3e4cf;
+
+  --wrtp-brand-orange: #f1673b;
 }
 
 @theme inline {
@@ -90,6 +92,8 @@
   --color-dashed: var(--dashed);
   --color-muted-tan: var(--muted-tan);
   --color-black: var(--black);
+
+  --color-wrtp-brand-orange: var(--wrtp-brand-orange);
 }
 
 @layer base {

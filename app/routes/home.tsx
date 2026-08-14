@@ -1,4 +1,5 @@
-import { Link } from "react-router";
+import { useEffect } from "react";
+import { Form, Link } from "react-router";
 import type { Route } from "./+types/home";
 import { db } from "~/db/client.server";
 import { Button } from "~/components/ui/button";
@@ -12,6 +13,9 @@ import {
   offsetShadow,
 } from "~/components/visual-grammar";
 import { REVEAL_DATE, seasonView } from "~/features/events/services/season.server";
+import { checkRateLimit, getClientIp } from "~/newsletter/rate-limit.server";
+import { newsletterFormSchema } from "~/newsletter/schema";
+import { subscribe } from "~/newsletter/subscribe.server";
 
 export function meta() {
   return [
@@ -37,6 +41,44 @@ export async function loader() {
   };
 }
 
+export async function action({ request }: Route.ActionArgs) {
+  const form = await request.formData();
+
+  // Honeypot: a real visitor never fills this in (off tab order, visually
+  // hidden). A non-empty value gets the same success response as a real
+  // submission — indistinguishable to whatever filled it in — without
+  // calling Emma.
+  if (String(form.get("company") ?? "").trim() !== "") {
+    return { ok: true as const };
+  }
+
+  if (!checkRateLimit(getClientIp(request))) {
+    return {
+      ok: false as const,
+      error: "That's a lot of signups at once. Try again in a few minutes.",
+    };
+  }
+
+  const parsed = newsletterFormSchema.safeParse({
+    email: String(form.get("email") ?? ""),
+  });
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Check the email address.";
+    return { ok: false as const, error: message };
+  }
+
+  try {
+    await subscribe(parsed.data.email);
+  } catch {
+    return {
+      ok: false as const,
+      error: "Couldn't sign you up right now. Try again in a bit.",
+    };
+  }
+
+  return { ok: true as const };
+}
+
 // Prompts are host-authored free text — there's no reliable way to detect
 // a "last clause" to underline generically, so this underlines just the
 // final word as a lighter-touch echo of the design's headline treatment.
@@ -54,10 +96,20 @@ function daysUntil(iso: string): number {
   return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
 }
 
-export default function Home({ loaderData }: Route.ComponentProps) {
+export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const { view, revealDateIso, revealDateLabel } = loaderData;
   const daysToReveal = daysUntil(revealDateIso);
+  const subscribed = actionData?.ok === true;
   const nextStop = view?.ledger.find((event) => event.status === "up-next");
+
+  // The form is well below the fold — after a successful subscribe, bring
+  // the confirmation into view rather than leaving the visitor to guess
+  // whether anything happened.
+  useEffect(() => {
+    if (subscribed) {
+      document.getElementById("newsletter-success")?.scrollIntoView({ block: "center" });
+    }
+  }, [subscribed]);
 
   return (
     <div className="flex min-h-screen flex-col font-sans text-foreground">
@@ -190,25 +242,51 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <div>
             <h2 className="font-serif text-2xl font-semibold">Hear where it&rsquo;s headed</h2>
             <p className="mt-2 max-w-prose text-muted-foreground">
-              An occasional letter from We (ARE) The People: where the table goes next, and what the
+              An occasional letter from We (ARE) the People: where the table goes next, and what the
               country has been writing. Easy to leave.
             </p>
           </div>
           <div>
-            {/* Newsletter is visual-only this phase — Emma isn't wired up yet.
-                Wire the real signup here once an Emma account/list exists. */}
-            <form
-              className="flex flex-col gap-2 sm:flex-row"
-              onSubmit={(event) => event.preventDefault()}
-            >
-              <Input type="email" placeholder="you@example.com" disabled className="bg-card" />
-              <Button type="submit" disabled>
-                Stay engaged
-              </Button>
-            </form>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Your email is for the letter and nothing else. It never connects to what anyone wrote.
-            </p>
+            {subscribed ? (
+              <p className="text-sm font-semibold" id="newsletter-success">
+                You&rsquo;re on the list. Thanks.
+              </p>
+            ) : (
+              <>
+                <Form method="post" className="flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    type="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    required
+                    className="bg-card"
+                    suppressHydrationWarning
+                  />
+
+                  {/* Honeypot — real visitors never see or fill this in. */}
+                  <div className="visually-hidden" aria-hidden="true">
+                    <label htmlFor="newsletter-company">Company</label>
+                    <input
+                      id="newsletter-company"
+                      name="company"
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  <Button type="submit">Stay engaged</Button>
+                </Form>
+                {actionData && !actionData.ok ? (
+                  <p className="banner banner-error mt-2" role="alert">
+                    {actionData.error}
+                  </p>
+                ) : null}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Your email is for the letter and nothing else. It never connects to what anyone
+                  wrote.
+                </p>
+              </>
+            )}
           </div>
         </section>
       </main>
