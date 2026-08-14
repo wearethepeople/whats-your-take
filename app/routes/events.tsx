@@ -3,7 +3,12 @@ import type { Route } from "./+types/events";
 import { db } from "~/db/client.server";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { GoldUnderline, ledgerStatusMeta, Stamp } from "~/components/visual-grammar";
-import { archiveView, currentSeason, REVEAL_DATE } from "~/features/events/services/season.server";
+import { formatRevealDate } from "~/features/events/reveal-date";
+import {
+  archiveView,
+  currentOrClosedSeason,
+  type ArchiveEvent,
+} from "~/features/events/services/season.server";
 
 export function meta() {
   return [
@@ -18,24 +23,43 @@ export function meta() {
 export async function loader() {
   return {
     archive: archiveView(db),
-    season: currentSeason(db),
-    revealDateIso: REVEAL_DATE.toISOString(),
-    revealDateLabel: REVEAL_DATE.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }),
+    season: currentOrClosedSeason(db),
   };
 }
 
-function daysUntil(iso: string): number {
-  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
+function daysUntil(date: Date): number {
+  return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86_400_000));
+}
+
+type SeasonGroup = { promptId: number; seasonLabel: string; events: ArchiveEvent[] };
+
+// Groups by promptId, preserving archive.events' newest-first order — since
+// that order is newest-first, each group's own first occurrence is its most
+// recent event, so the groups themselves come out newest-season-first too.
+function groupBySeason(events: ArchiveEvent[]): SeasonGroup[] {
+  const groups = new Map<number, SeasonGroup>();
+  for (const event of events) {
+    let group = groups.get(event.promptId);
+    if (!group) {
+      group = { promptId: event.promptId, seasonLabel: event.seasonLabel, events: [] };
+      groups.set(event.promptId, group);
+    }
+    group.events.push(event);
+  }
+  return [...groups.values()];
 }
 
 export default function Events({ loaderData }: Route.ComponentProps) {
-  const { archive, season, revealDateIso, revealDateLabel } = loaderData;
-  const daysToReveal = daysUntil(revealDateIso);
+  const { archive, season } = loaderData;
+  const reveal = season?.revealDate ?? null;
+  const revealDateLabel = reveal ? formatRevealDate(reveal) : null;
+  const daysToReveal = reveal ? daysUntil(reveal.date) : null;
   const eyebrow = [season?.label, archive.dateRangeLabel].filter(Boolean).join(" · ");
+  const seasons = groupBySeason(archive.events);
+  // A header per season only earns its place once there's more than one —
+  // for a single-season site it's noise repeating what the eyebrow above
+  // already says.
+  const showSeasonHeaders = seasons.length > 1;
 
   return (
     <div className="flex min-h-screen flex-col font-sans text-foreground">
@@ -50,8 +74,8 @@ export default function Events({ loaderData }: Route.ComponentProps) {
             </h1>
             <p className="max-w-prose text-muted-foreground">
               Every stop gets a page: the day, the place, and how many people sat down. What they
-              wrote stays sealed with everything else, until the whole record opens on{" "}
-              {revealDateLabel}.
+              wrote stays sealed with everything else, until the whole record opens
+              {revealDateLabel ? ` on ${revealDateLabel}` : ", on a date to be announced"}.
             </p>
           </div>
           <dl className="flex gap-8 sm:flex-col sm:gap-2 sm:text-right">
@@ -59,27 +83,36 @@ export default function Events({ loaderData }: Route.ComponentProps) {
               <dt className="text-sm text-muted-foreground">Takes recorded</dt>
               <dd className="font-serif text-2xl">{archive.totalTakes}</dd>
             </div>
-            <div>
-              <dt className="text-sm text-muted-foreground">Days to the reveal</dt>
-              <dd className="font-serif text-2xl text-primary">{daysToReveal}</dd>
-            </div>
+            {daysToReveal != null ? (
+              <div>
+                <dt className="text-sm text-muted-foreground">Days to the reveal</dt>
+                <dd className="font-serif text-2xl text-primary">{daysToReveal}</dd>
+              </div>
+            ) : null}
           </dl>
         </section>
 
         {archive.events.length > 0 ? (
-          <section className="px-6 py-10 sm:px-14">
-            <div className="grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-4 border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase sm:gap-8">
-              <span>Nº</span>
-              <span>Date</span>
-              <span>Stop</span>
-              <span>Takes</span>
-              <span>Status</span>
-            </div>
-            <div className="flex flex-col">
-              {archive.events.map((event) => (
-                <ArchiveRow key={event.id} event={event} />
-              ))}
-            </div>
+          <section className="flex flex-col gap-8 px-6 py-10 sm:px-14">
+            {seasons.map((group) => (
+              <div key={group.promptId}>
+                {showSeasonHeaders ? (
+                  <h2 className="mb-2 font-serif text-xl font-semibold">{group.seasonLabel}</h2>
+                ) : null}
+                <div className="grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-4 border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase sm:gap-8">
+                  <span>Nº</span>
+                  <span>Date</span>
+                  <span>Stop</span>
+                  <span>Takes</span>
+                  <span>Status</span>
+                </div>
+                <div className="flex flex-col">
+                  {group.events.map((event) => (
+                    <ArchiveRow key={event.id} event={event} />
+                  ))}
+                </div>
+              </div>
+            ))}
           </section>
         ) : (
           <section className="px-6 py-10 sm:px-14">
@@ -89,7 +122,7 @@ export default function Events({ loaderData }: Route.ComponentProps) {
 
         <section className="px-6 py-10 sm:px-14">
           <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
-            <Stamp className="border-primary text-primary">{revealDateLabel}</Stamp>
+            <Stamp className="border-primary text-primary">{revealDateLabel ?? "Date TBD"}</Stamp>
             <p className="text-muted-foreground">
               Every sealed stop opens at once, at the season premiere. Until then, the count is the
               story.
@@ -122,7 +155,7 @@ function ArchiveRow({
     <Link
       to={`/events/${event.publicSlug}`}
       className={`grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-4 border-b border-foreground/10 px-0 py-4 sm:gap-8 ${
-        status.rowHighlight ? "bg-card px-3" : ""
+        status.rowHighlight ? "bg-card" : ""
       }`}
     >
       <span className="font-mono text-sm text-muted-foreground">

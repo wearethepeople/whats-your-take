@@ -3,7 +3,8 @@ import type { Route } from "./+types/events.$publicSlug";
 import { db } from "~/db/client.server";
 import { SiteFooter } from "~/components/site-chrome";
 import { DashedDivider, GoldUnderline, Stamp } from "~/components/visual-grammar";
-import { eventDetail, REVEAL_DATE } from "~/features/events/services/season.server";
+import { formatRevealDate } from "~/features/events/reveal-date";
+import { eventDetail } from "~/features/events/services/season.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return [
@@ -14,19 +15,11 @@ export function meta({ loaderData }: Route.MetaArgs) {
 export async function loader({ params }: Route.LoaderArgs) {
   const event = eventDetail(db, params.publicSlug);
   if (!event) throw data(null, { status: 404 });
-  return {
-    event,
-    revealDateIso: REVEAL_DATE.toISOString(),
-    revealDateLabel: REVEAL_DATE.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }),
-  };
+  return { event };
 }
 
-function daysUntil(iso: string): number {
-  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
+function daysUntil(date: Date): number {
+  return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86_400_000));
 }
 
 // Same "underline the last word" simplification as the homepage's
@@ -43,8 +36,9 @@ function EventHeadline({ text }: { text: string }) {
 }
 
 export default function EventDetail({ loaderData }: Route.ComponentProps) {
-  const { event, revealDateIso, revealDateLabel } = loaderData;
-  const daysToReveal = daysUntil(revealDateIso);
+  const { event } = loaderData;
+  const revealDateLabel = event.revealDate ? formatRevealDate(event.revealDate) : null;
+  const daysToReveal = event.revealDate ? daysUntil(event.revealDate.date) : null;
   const sealed = event.status === "sealed";
   const scheduled = event.status === "scheduled";
 
@@ -78,7 +72,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
               <Stamp className="border-primary text-primary">Sealed</Stamp>
               <p className="text-muted-foreground">
                 This day&rsquo;s {event.takeCount} takes are in the record. They open with every
-                other stop on {revealDateLabel}, at the season premiere.
+                other stop{revealDateLabel ? ` on ${revealDateLabel}` : ""}, at the season premiere.
               </p>
             </div>
           ) : scheduled ? (
@@ -143,8 +137,12 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           </FactRow>
 
           <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-sm text-muted-foreground">Opens in</span>
-            <span className="font-serif text-xl text-primary">{daysToReveal} days</span>
+            <span className="text-sm text-muted-foreground">
+              {daysToReveal != null ? "Opens in" : "Opens"}
+            </span>
+            <span className="font-serif text-xl text-primary">
+              {daysToReveal != null ? `${daysToReveal} days` : "Date TBD"}
+            </span>
           </div>
         </div>
       </main>

@@ -172,11 +172,21 @@ Build the pipeline after the format survives contact with a real crowd.
 Prompt                                  -- a prompt IS a season: one question
   id, text, created_at,                 -- reused across events/geographies
   retired_at (nullable),                -- until retired
-  season_label (nullable)               -- host-settable ("Season One");
+  season_label (nullable),              -- host-settable ("Season One");
                                          -- unset falls back to an ordinal
                                          -- label derived from creation
                                          -- order (added 2026-08-06 for the
                                          -- living-seasons homepage)
+  reveal_date (nullable),               -- when this season's corpus opens;
+                                         -- per-season, not a site-wide
+                                         -- constant — cadence between
+                                         -- seasons is undecided (added
+                                         -- 2026-08-11)
+  reveal_precision (nullable,           -- "day" once locked, "month" while
+    enum: day | month)                  -- still working out timing; only
+                                         -- meaningful when reveal_date is
+                                         -- set, month stores the 1st and is
+                                         -- never rendered with a day
 
 Event
   id, slug, prompt_id, name, venue, address (nullable), zip, city,
@@ -379,7 +389,8 @@ accepted, stated here so it stays a decision and not a surprise.)
 - Moderation: everything is `pending` until approved; only `approved` responses
   enter the synthesis export. `hidden` is a terminal state, not deletion —
   append-only habit. The queue is available mid-event behind a prominent
-  warning (discipline, not a lock — see open items).
+  warning — discipline, not a lock, by deliberate choice (2026-08-11): if
+  a host reads early it's a norm violation, not a system failure to fix.
 - Corpus export: `approved` responses for an event as JSON/CSV (body, channel,
   created_bucket, showcase only). Rows are ordered (created_at, body) so row
   order never reconstructs intra-hour submission sequence — the same rule
@@ -490,25 +501,30 @@ Slices 1–4 are the weekend target; a table can run on 1–4 plus a phone
 camera and manual transcription, with the public page following before the
 synthesis is announced.
 
-### Open items
+### Open items — resolved 2026-08-11
 
-- **Moderation queue mid-event:** shipped allow-with-warning (slice 3).
-  Revisit post-weekend whether the queue should be gated instead — one idea
-  is local-dev only, making mid-event reading structurally impossible rather
-  than disciplined.
-- **In-between-seasons state (added 2026-08-06):** a season closes (its
-  prompt is retired) before the next prompt exists, and separately before
-  its own premiere — the site has no way to represent either gap yet.
-  Nothing today even retires a prompt (no host route/action sets
-  `retired_at`), so the state is currently unreachable, not just
-  unhandled. Needs: (1) a retire action, (2) splitting "the active
-  season" (`currentSeason()`, now guaranteed unique by the
-  `prompts_single_active_season` index) from "the most recently closed
-  season" so the homepage can show a closed season's sealed stats/ledger
-  instead of falling back to pre-launch ("on its way") copy that assumes
-  nothing has ever happened, and (3) deciding whether a multi-season
-  future needs a per-season reveal date rather than the single global
-  `REVEAL_DATE` constant `season.server.ts` uses today.
+- **In-between-seasons state:** needs (1) and (2) shipped — a retire
+  action exists (`retirePrompt()`, blocked while any of the season's
+  events is open/scheduled), and the homepage now distinguishes a live
+  season, a closed season awaiting the next one (sealed stats/ledger,
+  no "on its way" copy), and true pre-launch. Need (3), per-season reveal
+  date, split out as its own item below and now also resolved.
+- **Per-season reveal date (split from "In-between-seasons state";
+  refined once, then implemented, all 2026-08-11):** `prompts.reveal_date`
+  (nullable timestamp) + `prompts.reveal_precision` (`"day" | "month"`,
+  month stores the 1st and is never rendered with a day) replace the old
+  global `REVEAL_DATE` constant — no backfill; a host sets each season's
+  date via the Prompts admin page
+  (`host.prompts.tsx`, a date input and a month input, whichever is
+  filled wins). `currentSeason()`/`seasonView()`/`closedSeasonView()`/
+  `eventDetail()` surface a `revealDate: { date, precision } | null` off
+  the owning prompt; `formatRevealDate()` in `season.server.ts` is the one
+  place that turns it into `"July 2027"` or `"July 4, 2027"`. `home.tsx`,
+  `events.tsx`, and `events.$publicSlug.tsx` all fall back to "date to be
+  announced" copy when null.
+- **No prompt management interface:** `host.prompts.tsx` — list view
+  (active + retired, event/take counts, date range), retire action, and
+  `seasonLabel` edit.
 
 ### Open items — resolved 2026-07-19
 
