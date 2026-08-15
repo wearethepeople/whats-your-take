@@ -14,7 +14,7 @@ import { enterCard } from "~/submissions/card.server";
 import { MAX_BODY_LENGTH } from "~/submissions/constants";
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  return [{ title: `Card entry · ${loaderData?.event.name ?? "Event"} · What's Your Take?` }];
+  return [{ title: `Card entry · ${loaderData?.event.name ?? "Event"} · What’s Your Take?` }];
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -64,7 +64,7 @@ export default function HostCardEntry({ loaderData, actionData }: Route.Componen
         </HostSection>
       ) : (
         <p className="banner banner-error">
-          Cards can't be entered while the event is {event.status}.
+          Cards can&rsquo;t be entered while the event is {event.status}.
         </p>
       )}
     </main>

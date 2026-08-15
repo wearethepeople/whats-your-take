@@ -26,7 +26,7 @@ function toDateInput(date: Date): string {
 }
 
 export function meta() {
-  return [{ title: "Prompts · What's Your Take?" }];
+  return [{ title: "Prompts · What’s Your Take?" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

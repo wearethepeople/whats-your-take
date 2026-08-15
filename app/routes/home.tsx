@@ -20,7 +20,7 @@ import { subscribe } from "~/newsletter/subscribe.server";
 
 export function meta() {
   return [
-    { title: "What's Your Take?" },
+    { title: "What’s Your Take?" },
     {
       name: "description",
       content:
@@ -54,7 +54,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (!checkRateLimit(getClientIp(request))) {
     return {
       ok: false as const,
-      error: "That's a lot of signups at once. Try again in a few minutes.",
+      error: "That’s a lot of signups at once. Try again in a few minutes.",
     };
   }
 
@@ -71,7 +71,7 @@ export async function action({ request }: Route.ActionArgs) {
   } catch {
     return {
       ok: false as const,
-      error: "Couldn't sign you up right now. Try again in a bit.",
+      error: "Couldn’t sign you up right now. Try again in a bit.",
     };
   }
 
@@ -245,7 +245,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           <section className="px-6 py-14 sm:px-14">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-sm text-muted-tan">
-                {sealed ? "Where the table went" : "The season so far, and where it's going"}
+                {sealed ? "Where the table went" : "The season so far, and where it’s going"}
               </h2>
               <Link to="/events" className="text-sm underline underline-offset-4">
                 All stops

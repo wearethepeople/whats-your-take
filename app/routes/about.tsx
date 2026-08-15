@@ -4,10 +4,10 @@ import { DashedDivider, GoldUnderline } from "~/components/visual-grammar";
 
 export function meta() {
   return [
-    { title: "About · What's Your Take?" },
+    { title: "About · What’s Your Take?" },
     {
       name: "description",
-      content: "A guestbook for the country's 250th year: in person, anonymous, and sealed.",
+      content: "A guestbook for the country’s 250th year: in person, anonymous, and sealed.",
     },
   ];
 }

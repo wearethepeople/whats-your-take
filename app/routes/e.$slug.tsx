@@ -18,7 +18,7 @@ import { stageDraft } from "~/submissions/stage.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return [
-    { title: loaderData ? `${loaderData.eventName} · What's Your Take?` : "What's Your Take?" },
+    { title: loaderData ? `${loaderData.eventName} · What’s Your Take?` : "What’s Your Take?" },
   ];
 }
 

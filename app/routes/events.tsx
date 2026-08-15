@@ -12,10 +12,10 @@ import {
 
 export function meta() {
   return [
-    { title: "Where the table has been · What's Your Take?" },
+    { title: "Where the table has been · What’s Your Take?" },
     {
       name: "description",
-      content: "Every stop the table has made, and what's still sealed until the reveal.",
+      content: "Every stop the table has made, and what’s still sealed until the reveal.",
     },
   ];
 }

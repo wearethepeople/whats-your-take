@@ -14,7 +14,7 @@ import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 
 export function meta() {
-  return [{ title: "New event · What's Your Take?" }];
+  return [{ title: "New event · What’s Your Take?" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -118,7 +118,7 @@ export default function HostEventsNew({ loaderData, actionData }: Route.Componen
             />
           </Field>
 
-          <Field htmlFor="promptId" label="Prompt (the season's question)">
+          <Field htmlFor="promptId" label="Prompt (the season’s question)">
             <select
               id="promptId"
               name="promptId"

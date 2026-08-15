@@ -65,7 +65,7 @@ export function ScanPanel({
       if (!navigator.mediaDevices?.getUserMedia) {
         setError(
           window.isSecureContext
-            ? "Camera scanning isn't supported in this browser. Type the code below."
+            ? "Camera scanning isn’t supported in this browser. Type the code below."
             : "Camera scanning needs a secure (https) connection. Type the code below.",
         );
         setScanning(false);
@@ -83,7 +83,7 @@ export function ScanPanel({
             ? "Camera permission was denied. You can still type the code below."
             : name === "NotFoundError" || name === "DevicesNotFoundError"
               ? "No camera found on this device. Type the code below."
-              : "Camera scanning isn't available here. Type the code below.",
+              : "Camera scanning isn’t available here. Type the code below.",
         );
         setScanning(false);
         return;

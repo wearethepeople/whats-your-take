@@ -15,7 +15,7 @@ import { HostSection } from "~/host/section";
 import { promoteDraft } from "~/submissions/promote.server";
 
 export function meta() {
-  return [{ title: "Promote · What's Your Take?" }];
+  return [{ title: "Promote · What’s Your Take?" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -46,7 +46,7 @@ export async function action({ request }: Route.ActionArgs) {
   const prefix = code ? `${code}: ` : "";
   // submittedAt keys the form so the input clears for the next code.
   if (result.ok) {
-    return { ok: true as const, message: `${prefix}it's in the book.`, submittedAt: Date.now() };
+    return { ok: true as const, message: `${prefix}it’s in the book.`, submittedAt: Date.now() };
   }
   return { ok: false as const, message: `${prefix}${result.message}`, submittedAt: Date.now() };
 }

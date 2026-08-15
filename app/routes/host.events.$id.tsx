@@ -19,7 +19,7 @@ import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  return [{ title: `${loaderData?.event.name ?? "Event"} · What's Your Take?` }];
+  return [{ title: `${loaderData?.event.name ?? "Event"} · What’s Your Take?` }];
 }
 
 // datetime-local round-trip for the edit form (server-local time; the
@@ -63,7 +63,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       if (to === "archived" && String(form.get("confirmSlug") ?? "") !== event.slug) {
         return {
           ok: false as const,
-          message: "Archiving is one-way. Type the event's slug to confirm.",
+          message: "Archiving is one-way. Type the event’s slug to confirm.",
           submittedAt,
         };
       }

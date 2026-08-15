@@ -29,7 +29,7 @@ const AREA_SUGGEST_DEBOUNCE_MS = 300;
 
 export function meta() {
   return [
-    { title: "Bring the table to your town · What's Your Take?" },
+    { title: "Bring the table to your town · What’s Your Take?" },
     {
       name: "description",
       content: "Point us toward a ZIP code where the table should go next.",
@@ -51,7 +51,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (!checkRateLimit(getClientIp(request))) {
     return {
       ok: false as const,
-      error: "That's a lot of pointers at once. Try again in a few minutes.",
+      error: "That’s a lot of pointers at once. Try again in a few minutes.",
     };
   }
 
@@ -190,7 +190,7 @@ export default function BringTheTable({ actionData }: Route.ComponentProps) {
                   name="note"
                   rows={4}
                   maxLength={500}
-                  placeholder="A specific festival or market, timing, whatever's relevant"
+                  placeholder="A specific festival or market, timing, whatever’s relevant"
                 />
               </div>
 

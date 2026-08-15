@@ -7,7 +7,7 @@ import { createHostSession, isHost, verifyPassword } from "~/host/auth.server";
 import { HostSection } from "~/host/section";
 
 export function meta() {
-  return [{ title: "Host login · What's Your Take?" }];
+  return [{ title: "Host login · What’s Your Take?" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -19,7 +19,7 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const password = String(form.get("password") ?? "");
   if (!verifyPassword(password)) {
-    return { error: "That's not it." };
+    return { error: "That’s not it." };
   }
   return createHostSession("/host/events");
 }

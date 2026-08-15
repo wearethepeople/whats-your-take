@@ -9,7 +9,7 @@ import { HostSection } from "~/host/section";
 import { approveResponse, hideResponse, listForModeration } from "~/submissions/moderate.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  return [{ title: `Moderation · ${loaderData?.event.name ?? "Event"} · What's Your Take?` }];
+  return [{ title: `Moderation · ${loaderData?.event.name ?? "Event"} · What’s Your Take?` }];
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {

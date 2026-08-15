@@ -9,7 +9,7 @@ import { DEFAULT_TIME_ZONE } from "~/lib/timezone";
 
 export function meta() {
   return [
-    { title: "Find the table · What's Your Take?" },
+    { title: "Find the table · What’s Your Take?" },
     {
       name: "description",
       content: "No tickets, no signup, just show up. Where the table is headed next.",
@@ -79,14 +79,14 @@ function buildIcsDataUrl(event: {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//What's Your Take?//EN",
+    "PRODID:-//What’s Your Take?//EN",
     ...CHICAGO_VTIMEZONE,
     "BEGIN:VEVENT",
     `UID:${event.publicSlug}@wrtp.us`,
     `DTSTAMP:${icsUtcTimestamp(new Date())}`,
     `DTSTART;TZID=${DEFAULT_TIME_ZONE}:${icsLocalTimestamp(event.startsAt)}`,
     `DTEND;TZID=${DEFAULT_TIME_ZONE}:${icsLocalTimestamp(event.endsAt)}`,
-    `SUMMARY:${escapeIcsText(`${event.name} · What's Your Take?`)}`,
+    `SUMMARY:${escapeIcsText(`${event.name} · What’s Your Take?`)}`,
     `LOCATION:${escapeIcsText(location)}`,
     "END:VEVENT",
     "END:VCALENDAR",

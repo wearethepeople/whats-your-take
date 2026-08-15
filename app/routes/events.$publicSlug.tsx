@@ -8,7 +8,7 @@ import { eventDetail } from "~/features/events/services/season.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return [
-    { title: loaderData ? `${loaderData.event.name} · What's Your Take?` : "What's Your Take?" },
+    { title: loaderData ? `${loaderData.event.name} · What’s Your Take?` : "What’s Your Take?" },
   ];
 }
 

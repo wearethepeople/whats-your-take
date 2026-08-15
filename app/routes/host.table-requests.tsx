@@ -15,7 +15,7 @@ import {
 } from "~/features/table-requests/services/table-requests.server";
 
 export function meta() {
-  return [{ title: "Table requests · What's Your Take?" }];
+  return [{ title: "Table requests · What’s Your Take?" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

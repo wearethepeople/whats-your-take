@@ -1,7 +1,7 @@
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 
 export function meta() {
-  return [{ title: "Page not found · What's Your Take?" }];
+  return [{ title: "Page not found · What’s Your Take?" }];
 }
 
 export function loader() {
