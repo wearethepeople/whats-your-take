@@ -22,4 +22,5 @@ export default [
   route("host/events/:id/cards", "routes/host.events.$id.cards.tsx"),
   route("host/events/:id/moderation", "routes/host.events.$id.moderation.tsx"),
   route("host/events/:id/export/:format", "routes/host.events.$id.export.ts"),
+  route("*", "routes/$.tsx"),
 ] satisfies RouteConfig;
