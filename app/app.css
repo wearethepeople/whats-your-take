@@ -175,7 +175,7 @@ body {
 }
 
 .claim-code {
-  font-size: 4rem;
+  font-size: clamp(2.5rem, 12vw, 4rem);
   font-weight: 700;
   letter-spacing: 0.15em;
   font-variant-numeric: tabular-nums;
