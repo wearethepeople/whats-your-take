@@ -409,6 +409,16 @@ export function updatePromptSeasonLabel(
   return { ok: true };
 }
 
+export type UpdatePromptTextResult = { ok: true } | { ok: false; message: string };
+
+export function updatePromptText(db: Db, id: number, text: string): UpdatePromptTextResult {
+  if (!text.trim()) return { ok: false, message: "Prompt text can't be empty." };
+  const prompt = db.select({ id: prompts.id }).from(prompts).where(eq(prompts.id, id)).get();
+  if (!prompt) return { ok: false, message: "No such prompt." };
+  db.update(prompts).set({ text: text.trim() }).where(eq(prompts.id, id)).run();
+  return { ok: true };
+}
+
 export type UpdatePromptRevealDateResult = { ok: true } | { ok: false; message: string };
 
 // input null clears the reveal date entirely (both columns) — a season can

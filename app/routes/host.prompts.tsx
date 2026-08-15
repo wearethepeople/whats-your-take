@@ -2,12 +2,14 @@ import { Form } from "react-router";
 import type { Route } from "./+types/host.prompts";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import { db } from "~/db/client.server";
 import {
   listPromptsAdmin,
   retirePrompt,
   updatePromptRevealDate,
   updatePromptSeasonLabel,
+  updatePromptText,
 } from "~/features/events/services/lifecycle.server";
 import { formatRevealDate, type RevealDate } from "~/features/events/reveal-date";
 import { requireHost } from "~/host/auth.server";
@@ -42,6 +44,14 @@ export async function action({ request }: Route.ActionArgs) {
     const result = retirePrompt(db, id);
     return result.ok
       ? { ok: true as const, message: "Prompt retired. The season is closed." }
+      : { ok: false as const, message: result.message };
+  }
+
+  if (intent === "text") {
+    const text = String(form.get("text") ?? "");
+    const result = updatePromptText(db, id, text);
+    return result.ok
+      ? { ok: true as const, message: "Saved." }
       : { ok: false as const, message: result.message };
   }
 
@@ -105,13 +115,26 @@ export default function HostPrompts({ loaderData, actionData }: Route.ComponentP
             {prompts.map((prompt) => (
               <li key={prompt.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
                 <div className="flex items-baseline justify-between gap-4">
-                  <p className="font-medium">&ldquo;{prompt.text}&rdquo;</p>
+                  <span className="text-xs font-medium text-muted-foreground">Prompt text</span>
                   <span
                     className={`status-badge ${prompt.retiredAt ? "status-closed" : "status-open"}`}
                   >
                     {prompt.retiredAt ? "retired" : "active"}
                   </span>
                 </div>
+                <Form method="post" className="mt-1 flex flex-col items-end gap-2">
+                  <input type="hidden" name="id" value={prompt.id} />
+                  <Textarea
+                    name="text"
+                    defaultValue={prompt.text}
+                    rows={2}
+                    className="font-medium"
+                    aria-label="Prompt text"
+                  />
+                  <Button type="submit" size="sm" variant="outline" name="intent" value="text">
+                    Save prompt text
+                  </Button>
+                </Form>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Created {prompt.createdAt.toLocaleDateString()}
                   {prompt.retiredAt
