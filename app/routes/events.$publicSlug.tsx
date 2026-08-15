@@ -1,7 +1,7 @@
-import { data, Link } from "react-router";
+import { data } from "react-router";
 import type { Route } from "./+types/events.$publicSlug";
 import { db } from "~/db/client.server";
-import { SiteFooter } from "~/components/site-chrome";
+import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { DashedDivider, GoldUnderline, Stamp } from "~/components/visual-grammar";
 import { formatRevealDate } from "~/features/events/reveal-date";
 import { eventDetail } from "~/features/events/services/season.server";
@@ -44,14 +44,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="flex min-h-screen flex-col font-sans text-foreground">
-      <header className="flex items-center justify-between border-b-2 border-foreground px-6 py-5 sm:px-14">
-        <Link to="/" className="text-[17px] font-bold">
-          What&rsquo;s your take?
-        </Link>
-        <Link to="/events" className="text-sm text-primary underline underline-offset-4">
-          ← All stops
-        </Link>
-      </header>
+      <SiteHeader />
 
       <main className="flex-1 grid gap-10 px-6 py-14 sm:grid-cols-[1fr_320px] sm:items-start sm:px-14">
         <div className="flex flex-col gap-5">
