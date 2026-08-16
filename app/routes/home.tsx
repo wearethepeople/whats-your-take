@@ -387,7 +387,7 @@ function LedgerRow({
   return (
     <Link
       to={`/events/${event.publicSlug}`}
-      className={`grid grid-cols-[auto_1fr_auto_auto] items-center gap-4 border-b border-foreground/10 px-3 py-4 first:border-t sm:gap-8 ${
+      className={`grid grid-cols-[auto_1fr_6rem_auto] items-center gap-4 border-b border-foreground/10 px-3 py-4 first:border-t sm:gap-8 ${
         status.rowHighlight ? "bg-card" : ""
       }`}
     >
@@ -399,7 +399,7 @@ function LedgerRow({
       <span className="font-semibold">
         {event.name} <span className="font-normal text-muted-tan">· {event.city}</span>
       </span>
-      <span className="flex flex-col justify-center leading-tight">
+      <span className="flex flex-col items-end justify-center text-right leading-tight">
         <span className="font-mono text-sm text-muted-foreground">
           {status.countLabel ?? `${event.takeCount} takes`}
         </span>
