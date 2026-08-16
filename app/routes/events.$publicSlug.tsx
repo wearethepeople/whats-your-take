@@ -50,7 +50,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
       <main className="flex-1 grid gap-10 px-6 py-14 sm:grid-cols-[1fr_320px] sm:items-start sm:px-14">
         <div className="flex flex-col gap-5">
           <p className="font-mono text-xs text-primary uppercase">
-            Stop № {String(event.stopNumber).padStart(2, "0")}
+            Stop No. {String(event.stopNumber).padStart(2, "0")}
             {event.seasonLabel ? ` · ${event.seasonLabel}` : ""}
           </p>
           <EventHeadline text={event.name} />
@@ -99,7 +99,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
 
         <div className="relative border-[1.5px] border-foreground bg-card p-5">
           <Stamp className="absolute -top-3 right-4 bg-primary text-primary-foreground">
-            Stop № {String(event.stopNumber).padStart(2, "0")}
+            Stop No. {String(event.stopNumber).padStart(2, "0")}
           </Stamp>
 
           <FactRow label="Day">

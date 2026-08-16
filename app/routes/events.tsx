@@ -106,7 +106,7 @@ export default function Events({ loaderData }: Route.ComponentProps) {
                   <h2 className="mb-2 font-serif text-xl font-semibold">{group.seasonLabel}</h2>
                 ) : null}
                 <div className="grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-4 border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase sm:gap-8">
-                  <span>Nº</span>
+                  <span>No.</span>
                   <span>Date</span>
                   <span>Stop</span>
                   <span>Takes</span>

@@ -175,7 +175,7 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
               {upcoming.length > 0 ? (
                 <div className="flex flex-col">
                   <div className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-4 border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase sm:gap-8">
-                    <span>Nº</span>
+                    <span>No.</span>
                     <span>Date</span>
                     <span>Stop</span>
                     <span>Status</span>
