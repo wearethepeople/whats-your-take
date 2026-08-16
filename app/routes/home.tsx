@@ -188,7 +188,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               </p>
               <dl className="flex flex-col">
                 <StatRow label="Stops so far" value={String(view.stats.stopCount)} />
-                <StatRow label="Takes recorded" value={String(view.stats.totalTakes)} />
+                <StatRow
+                  label="Takes recorded"
+                  value={String(view.stats.totalTakes)}
+                  note={view.stats.ingestionPending ? "In process" : undefined}
+                />
                 <StatRow label="Towns" value={String(view.stats.townCount)} />
                 {daysToReveal != null ? (
                   <StatRow label="Days to the reveal" value={String(daysToReveal)} highlight />
@@ -198,6 +202,12 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 No names, no accounts. One scan at the table is the whole system. The record stays
                 sealed until it opens all at once.
               </p>
+              {view.stats.ingestionPending ? (
+                <p className="mt-3 border border-border bg-muted p-2 text-xs text-muted-tan">
+                  &ldquo;In process&rdquo; means a table has closed and physical are being
+                  transcribed.
+                </p>
+              ) : null}
             </div>
           ) : null}
         </section>
@@ -321,14 +331,24 @@ function StatRow({
   label,
   value,
   highlight = false,
+  note,
 }: {
   label: string;
   value: string;
   highlight?: boolean;
+  note?: string;
 }) {
   return (
-    <div className="flex items-baseline justify-between border-b border-dashed border-(--color-dashed) py-2 last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
+    <div className="flex items-center justify-between border-b border-dashed border-(--color-dashed) py-2 last:border-0">
+      <span className="flex flex-col justify-center leading-tight">
+        <span className="text-sm text-muted-foreground">{label}</span>
+        {note ? (
+          <span className="flex items-center gap-1 text-[10px] leading-none text-muted-tan">
+            <span className="size-1 rounded-full bg-accent" aria-hidden="true" />
+            {note}
+          </span>
+        ) : null}
+      </span>
       <span className={`font-serif text-2xl ${highlight ? "text-primary" : ""}`}>{value}</span>
     </div>
   );

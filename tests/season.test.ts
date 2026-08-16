@@ -171,6 +171,32 @@ describe("status mapping", () => {
     expect(byStatus.get("pub-closed-one")).toBe("sealed");
   });
 
+  it("flags ingestionPending when an event has closed but not archived", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    seedEvent(db, prompt.id, {
+      slug: "closed-one",
+      status: "closed",
+      startsAt: new Date("2026-08-01T15:00:00Z"),
+    });
+
+    const view = seasonView(db);
+    expect(view?.stats.ingestionPending).toBe(true);
+  });
+
+  it("does not flag ingestionPending once every closed event is archived", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    seedEvent(db, prompt.id, {
+      slug: "archived-one",
+      status: "archived",
+      startsAt: new Date("2026-08-01T15:00:00Z"),
+    });
+
+    const view = seasonView(db);
+    expect(view?.stats.ingestionPending).toBe(false);
+  });
+
   it("archiveView agrees with seasonView's status mapping", () => {
     const { db } = freshDb();
     const prompt = seedPrompt(db);

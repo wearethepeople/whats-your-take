@@ -151,6 +151,13 @@ export type SeasonStats = {
   stopCount: number;
   totalTakes: number;
   townCount: number;
+  // True while any event in the season has closed but not yet been
+  // archived — the table ran, but the host hasn't promoted staged
+  // responses into the corpus yet (see I2). totalTakes is accurate as
+  // far as it goes, but a homepage visitor reading "0" while the table
+  // sits closed would read the guestbook as unused rather than
+  // mid-ingestion, so callers surface this to say otherwise.
+  ingestionPending: boolean;
 };
 
 export type SeasonView = {
@@ -215,6 +222,7 @@ function seasonViewFor(db: Db, season: Season): SeasonView {
     stopCount: seasonEvents.length,
     totalTakes: [...takeCounts.values()].reduce((sum, n) => sum + n, 0),
     townCount: new Set(seasonEvents.map((event) => event.city)).size,
+    ingestionPending: seasonEvents.some((event) => event.status === "closed"),
   };
 
   return { season, stats, ledger };
