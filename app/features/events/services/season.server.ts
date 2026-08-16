@@ -137,6 +137,32 @@ function publicStatus(status: string): LedgerStatus {
   return "sealed";
 }
 
+// A note on a stat/listing that a raw event.status alone doesn't convey:
+// "open" — the table is live right now; "transcribing" — it closed but
+// hasn't been archived yet, so a visible total may still be catching up
+// with what's on paper (see I2). null once archived, or for
+// scheduled/draft events that haven't happened yet.
+//
+// This picks a single state per season/archive by priority (open over
+// transcribing) on the assumption that at most one is ever true at a
+// time — today there are never concurrent tables. If that ever changes,
+// a single note can no longer speak for a whole stat panel and this
+// needs revisiting (per-event notes already don't have this problem —
+// see LedgerEvent.liveState).
+export type LiveState = "open" | "transcribing" | null;
+
+function liveStateFor(status: string): LiveState {
+  if (status === "open") return "open";
+  if (status === "closed") return "transcribing";
+  return null;
+}
+
+function aggregateLiveState(statuses: string[]): LiveState {
+  if (statuses.includes("open")) return "open";
+  if (statuses.includes("closed")) return "transcribing";
+  return null;
+}
+
 export type LedgerEvent = {
   id: number;
   publicSlug: string;
@@ -145,19 +171,18 @@ export type LedgerEvent = {
   dateLabel: string;
   takeCount: number;
   status: LedgerStatus;
+  liveState: LiveState;
 };
 
 export type SeasonStats = {
   stopCount: number;
   totalTakes: number;
   townCount: number;
-  // True while any event in the season has closed but not yet been
-  // archived — the table ran, but the host hasn't promoted staged
-  // responses into the corpus yet (see I2). totalTakes is accurate as
-  // far as it goes, but a homepage visitor reading "0" while the table
-  // sits closed would read the guestbook as unused rather than
-  // mid-ingestion, so callers surface this to say otherwise.
-  ingestionPending: boolean;
+  // See LiveState — totalTakes is accurate as far as it goes, but a
+  // homepage visitor reading "0" while the table is open or just closed
+  // would read the guestbook as unused rather than live/mid-ingestion,
+  // so callers surface this to say otherwise.
+  liveState: LiveState;
 };
 
 export type SeasonView = {
@@ -216,13 +241,14 @@ function seasonViewFor(db: Db, season: Season): SeasonView {
     dateLabel: formatDateLabel(event.startsAt),
     takeCount: takeCounts.get(event.id) ?? 0,
     status: publicStatus(event.status),
+    liveState: liveStateFor(event.status),
   }));
 
   const stats: SeasonStats = {
     stopCount: seasonEvents.length,
     totalTakes: [...takeCounts.values()].reduce((sum, n) => sum + n, 0),
     townCount: new Set(seasonEvents.map((event) => event.city)).size,
-    ingestionPending: seasonEvents.some((event) => event.status === "closed"),
+    liveState: aggregateLiveState(seasonEvents.map((event) => event.status)),
   };
 
   return { season, stats, ledger };
@@ -264,6 +290,8 @@ export type ArchiveView = {
   // "May 2026 — July 2026", derived from the real first/last event dates —
   // not a design placeholder like the handoff mock's hardcoded range.
   dateRangeLabel: string | null;
+  // See LiveState / SeasonStats.liveState.
+  liveState: LiveState;
 };
 
 // Every public event across every season — not just the current one —
@@ -301,6 +329,7 @@ function publicEventRows(db: Db): ArchiveEvent[] {
     dateLabel: formatDateLabel(event.startsAt),
     takeCount: takeCounts.get(event.id) ?? 0,
     status: publicStatus(event.status),
+    liveState: liveStateFor(event.status),
     stopNumber: total - index,
     seasonLabel: labels.get(event.promptId) ?? "",
     promptId: event.promptId,
@@ -334,10 +363,14 @@ export function archiveView(db: Db): ArchiveView {
     dateRangeLabel = earliest === latest ? earliest : `${earliest} — ${latest}`;
   }
 
+  const openEvent = archiveEvents.some((event) => event.liveState === "open");
+  const transcribingEvent = archiveEvents.some((event) => event.liveState === "transcribing");
+
   return {
     events: archiveEvents,
     totalTakes: archiveEvents.reduce((sum, event) => sum + event.takeCount, 0),
     dateRangeLabel,
+    liveState: openEvent ? "open" : transcribingEvent ? "transcribing" : null,
   };
 }
 

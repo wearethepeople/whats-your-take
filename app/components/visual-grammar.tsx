@@ -45,6 +45,29 @@ export function Stamp({
   );
 }
 
+// Small inline note for a stop whose take count needs a caveat: "open" —
+// the table is live right now, so the count is still climbing; or
+// "transcribing" — it closed but hasn't been archived yet, so the host
+// hasn't promoted its staged responses into the corpus (see I2).
+// Deliberately quiet: a dot and ten-point text, not a badge, so it reads
+// as a minor status note rather than the headline. Shared by every public
+// listing that shows take counts (home, /events) so the treatment doesn't
+// drift between them.
+export function LiveStateNote({
+  state,
+  className,
+}: {
+  state: "open" | "transcribing";
+  className?: string;
+}) {
+  return (
+    <span className={cn("flex items-center gap-1 text-[10px] leading-none text-muted-tan", className)}>
+      <span className="size-1 rounded-full bg-accent" aria-hidden="true" />
+      {state === "open" ? "In process" : "Transcribing"}
+    </span>
+  );
+}
+
 // Shared status treatment for public ledger rows (home, /events,
 // /find-the-table) — one place that decides what a stop's status reads as
 // and how loud it looks, so the three pages don't drift from each other.

@@ -2,12 +2,13 @@ import { Link } from "react-router";
 import type { Route } from "./+types/events";
 import { db } from "~/db/client.server";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
-import { GoldUnderline, ledgerStatusMeta, Stamp } from "~/components/visual-grammar";
+import { GoldUnderline, LiveStateNote, ledgerStatusMeta, Stamp } from "~/components/visual-grammar";
 import { formatRevealDate } from "~/features/events/reveal-date";
 import {
   archiveView,
   currentOrClosedSeason,
   type ArchiveEvent,
+  type LiveState,
 } from "~/features/events/services/season.server";
 
 export function meta() {
@@ -82,6 +83,11 @@ export default function Events({ loaderData }: Route.ComponentProps) {
             <div>
               <dt className="text-sm text-muted-foreground">Takes recorded</dt>
               <dd className="font-serif text-2xl">{archive.totalTakes}</dd>
+              {archive.liveState ? (
+                <div className="sm:flex sm:justify-end">
+                  <LiveStateNote state={archive.liveState} />
+                </div>
+              ) : null}
             </div>
             {daysToReveal != null ? (
               <div>
@@ -148,6 +154,7 @@ function ArchiveRow({
     takeCount: number;
     status: "up-next" | "scheduled" | "sealed";
     stopNumber: number;
+    liveState: LiveState;
   };
 }) {
   const status = ledgerStatusMeta(event.status);
@@ -169,8 +176,11 @@ function ArchiveRow({
       <span className="font-semibold">
         {event.name} <span className="font-normal text-muted-tan">· {event.city}</span>
       </span>
-      <span className="font-mono text-sm text-muted-foreground">
-        {status.countLabel ?? `${event.takeCount} takes`}
+      <span className="flex flex-col justify-center leading-tight">
+        <span className="font-mono text-sm text-muted-foreground">
+          {status.countLabel ?? `${event.takeCount} takes`}
+        </span>
+        {event.liveState ? <LiveStateNote state={event.liveState} /> : null}
       </span>
       <span className={`font-mono text-xs uppercase ${status.statusClassName}`}>
         {status.statusLabel}

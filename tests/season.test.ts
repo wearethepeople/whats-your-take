@@ -171,7 +171,7 @@ describe("status mapping", () => {
     expect(byStatus.get("pub-closed-one")).toBe("sealed");
   });
 
-  it("flags ingestionPending when an event has closed but not archived", () => {
+  it("flags liveState as transcribing when an event has closed but not archived", () => {
     const { db } = freshDb();
     const prompt = seedPrompt(db);
     seedEvent(db, prompt.id, {
@@ -181,10 +181,23 @@ describe("status mapping", () => {
     });
 
     const view = seasonView(db);
-    expect(view?.stats.ingestionPending).toBe(true);
+    expect(view?.stats.liveState).toBe("transcribing");
   });
 
-  it("does not flag ingestionPending once every closed event is archived", () => {
+  it("flags liveState as open when an event is currently open", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    seedEvent(db, prompt.id, {
+      slug: "open-one",
+      status: "open",
+      startsAt: new Date("2026-08-01T15:00:00Z"),
+    });
+
+    const view = seasonView(db);
+    expect(view?.stats.liveState).toBe("open");
+  });
+
+  it("liveState is null once every closed event is archived", () => {
     const { db } = freshDb();
     const prompt = seedPrompt(db);
     seedEvent(db, prompt.id, {
@@ -194,7 +207,41 @@ describe("status mapping", () => {
     });
 
     const view = seasonView(db);
-    expect(view?.stats.ingestionPending).toBe(false);
+    expect(view?.stats.liveState).toBeNull();
+  });
+
+  it("flags liveState on the individual ledger row, not just season-wide", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    seedEvent(db, prompt.id, {
+      slug: "closed-one",
+      status: "closed",
+      startsAt: new Date("2026-08-01T15:00:00Z"),
+    });
+    seedEvent(db, prompt.id, {
+      slug: "open-one",
+      status: "open",
+      startsAt: new Date("2026-09-01T15:00:00Z"),
+    });
+
+    const view = seasonView(db);
+    const byStatus = new Map(view?.ledger.map((event) => [event.publicSlug, event.liveState]));
+    expect(byStatus.get("pub-closed-one")).toBe("transcribing");
+    expect(byStatus.get("pub-open-one")).toBe("open");
+  });
+
+  it("archiveView flags liveState as transcribing when any archived event is still closed", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    seedEvent(db, prompt.id, {
+      slug: "closed-one",
+      status: "closed",
+      startsAt: new Date("2026-08-01T15:00:00Z"),
+    });
+
+    const archive = archiveView(db);
+    expect(archive.liveState).toBe("transcribing");
+    expect(archive.events[0].liveState).toBe("transcribing");
   });
 
   it("archiveView agrees with seasonView's status mapping", () => {

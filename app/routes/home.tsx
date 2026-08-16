@@ -8,12 +8,17 @@ import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import {
   CircledStep,
   GoldUnderline,
+  LiveStateNote,
   ledgerStatusMeta,
   Stamp,
   offsetShadow,
 } from "~/components/visual-grammar";
 import { formatRevealDate } from "~/features/events/reveal-date";
-import { closedSeasonView, seasonView } from "~/features/events/services/season.server";
+import {
+  closedSeasonView,
+  seasonView,
+  type LiveState,
+} from "~/features/events/services/season.server";
 import { checkRateLimit, getClientIp } from "~/newsletter/rate-limit.server";
 import { newsletterFormSchema } from "~/newsletter/schema";
 import { subscribe } from "~/newsletter/subscribe.server";
@@ -191,7 +196,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 <StatRow
                   label="Takes recorded"
                   value={String(view.stats.totalTakes)}
-                  note={view.stats.ingestionPending ? "In process" : undefined}
+                  liveState={view.stats.liveState}
                 />
                 <StatRow label="Towns" value={String(view.stats.townCount)} />
                 {daysToReveal != null ? (
@@ -202,10 +207,16 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 No names, no accounts. One scan at the table is the whole system. The record stays
                 sealed until it opens all at once.
               </p>
-              {view.stats.ingestionPending ? (
+              {view.stats.liveState ? (
                 <p className="mt-3 border border-border bg-muted p-2 text-xs text-muted-tan">
-                  &ldquo;In process&rdquo; means a table has closed and physical are being
-                  transcribed.
+                  {view.stats.liveState === "open" ? (
+                    <>&ldquo;In process&rdquo; means a table is currently open.</>
+                  ) : (
+                    <>
+                      &ldquo;Transcribing&rdquo; means a table has closed and physical cards are being
+                      transcribed.
+                    </>
+                  )}
                 </p>
               ) : null}
             </div>
@@ -331,23 +342,18 @@ function StatRow({
   label,
   value,
   highlight = false,
-  note,
+  liveState = null,
 }: {
   label: string;
   value: string;
   highlight?: boolean;
-  note?: string;
+  liveState?: LiveState;
 }) {
   return (
     <div className="flex items-center justify-between border-b border-dashed border-(--color-dashed) py-2 last:border-0">
       <span className="flex flex-col justify-center leading-tight">
         <span className="text-sm text-muted-foreground">{label}</span>
-        {note ? (
-          <span className="flex items-center gap-1 text-[10px] leading-none text-muted-tan">
-            <span className="size-1 rounded-full bg-accent" aria-hidden="true" />
-            {note}
-          </span>
-        ) : null}
+        {liveState ? <LiveStateNote state={liveState} /> : null}
       </span>
       <span className={`font-serif text-2xl ${highlight ? "text-primary" : ""}`}>{value}</span>
     </div>
@@ -374,6 +380,7 @@ function LedgerRow({
     dateLabel: string;
     takeCount: number;
     status: "up-next" | "scheduled" | "sealed";
+    liveState: LiveState;
   };
 }) {
   const status = ledgerStatusMeta(event.status);
@@ -392,8 +399,11 @@ function LedgerRow({
       <span className="font-semibold">
         {event.name} <span className="font-normal text-muted-tan">· {event.city}</span>
       </span>
-      <span className="font-mono text-sm text-muted-foreground">
-        {status.countLabel ?? `${event.takeCount} takes`}
+      <span className="flex flex-col justify-center leading-tight">
+        <span className="font-mono text-sm text-muted-foreground">
+          {status.countLabel ?? `${event.takeCount} takes`}
+        </span>
+        {event.liveState ? <LiveStateNote state={event.liveState} /> : null}
       </span>
       <span className={`font-mono text-xs uppercase ${status.statusClassName}`}>
         {status.statusLabel}
