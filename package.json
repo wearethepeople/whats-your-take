@@ -62,7 +62,7 @@
       "oxlint",
       "oxfmt"
     ],
-    "*.{json,css,md}": [
+    "!(package-lock).{json,css,md}": [
       "oxfmt"
     ]
   },
