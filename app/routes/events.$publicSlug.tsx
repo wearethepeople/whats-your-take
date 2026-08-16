@@ -2,7 +2,7 @@ import { data } from "react-router";
 import type { Route } from "./+types/events.$publicSlug";
 import { db } from "~/db/client.server";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
-import { DashedDivider, GoldUnderline, Stamp } from "~/components/visual-grammar";
+import { DashedDivider, GoldUnderline, LiveStateNote, Stamp } from "~/components/visual-grammar";
 import { formatRevealDate } from "~/features/events/reveal-date";
 import { eventDetail } from "~/features/events/services/season.server";
 
@@ -41,6 +41,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
   const daysToReveal = event.revealDate ? daysUntil(event.revealDate.date) : null;
   const sealed = event.status === "sealed";
   const scheduled = event.status === "scheduled";
+  const liveState = event.liveState;
 
   return (
     <div className="flex min-h-screen flex-col font-sans text-foreground">
@@ -60,7 +61,17 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
             </p>
           ) : null}
 
-          {sealed ? (
+          {sealed && liveState === "transcribing" ? (
+            <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
+              <Stamp className="border-primary text-primary">Transcribing</Stamp>
+              <p className="text-muted-foreground">
+                This day&rsquo;s table has closed. Physical cards are still being transcribed, so
+                the count isn&rsquo;t final yet — once it is, these takes join the record and open
+                with every other stop{revealDateLabel ? ` on ${revealDateLabel}` : ""}, at the
+                season premiere.
+              </p>
+            </div>
+          ) : sealed ? (
             <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
               <Stamp className="border-primary text-primary">Sealed</Stamp>
               <p className="text-muted-foreground">
@@ -77,13 +88,11 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">
-              <Stamp className="border-primary text-primary">Up next</Stamp>
+              <Stamp className="border-primary text-primary">In process</Stamp>
               {/* Deliberately no link to the submission flow here: that
                   URL is printed on the table's QR and never published on
                   the marketing site (see events.slug's schema comment). */}
-              <p className="text-muted-foreground">
-                This stop is open. Come find the table and scan the QR there to add your take.
-              </p>
+              <p className="text-muted-foreground">This table is open right now.</p>
             </div>
           )}
         </div>
@@ -105,13 +114,17 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           </FactRow>
           <DashedDivider />
 
-          <FactRow label="Entries recorded">
+          <FactRow
+            label="Entries recorded"
+            labelSuffix={liveState ? <LiveStateNote state={liveState} /> : null}
+          >
             {sealed ? (
               <>
                 <p className="font-serif text-2xl">{event.takeCount}</p>
                 <p className="text-sm text-muted-foreground">
                   {event.channelBreakdown.card} handwritten cards · {event.channelBreakdown.screens}{" "}
                   from screens
+                  {liveState === "transcribing" ? " so far" : ""}
                 </p>
               </>
             ) : scheduled ? (
@@ -145,10 +158,21 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
   );
 }
 
-function FactRow({ label, children }: { label: string; children: React.ReactNode }) {
+function FactRow({
+  label,
+  labelSuffix,
+  children,
+}: {
+  label: string;
+  labelSuffix?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div className="py-3 first:pt-0">
-      <p className="text-xs text-muted-foreground uppercase">{label}</p>
+      <p className="flex items-center gap-2 text-xs text-muted-foreground uppercase">
+        {label}
+        {labelSuffix}
+      </p>
       <div className="mt-1">{children}</div>
     </div>
   );

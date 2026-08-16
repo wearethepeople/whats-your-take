@@ -410,6 +410,7 @@ export type EventDetail = {
   startsAt: Date;
   endsAt: Date;
   status: LedgerStatus;
+  liveState: LiveState;
   stopNumber: number;
   seasonLabel: string;
   revealDate: RevealDate | null;
@@ -473,6 +474,7 @@ function buildEventDetail(db: Db, event: PublicEventRow): EventDetail {
     startsAt: event.startsAt,
     endsAt: event.endsAt,
     status: publicStatus(event.status),
+    liveState: liveStateFor(event.status),
     stopNumber,
     seasonLabel: seasonLabels(db).get(event.promptId) ?? "",
     revealDate: promptRevealDate(db, event.promptId),
