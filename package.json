@@ -12,7 +12,8 @@
     "format:check": "oxfmt --check",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node other/migrate.js"
+    "db:migrate": "node other/migrate.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -48,11 +49,22 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "drizzle-kit": "^0.31.10",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.3.0",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
     "typescript": "^5.9.0",
     "vite": "^8.1.5",
     "vitest": "^4.1.10"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "oxlint",
+      "oxfmt"
+    ],
+    "*.{json,css,md}": [
+      "oxfmt"
+    ]
   },
   "engines": {
     "node": ">=22.22.0"

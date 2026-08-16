@@ -61,7 +61,9 @@ export function LiveStateNote({
   className?: string;
 }) {
   return (
-    <span className={cn("flex items-center gap-1 text-[10px] leading-none text-muted-tan", className)}>
+    <span
+      className={cn("flex items-center gap-1 text-[10px] leading-none text-muted-tan", className)}
+    >
       <span className="size-1 rounded-full bg-accent" aria-hidden="true" />
       {state === "open" ? "In process" : "Transcribing"}
     </span>

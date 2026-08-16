@@ -213,8 +213,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                     <>&ldquo;In process&rdquo; means a table is currently open.</>
                   ) : (
                     <>
-                      &ldquo;Transcribing&rdquo; means a table has closed and physical cards are being
-                      transcribed.
+                      &ldquo;Transcribing&rdquo; means a table has closed and physical cards are
+                      being transcribed.
                     </>
                   )}
                 </p>
