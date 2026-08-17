@@ -9,6 +9,8 @@
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { events, prompts, responses } from "~/db/schema.server";
 import type { Db } from "~/db/types.server";
+import { galleryPublishedAt, listEventPhotos } from "~/photos/photos.server";
+import { EVENT_PHOTOS_PREFIX } from "~/photos/storage.server";
 import type { RevealDate } from "../reveal-date";
 
 // Re-exported so existing callers (routes, lifecycle.server.ts) don't need
@@ -418,6 +420,11 @@ export type EventDetail = {
   // "screens" combines site + kiosk — the public distinction that matters
   // is handwritten-in-person vs. typed, not the device.
   channelBreakdown: { card: number; screens: number };
+  // Venue/atmosphere photos — see EventPhoto in docs/spec.md. Always []
+  // unless the event is sealed and the host has published the gallery
+  // (see buildEventDetail below); never gated to the season reveal like
+  // ShowcaseCard would be, since these aren't response content.
+  photos: { id: number; url: string; thumbnailUrl: string; caption: string | null }[];
 };
 
 type PublicEventRow = typeof events.$inferSelect;
@@ -460,6 +467,19 @@ function buildEventDetail(db: Db, event: PublicEventRow): EventDetail {
     else channelBreakdown.screens += row.n;
   }
 
+  const status = publicStatus(event.status);
+  // Skip the query entirely unless a sealed+published gallery could
+  // actually have anything to show — no reason to fetch and discard.
+  const sealedAndPublished = status === "sealed" && galleryPublishedAt(db, event.id) != null;
+  const photos = sealedAndPublished
+    ? listEventPhotos(db, event.id).map((photo) => ({
+        id: photo.id,
+        url: "/photos/" + photo.storageKey.slice(EVENT_PHOTOS_PREFIX.length),
+        thumbnailUrl: "/photos/" + photo.thumbnailKey.slice(EVENT_PHOTOS_PREFIX.length),
+        caption: photo.caption,
+      }))
+    : [];
+
   return {
     id: event.id,
     publicSlug: event.publicSlug,
@@ -473,13 +493,14 @@ function buildEventDetail(db: Db, event: PublicEventRow): EventDetail {
     timeLabel: formatTimeLabel(event.startsAt, event.endsAt),
     startsAt: event.startsAt,
     endsAt: event.endsAt,
-    status: publicStatus(event.status),
+    status,
     liveState: liveStateFor(event.status),
     stopNumber,
     seasonLabel: seasonLabels(db).get(event.promptId) ?? "",
     revealDate: promptRevealDate(db, event.promptId),
     takeCount: channelBreakdown.card + channelBreakdown.screens,
     channelBreakdown,
+    photos,
   };
 }
 

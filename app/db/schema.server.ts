@@ -1,5 +1,5 @@
 import { isNull, sql } from "drizzle-orm";
-import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Schema source of truth is docs/spec.md Part II; changes land there first.
 
@@ -100,6 +100,52 @@ export const responses = sqliteTable("responses", {
   // typed it in, not when the participant wrote it at the table, so a
   // day-part bucket would be fabricated. See card.server.ts.
   createdBucket: text("created_bucket"),
+});
+
+// Host-uploaded venue/atmosphere photos (the table, the space, the crowd
+// — never photographed response cards, no participant-identifying content
+// intended). Distinct from the speced-but-unbuilt ShowcaseCard (docs/spec.md
+// Part II), which is curated response-card photography gated to the season
+// reveal (I3) — these are gated only by eventPhotoGalleries.publishedAt
+// plus the event being sealed, no reveal wait, no per-photo moderation
+// (the host is trusted, direct-to-public once the gallery is published).
+export const eventPhotos = sqliteTable(
+  "event_photos",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id),
+    // Full object key including the "event-photos/" prefix — stored in
+    // full so the serving route never reconstructs/guesses it.
+    storageKey: text("storage_key").notNull(),
+    thumbnailKey: text("thumbnail_key").notNull(),
+    contentType: text("content_type").notNull(),
+    caption: text("caption"),
+    // Display order within the gallery. Assigned as max(position)+1 at
+    // upload time; host reorders via up/down moves that swap two rows'
+    // positions (see photos.server.ts) — no drag-and-drop.
+    position: integer("position").notNull(),
+    // Real (non-bucketed) timestamp: I4's hour-truncation guards
+    // correlating a *participant's* presence with responses (see the same
+    // note on tableRequests.createdAt) — doesn't apply to host-uploaded
+    // venue photography.
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [index("event_photos_event_idx").on(table.eventId)],
+);
+
+// One row per event, holding the venue-photo gallery's publish state.
+// NULL until the host explicitly publishes; the public event page shows
+// nothing from eventPhotos until both this is set AND the event itself is
+// sealed (closed/archived) — see eventDetail() in season.server.ts.
+export const eventPhotoGalleries = sqliteTable("event_photo_galleries", {
+  eventId: integer("event_id")
+    .primaryKey()
+    .references(() => events.id),
+  publishedAt: integer("published_at", { mode: "timestamp" }),
 });
 
 // Ephemeral pre-corpus holding pen: a participant STAGES a draft, the host

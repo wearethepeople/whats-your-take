@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   archiveView,
+  eventDetail,
   nextStop,
   seasonView,
   upcomingLedger,
@@ -257,5 +258,86 @@ describe("status mapping", () => {
 
     const archive = archiveView(db);
     expect(archive.events[0].status).toBe("scheduled");
+  });
+});
+
+describe("eventDetail photo visibility", () => {
+  function seedPhoto(db: Db, eventId: number) {
+    db.insert(schema.eventPhotos)
+      .values({
+        eventId,
+        storageKey: `event-photos/${eventId}/1-original.jpg`,
+        thumbnailKey: `event-photos/${eventId}/1-thumb.jpg`,
+        contentType: "image/jpeg",
+        position: 1,
+      })
+      .run();
+  }
+
+  function publish(db: Db, eventId: number) {
+    db.insert(schema.eventPhotoGalleries).values({ eventId, publishedAt: new Date() }).run();
+  }
+
+  it("omits photos for an open event, even if the gallery is published", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    const event = seedEvent(db, prompt.id, {
+      slug: "open-one",
+      status: "open",
+      startsAt: new Date("2026-08-01T15:00:00Z"),
+    });
+    seedPhoto(db, event.id);
+    publish(db, event.id);
+
+    expect(eventDetail(db, event.publicSlug)?.photos).toEqual([]);
+  });
+
+  it("omits photos for a sealed event whose gallery isn't published", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    const event = seedEvent(db, prompt.id, {
+      slug: "closed-one",
+      status: "closed",
+      startsAt: new Date("2026-08-01T15:00:00Z"),
+    });
+    seedPhoto(db, event.id);
+
+    expect(eventDetail(db, event.publicSlug)?.photos).toEqual([]);
+  });
+
+  it("omits photos for a published gallery on an event that isn't sealed", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    const event = seedEvent(db, prompt.id, {
+      slug: "scheduled-one",
+      status: "scheduled",
+      startsAt: new Date("2026-10-01T15:00:00Z"),
+      venue: null,
+      zip: null,
+    });
+    seedPhoto(db, event.id);
+    publish(db, event.id);
+
+    expect(eventDetail(db, event.publicSlug)?.photos).toEqual([]);
+  });
+
+  it("includes photos once the event is sealed and the gallery is published", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    const event = seedEvent(db, prompt.id, {
+      slug: "archived-one",
+      status: "archived",
+      startsAt: new Date("2026-08-01T15:00:00Z"),
+    });
+    seedPhoto(db, event.id);
+    publish(db, event.id);
+
+    const photos = eventDetail(db, event.publicSlug)?.photos;
+    expect(photos).toHaveLength(1);
+    expect(photos?.[0]).toMatchObject({
+      url: `/photos/${event.id}/1-original.jpg`,
+      thumbnailUrl: `/photos/${event.id}/1-thumb.jpg`,
+      caption: null,
+    });
   });
 });

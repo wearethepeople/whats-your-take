@@ -23,6 +23,16 @@ fly deploy --ha=false           # REQUIRED flag: prevents Fly's two-machine
 fly scale count 1               # verify/enforce; must stay 1 forever
 ```
 
+## Local dev storage bucket
+
+To test event-photo upload locally (`app/photos/`), you need a second Tigris
+bucket, separate from production's. Run `fly storage create` from *outside*
+this directory — inside it, flyctl auto-detects the app from `fly.toml` and
+tries to reuse its existing Tigris project, which fails ("already exists")
+or hands back credentials scoped to the wrong bucket. One directory up is
+enough to avoid the app auto-detection. Put the printed credentials in your
+local `.env` (see `.env.example`).
+
 ## Restore drill — REQUIRED before event one
 
 Digital responses have no physical backup (cards do). Prove the replica

@@ -107,55 +107,79 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           )}
         </div>
 
-        <div className="relative border-[1.5px] border-foreground bg-card p-5">
-          <Stamp className="absolute -top-3 right-4 bg-primary text-primary-foreground">
-            Stop No. {String(event.stopNumber).padStart(2, "0")}
-          </Stamp>
+        <div className="flex flex-col gap-6">
+          <div className="relative border-[1.5px] border-foreground bg-card p-5">
+            <Stamp className="absolute -top-3 right-4 bg-primary text-primary-foreground">
+              Stop No. {String(event.stopNumber).padStart(2, "0")}
+            </Stamp>
 
-          <FactRow label="Day">
-            <p>{event.dayLabel}</p>
-            <p>{event.timeLabel}</p>
-          </FactRow>
-          <DashedDivider />
+            <FactRow label="Day">
+              <p>{event.dayLabel}</p>
+              <p>{event.timeLabel}</p>
+            </FactRow>
+            <DashedDivider />
 
-          <FactRow label="Place">
-            <p>{event.venue ?? "Venue to be announced"}</p>
-            <p>{event.address ? `${event.address}, ${event.city}` : event.city}</p>
-          </FactRow>
-          <DashedDivider />
+            <FactRow label="Place">
+              <p>{event.venue ?? "Venue to be announced"}</p>
+              <p>{event.address ? `${event.address}, ${event.city}` : event.city}</p>
+            </FactRow>
+            <DashedDivider />
 
-          <FactRow
-            label="Entries recorded"
-            labelSuffix={liveState ? <LiveStateNote state={liveState} /> : null}
-          >
-            {sealed ? (
-              <>
-                <p className="font-serif text-2xl">{event.takeCount}</p>
-                <p className="text-sm text-muted-foreground">
-                  {event.channelBreakdown.card} handwritten cards · {event.channelBreakdown.screens}{" "}
-                  from screens
-                  {liveState === "transcribing" ? " so far" : ""}
-                </p>
-              </>
-            ) : scheduled ? (
-              <p className="text-sm text-muted-foreground">Not open yet.</p>
-            ) : (
-              // Mid-event, the tent whiteboard is the only live mirror
-              // (I6) — the public page doesn't extend that count online
-              // while the table is still open.
-              <p className="text-sm text-muted-foreground">Recording now. Count follows close.</p>
-            )}
-          </FactRow>
-          <DashedDivider />
+            <FactRow
+              label="Entries recorded"
+              labelSuffix={liveState ? <LiveStateNote state={liveState} /> : null}
+            >
+              {sealed ? (
+                <>
+                  <p className="font-serif text-2xl">{event.takeCount}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {event.channelBreakdown.card} handwritten cards ·{" "}
+                    {event.channelBreakdown.screens} from screens
+                    {liveState === "transcribing" ? " so far" : ""}
+                  </p>
+                </>
+              ) : scheduled ? (
+                <p className="text-sm text-muted-foreground">Not open yet.</p>
+              ) : (
+                // Mid-event, the tent whiteboard is the only live mirror
+                // (I6) — the public page doesn't extend that count online
+                // while the table is still open.
+                <p className="text-sm text-muted-foreground">Recording now. Count follows close.</p>
+              )}
+            </FactRow>
+            <DashedDivider />
 
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-sm text-muted-foreground">
-              {daysToReveal != null ? "Opens in" : "Opens"}
-            </span>
-            <span className="font-serif text-xl text-primary">
-              {daysToReveal != null ? `${daysToReveal} days` : "Date TBD"}
-            </span>
+            <div className="mt-3 flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">
+                {daysToReveal != null ? "Opens in" : "Opens"}
+              </span>
+              <span className="font-serif text-xl text-primary">
+                {daysToReveal != null ? `${daysToReveal} days` : "Date TBD"}
+              </span>
+            </div>
           </div>
+
+          {sealed && event.photos.length > 0 ? (
+            <div className="border-[1.5px] border-foreground bg-card p-5">
+              <p className="mb-3 text-xs text-muted-foreground uppercase">Photos</p>
+              <div className="grid grid-cols-3 gap-2">
+                {event.photos.map((photo) => (
+                  <a
+                    key={photo.id}
+                    href={photo.url}
+                    className="block overflow-hidden border border-border"
+                  >
+                    <img
+                      src={photo.thumbnailUrl}
+                      alt={photo.caption ?? ""}
+                      className="aspect-square w-full object-cover"
+                      loading="lazy"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </main>
 

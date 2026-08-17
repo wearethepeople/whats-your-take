@@ -261,6 +261,39 @@ ShowcaseCard                               -- host-CURATED publication media:
                                            -- imageless); small by design,
                                            -- reviewed like any publication.
 
+EventPhotoGallery                          -- added 2026-08-17: one row per
+  event_id (PK), published_at (nullable)   -- event, holding the publish
+                                           -- state for that event's venue
+                                           -- photos. NULL until the host
+                                           -- explicitly publishes; the
+                                           -- public event page shows
+                                           -- nothing from EventPhoto until
+                                           -- both this is set AND the event
+                                           -- itself is sealed (closed or
+                                           -- archived).
+
+EventPhoto                                 -- added 2026-08-17: host-uploaded
+  id, event_id, storage_key,               -- venue/atmosphere photos (the
+  thumbnail_key, content_type,             -- table, the space, the crowd —
+  caption (nullable), position,            -- NOT photographed response
+  created_at                               -- cards; no participant-
+                                           -- identifying content intended).
+                                           -- Distinct from ShowcaseCard,
+                                           -- which is curated response-card
+                                           -- photography gated to the
+                                           -- season reveal (I3) — these are
+                                           -- gated only by
+                                           -- EventPhotoGallery.published_at
+                                           -- and the event being sealed, no
+                                           -- reveal wait, no per-photo
+                                           -- moderation (host is trusted).
+                                           -- Real (non-bucketed) created_at:
+                                           -- I4's hour-truncation guards
+                                           -- correlating a *participant's*
+                                           -- presence with responses, which
+                                           -- doesn't apply to host-uploaded
+                                           -- venue photography.
+
 TableRequest                               -- added 2026-08: anonymous "bring
   id, area, note (nullable),               -- the table to your town" pointer
   resolved_city (nullable),                -- (a general area, not a specific

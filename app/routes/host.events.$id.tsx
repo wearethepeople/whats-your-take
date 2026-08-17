@@ -159,6 +159,14 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
               </Link>
             </li>
             <li>
+              <Link
+                to={`/host/events/${event.id}/photos`}
+                className="text-primary underline underline-offset-4"
+              >
+                Photos
+              </Link>
+            </li>
+            <li>
               Export:{" "}
               <a
                 href={`/host/events/${event.id}/export/csv`}
