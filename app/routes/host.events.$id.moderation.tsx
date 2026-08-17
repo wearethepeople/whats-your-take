@@ -4,7 +4,6 @@ import { Button } from "~/components/ui/button";
 import { db } from "~/db/client.server";
 import { getEvent } from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
-import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 import { approveResponse, hideResponse, listForModeration } from "~/submissions/moderate.server";
 
@@ -53,7 +52,7 @@ function ResponseList({
   rows,
   actions,
 }: {
-  rows: { id: number; body: string; channel: string; createdBucket: string }[];
+  rows: { id: number; body: string; channel: string; createdBucket: string | null }[];
   actions: ("approve" | "hide")[];
 }) {
   if (rows.length === 0) return <p className="text-muted-foreground">None.</p>;
@@ -65,7 +64,8 @@ function ResponseList({
             {row.body}
           </blockquote>
           <p className="mt-1 mb-2 text-sm text-muted-foreground">
-            {row.channel} · {row.createdBucket}
+            {row.channel}
+            {row.createdBucket ? ` · ${row.createdBucket}` : ""}
           </p>
           <div className="flex gap-2">
             {actions.map((intent) => (
@@ -91,8 +91,7 @@ function ResponseList({
 export default function HostModeration({ loaderData, actionData }: Route.ComponentProps) {
   const { event, pending, approved, hidden } = loaderData;
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <HostNav />
+    <>
       <h1 className="mt-4 mb-2 text-2xl font-semibold">
         Moderation · {event.name}{" "}
         <span className={`status-badge status-${event.status}`}>{event.status}</span>
@@ -133,6 +132,6 @@ export default function HostModeration({ loaderData, actionData }: Route.Compone
           <ResponseList rows={hidden} actions={[]} />
         </HostSection>
       </div>
-    </main>
+    </>
   );
 }

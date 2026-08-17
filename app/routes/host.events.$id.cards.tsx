@@ -8,7 +8,6 @@ import { liveCount } from "~/features/events/services/counts.server";
 import { getEvent } from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
 import { Field } from "~/host/field";
-import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 import { enterCard } from "~/submissions/card.server";
 import { MAX_BODY_LENGTH } from "~/submissions/constants";
@@ -45,8 +44,7 @@ export default function HostCardEntry({ loaderData, actionData }: Route.Componen
   const { event, cardCount } = loaderData;
   const accepting = event.status === "open" || event.status === "closed";
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <HostNav />
+    <>
       <h1 className="mt-4 mb-4 text-2xl font-semibold">
         Card entry <span className={`status-badge status-${event.status}`}>{event.status}</span>
       </h1>
@@ -67,7 +65,7 @@ export default function HostCardEntry({ loaderData, actionData }: Route.Componen
           Cards can&rsquo;t be entered while the event is {event.status}.
         </p>
       )}
-    </main>
+    </>
   );
 }
 

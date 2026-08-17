@@ -4,7 +4,6 @@ import { db } from "~/db/client.server";
 import { liveCount } from "~/features/events/services/counts.server";
 import { listEvents } from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
-import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 import { sweepExpired } from "~/submissions/stage.server";
 
@@ -30,8 +29,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function HostEvents({ loaderData }: Route.ComponentProps) {
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <HostNav />
+    <>
       <div className="mt-4 mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Events</h1>
         <Link to="/host/events/new" className="text-sm text-primary underline underline-offset-4">
@@ -61,6 +59,6 @@ export default function HostEvents({ loaderData }: Route.ComponentProps) {
           </ul>
         )}
       </HostSection>
-    </main>
+    </>
   );
 }

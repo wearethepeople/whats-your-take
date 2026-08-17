@@ -14,7 +14,6 @@ import {
 import { formatRevealDate, type RevealDate } from "~/features/events/reveal-date";
 import { requireHost } from "~/host/auth.server";
 import { Field } from "~/host/field";
-import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 
 // revealDate is a calendar date, not an instant — read/write its components
@@ -93,8 +92,7 @@ export default function HostPrompts({ loaderData, actionData }: Route.ComponentP
   const { prompts } = loaderData;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <HostNav />
+    <>
       <h1 className="mt-4 mb-4 text-2xl font-semibold">Prompts</h1>
 
       {actionData ? (
@@ -215,6 +213,6 @@ export default function HostPrompts({ loaderData, actionData }: Route.ComponentP
           </ul>
         )}
       </HostSection>
-    </main>
+    </>
   );
 }

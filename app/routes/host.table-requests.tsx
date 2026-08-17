@@ -5,7 +5,6 @@ import { Input } from "~/components/ui/input";
 import { db } from "~/db/client.server";
 import { requireHost } from "~/host/auth.server";
 import { Field } from "~/host/field";
-import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 import {
   areaAggregates,
@@ -51,8 +50,7 @@ export default function HostTableRequests({ loaderData, actionData }: Route.Comp
   const { aggregates, pending, requests } = loaderData;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <HostNav />
+    <>
       <h1 className="mt-4 mb-4 text-2xl font-semibold">Table requests</h1>
 
       {actionData ? (
@@ -156,6 +154,6 @@ export default function HostTableRequests({ loaderData, actionData }: Route.Comp
           )}
         </HostSection>
       </div>
-    </main>
+    </>
   );
 }

@@ -15,7 +15,6 @@ import {
 } from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
 import { Field } from "~/host/field";
-import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -101,8 +100,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function HostEventDetail({ loaderData, actionData }: Route.ComponentProps) {
   const { event, count, legalTargets } = loaderData;
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <HostNav />
+    <>
       <h1 className="mt-4 mb-4 text-2xl font-semibold">
         {event.name} <span className={`status-badge status-${event.status}`}>{event.status}</span>
       </h1>
@@ -286,6 +284,6 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
           </Form>
         </HostSection>
       </div>
-    </main>
+    </>
   );
 }

@@ -9,7 +9,6 @@ import { db } from "~/db/client.server";
 import { events } from "~/db/schema.server";
 import { liveCount } from "~/features/events/services/counts.server";
 import { requireHost } from "~/host/auth.server";
-import { HostNav } from "~/host/nav";
 import { ScanPanel } from "~/host/scan-panel";
 import { HostSection } from "~/host/section";
 import { promoteDraft } from "~/submissions/promote.server";
@@ -82,8 +81,7 @@ export default function HostPromote({ loaderData, actionData }: Route.ComponentP
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <HostNav />
+    <>
       <h1 className="mt-4 mb-4 text-2xl font-semibold">Promote a take</h1>
       <p className="mb-4 text-muted-foreground">
         {loaderData.openEvents.length > 0 ? (
@@ -134,6 +132,6 @@ export default function HostPromote({ loaderData, actionData }: Route.ComponentP
             (to clear the typed input) doesn't also restart the camera stream. */}
         <ScanPanel onDecode={handleDecode} resetToken={actionData?.submittedAt} />
       </HostSection>
-    </main>
+    </>
   );
 }

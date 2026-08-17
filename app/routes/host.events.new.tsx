@@ -10,7 +10,6 @@ import {
 } from "~/features/events/services/lifecycle.server";
 import { requireHost } from "~/host/auth.server";
 import { Field, selectClassName } from "~/host/field";
-import { HostNav } from "~/host/nav";
 import { HostSection } from "~/host/section";
 
 export function meta() {
@@ -60,8 +59,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function HostEventsNew({ loaderData, actionData }: Route.ComponentProps) {
   const values = actionData?.values;
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <HostNav />
+    <>
       <h1 className="mt-4 mb-4 text-2xl font-semibold">New event</h1>
       <HostSection title="Details">
         <Form method="post" className="flex flex-col items-start gap-3">
@@ -159,6 +157,6 @@ export default function HostEventsNew({ loaderData, actionData }: Route.Componen
           <Button type="submit">Create event</Button>
         </Form>
       </HostSection>
-    </main>
+    </>
   );
 }
