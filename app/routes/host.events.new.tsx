@@ -8,7 +8,6 @@ import {
   eventFormSchema,
   listActivePrompts,
 } from "~/features/events/services/lifecycle.server";
-import { requireHost } from "~/host/auth.server";
 import { Field, selectClassName } from "~/host/field";
 import { HostSection } from "~/host/section";
 
@@ -16,13 +15,11 @@ export function meta() {
   return [{ title: "New event · What’s Your Take?" }];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireHost(request);
+export async function loader() {
   return { prompts: listActivePrompts(db) };
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  await requireHost(request);
   const form = await request.formData();
   const values = {
     slug: String(form.get("slug") ?? ""),

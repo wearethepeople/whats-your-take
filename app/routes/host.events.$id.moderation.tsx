@@ -3,7 +3,6 @@ import type { Route } from "./+types/host.events.$id.moderation";
 import { Button } from "~/components/ui/button";
 import { db } from "~/db/client.server";
 import { getEvent } from "~/features/events/services/lifecycle.server";
-import { requireHost } from "~/host/auth.server";
 import { HostSection } from "~/host/section";
 import { approveResponse, hideResponse, listForModeration } from "~/submissions/moderate.server";
 
@@ -11,8 +10,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
   return [{ title: `Moderation · ${loaderData?.event.name ?? "Event"} · What’s Your Take?` }];
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireHost(request);
+export async function loader({ params }: Route.LoaderArgs) {
   const event = getEvent(db, Number(params.id));
   if (!event) throw data(null, { status: 404 });
   const rows = listForModeration(db, event.id).map((row) => ({
@@ -31,7 +29,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-  await requireHost(request);
   const event = getEvent(db, Number(params.id));
   if (!event) throw data(null, { status: 404 });
   const form = await request.formData();

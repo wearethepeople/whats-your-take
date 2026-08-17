@@ -8,7 +8,6 @@ import { Label } from "~/components/ui/label";
 import { db } from "~/db/client.server";
 import { events } from "~/db/schema.server";
 import { liveCount } from "~/features/events/services/counts.server";
-import { requireHost } from "~/host/auth.server";
 import { ScanPanel } from "~/host/scan-panel";
 import { HostSection } from "~/host/section";
 import { promoteDraft } from "~/submissions/promote.server";
@@ -17,8 +16,7 @@ export function meta() {
   return [{ title: "Promote · What’s Your Take?" }];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireHost(request);
+export async function loader() {
   // Names and counts only — never response bodies (I6).
   const open = db
     .select({ id: events.id, name: events.name })
@@ -35,7 +33,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  await requireHost(request);
   const form = await request.formData();
   const code = String(form.get("code") ?? "");
   const result = promoteDraft(db, { code, now: new Date() });

@@ -3,7 +3,6 @@ import type { Route } from "./+types/host.events";
 import { db } from "~/db/client.server";
 import { liveCount } from "~/features/events/services/counts.server";
 import { listEvents } from "~/features/events/services/lifecycle.server";
-import { requireHost } from "~/host/auth.server";
 import { HostSection } from "~/host/section";
 import { sweepExpired } from "~/submissions/stage.server";
 
@@ -11,8 +10,7 @@ export function meta() {
   return [{ title: "Events · What’s Your Take?" }];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireHost(request);
+export async function loader() {
   // The dashboard is visited all day — a free moment to clear expired
   // staged drafts (post-promotion code stubs included).
   sweepExpired(db, new Date());

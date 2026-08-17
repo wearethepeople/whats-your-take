@@ -13,7 +13,6 @@ import {
   updateEvent,
   type EventStatus,
 } from "~/features/events/services/lifecycle.server";
-import { requireHost } from "~/host/auth.server";
 import { Field } from "~/host/field";
 import { HostSection } from "~/host/section";
 
@@ -30,8 +29,7 @@ function toLocalInput(date: Date): string {
 
 const STATUSES: EventStatus[] = ["draft", "scheduled", "open", "closed", "archived"];
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireHost(request);
+export async function loader({ params }: Route.LoaderArgs) {
   const event = getEvent(db, Number(params.id));
   if (!event) throw data(null, { status: 404 });
   return {
@@ -46,7 +44,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-  await requireHost(request);
   const event = getEvent(db, Number(params.id));
   if (!event) throw data(null, { status: 404 });
   const form = await request.formData();

@@ -12,7 +12,6 @@ import {
   updatePromptText,
 } from "~/features/events/services/lifecycle.server";
 import { formatRevealDate, type RevealDate } from "~/features/events/reveal-date";
-import { requireHost } from "~/host/auth.server";
 import { Field } from "~/host/field";
 import { HostSection } from "~/host/section";
 
@@ -28,13 +27,11 @@ export function meta() {
   return [{ title: "Prompts · What’s Your Take?" }];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireHost(request);
+export async function loader() {
   return { prompts: listPromptsAdmin(db) };
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  await requireHost(request);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
   const id = Number(form.get("id"));

@@ -3,7 +3,6 @@ import type { Route } from "./+types/host.table-requests";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { db } from "~/db/client.server";
-import { requireHost } from "~/host/auth.server";
 import { Field } from "~/host/field";
 import { HostSection } from "~/host/section";
 import {
@@ -17,8 +16,7 @@ export function meta() {
   return [{ title: "Table requests · What’s Your Take?" }];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireHost(request);
+export async function loader() {
   return {
     aggregates: areaAggregates(db),
     pending: needsManualResolution(db),
@@ -27,7 +25,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  await requireHost(request);
   const form = await request.formData();
   const id = Number(form.get("id"));
   const city = String(form.get("city") ?? "").trim();

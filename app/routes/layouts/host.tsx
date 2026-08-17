@@ -1,12 +1,26 @@
-// Shared chrome for every authenticated host route. Pathless layout route —
-// no loader here on purpose: a layout loader would not guard child actions,
-// so requireHost stays a first-line call in each child route (see
-// ~/host/nav.tsx). This layout only renders the nav + shell, and gives the
-// whole host section one real error screen instead of falling through to
-// root.tsx's bare "Something went wrong."
+// Shared chrome + auth gate for every authenticated host route. The auth
+// check lives in `middleware`, not `loader`: middleware runs ahead of a
+// child route's action too (unlike an ancestor loader, which a POST
+// navigation skips entirely — only the matched action runs, then loaders
+// revalidate after; a loader-only check here would leave every host action
+// reachable, unauthenticated, by a direct POST). Verified empirically:
+// stripping requireHost from an action left it 302-ing to /host/login on a
+// cookie-less POST, same as before — this middleware is what's blocking it.
+// Child loaders/actions no longer call requireHost themselves; this is the
+// only auth gate for anything nested under this layout. The one exception
+// is host/events/:id/export/:format — a resource route that never renders,
+// deliberately kept outside this layout (see routes.ts), so it still does
+// its own requireHost.
 import { isRouteErrorResponse, Outlet } from "react-router";
 import type { Route } from "./+types/host";
+import { requireHost } from "~/host/auth.server";
 import { HostNav } from "~/host/nav";
+
+export const middleware: Route.MiddlewareFunction[] = [
+  async ({ request }) => {
+    await requireHost(request);
+  },
+];
 
 function HostShell({ children }: { children: React.ReactNode }) {
   return (

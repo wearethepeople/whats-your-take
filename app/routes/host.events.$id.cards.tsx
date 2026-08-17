@@ -6,7 +6,6 @@ import { Textarea } from "~/components/ui/textarea";
 import { db } from "~/db/client.server";
 import { liveCount } from "~/features/events/services/counts.server";
 import { getEvent } from "~/features/events/services/lifecycle.server";
-import { requireHost } from "~/host/auth.server";
 import { Field } from "~/host/field";
 import { HostSection } from "~/host/section";
 import { enterCard } from "~/submissions/card.server";
@@ -16,8 +15,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
   return [{ title: `Card entry · ${loaderData?.event.name ?? "Event"} · What’s Your Take?` }];
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireHost(request);
+export async function loader({ params }: Route.LoaderArgs) {
   const event = getEvent(db, Number(params.id));
   if (!event) throw data(null, { status: 404 });
   return {
@@ -27,7 +25,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-  await requireHost(request);
   const form = await request.formData();
   const result = enterCard(db, {
     eventId: Number(params.id),
