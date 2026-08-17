@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { responses } from "~/db/schema.server";
-import { bucketFor, truncateToHour } from "~/db/time.server";
+import { truncateToHour } from "~/db/time.server";
 import { enterCard } from "~/submissions/card.server";
 import { MAX_BODY_LENGTH } from "~/submissions/constants";
 import { freshDb, seedOpenEvent } from "./helpers";
@@ -20,9 +20,10 @@ describe("enterCard", () => {
     expect(row?.status).toBe("pending");
     expect(row?.promptId).toBe(prompt.id);
     expect(row?.body).toBe("from a card");
-    // I4 on this second write path: hour-truncated, bucket only.
+    // I4 on this second write path: hour-truncated. No bucket for cards —
+    // `now` is the transcription moment, not when the card was written.
     expect(row?.createdAt).toEqual(truncateToHour(NOW));
-    expect(row?.createdBucket).toBe(bucketFor(NOW));
+    expect(row?.createdBucket).toBeNull();
   });
 
   it("accepts cards while the event is open or closed", () => {

@@ -3,6 +3,10 @@
 // id or timestamp (I4). Rows are ordered (created_at, body): deterministic,
 // and row order can never reconstruct intra-hour submission sequence. The
 // same field set and ordering rule apply to the slice-5 public corpus.
+//
+// created_bucket is null for channel=card: a transcribed card's insert
+// moment is when the host typed it in, not when it was written at the
+// table, so no day-part bucket exists for it (see write.server.ts).
 
 import { and, asc, eq } from "drizzle-orm";
 import { responses } from "~/db/schema.server";
@@ -11,7 +15,7 @@ import type { Db } from "~/db/types.server";
 export type ExportRow = {
   body: string;
   channel: string;
-  created_bucket: string;
+  created_bucket: string | null;
   showcase: boolean;
 };
 
@@ -45,7 +49,7 @@ export function toCsv(rows: ExportRow[]): string {
       [
         csvField(row.body, true),
         csvField(row.channel),
-        csvField(row.created_bucket),
+        row.created_bucket === null ? "" : csvField(row.created_bucket),
         row.showcase ? "true" : "false",
       ].join(","),
     );

@@ -63,7 +63,7 @@
       "oxfmt"
     ],
     "!(package-lock).{json,css,md}": [
-      "oxfmt"
+      "oxfmt --no-error-on-unmatched-pattern"
     ]
   },
   "engines": {

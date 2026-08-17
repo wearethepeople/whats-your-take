@@ -64,6 +64,13 @@
       "when": 1786505435144,
       "tag": "0008_ancient_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1786934007361,
+      "tag": "0009_normal_wiccan",
+      "breakpoints": true
     }
   ]
 }

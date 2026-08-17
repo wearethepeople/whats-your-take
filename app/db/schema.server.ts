@@ -95,8 +95,11 @@ export const responses = sqliteTable("responses", {
   // timing is never stored. No DB default on purpose: every insert must go
   // through the time helpers.
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  // The only time granularity that ever reaches a public surface.
-  createdBucket: text("created_bucket").notNull(),
+  // The only time granularity that ever reaches a public surface. Null for
+  // channel=card: a transcribed card's created_at reflects when the host
+  // typed it in, not when the participant wrote it at the table, so a
+  // day-part bucket would be fabricated. See card.server.ts.
+  createdBucket: text("created_bucket"),
 });
 
 // Ephemeral pre-corpus holding pen: a participant STAGES a draft, the host

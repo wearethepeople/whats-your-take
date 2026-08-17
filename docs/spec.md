@@ -223,8 +223,15 @@ Response
                                            -- precise time would place a row
                                            -- inside one staging window,
                                            -- partially relinking code→row)
-  created_bucket  text                     -- e.g. "afternoon" — the only
-                                           -- time granularity ever exposed
+  created_bucket  text (nullable)          -- e.g. "afternoon" — the only
+                                           -- time granularity ever exposed.
+                                           -- Null for channel=card: a card's
+                                           -- created_at is the transcription
+                                           -- moment (host typing it in),
+                                           -- not when it was written at the
+                                           -- table, so no day-part bucket
+                                           -- is fabricated for it (amended
+                                           -- 2026-08-16)
 
 PresenceWindow                             -- per 60s clock window: staging
   id, event_id, window_start, window_end,  -- counts for telemetry + the

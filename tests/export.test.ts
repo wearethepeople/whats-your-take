@@ -35,9 +35,18 @@ describe("exportRows", () => {
       now: NOW,
     });
     expect(hideResponse(db, toHide.id).ok).toBe(true);
+    // A card, approved: created_bucket must be null, never a fabricated bucket.
+    const cardRow = insertResponse(db, {
+      promptId: prompt.id,
+      eventId: event.id,
+      body: "from a card",
+      channel: "card",
+      now: NOW,
+    });
+    expect(approveResponse(db, cardRow.id).ok).toBe(true);
 
     const rows = exportRows(db, event.id);
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(2);
     // Structural I4/I2 check: no id, no created_at — these keys and no others.
     expect(Object.keys(rows[0] ?? {}).sort()).toEqual([
       "body",
@@ -45,10 +54,18 @@ describe("exportRows", () => {
       "created_bucket",
       "showcase",
     ]);
-    expect(rows[0]).toEqual({
+    expect(rows.find((row) => row.channel === "site")).toEqual({
       body: "approved take",
       channel: "site",
       created_bucket: "afternoon",
+      showcase: false,
+    });
+    // Card rows carry no bucket — the insert moment is transcription time,
+    // not when the card was written at the table.
+    expect(rows.find((row) => row.channel === "card")).toEqual({
+      body: "from a card",
+      channel: "card",
+      created_bucket: null,
       showcase: false,
     });
   });
@@ -92,6 +109,13 @@ describe("toCsv", () => {
     const lines = csv.split("\r\n");
     expect(lines[0]).toBe("body,channel,created_bucket,showcase");
     expect(lines[1]).toBe('"plain",site,evening,true');
+  });
+
+  it("writes an empty created_bucket field for a card row (no bucket to show)", () => {
+    const csv = toCsv([
+      { body: "card take", channel: "card", created_bucket: null, showcase: false },
+    ]);
+    expect(csv).toBe('body,channel,created_bucket,showcase\r\n"card take",card,,false\r\n');
   });
 
   it("escapes commas, quotes, and newlines per RFC 4180 without altering bytes", () => {
