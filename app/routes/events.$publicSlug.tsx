@@ -6,9 +6,19 @@ import { DashedDivider, GoldUnderline, LiveStateNote, Stamp } from "~/components
 import { formatRevealDate } from "~/features/events/reveal-date";
 import { eventDetail } from "~/features/events/services/season.server";
 
+function formatDateStamp(date: Date): string {
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${mm}/${dd}/${date.getFullYear()}`;
+}
+
 export function meta({ loaderData }: Route.MetaArgs) {
   return [
-    { title: loaderData ? `${loaderData.event.name} · What’s Your Take?` : "What’s Your Take?" },
+    {
+      title: loaderData
+        ? `${formatDateStamp(loaderData.event.startsAt)} ${loaderData.event.name} · What’s Your Take?`
+        : "What’s Your Take?",
+    },
   ];
 }
 
@@ -137,10 +147,6 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
             )}
           </FactRow>
           <DashedDivider />
-
-          <FactRow label="Hosted by">
-            <p>We (ARE) the People</p>
-          </FactRow>
 
           <div className="mt-3 flex items-baseline justify-between">
             <span className="text-sm text-muted-foreground">
