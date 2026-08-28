@@ -20,6 +20,7 @@ const FIELDS = {
   address: null,
   zip: "74103",
   city: "Tulsa",
+  state: "OK",
   startsAt: new Date("2026-09-05T15:00:00Z"),
   endsAt: new Date("2026-09-05T23:00:00Z"),
   narrative: null,
@@ -201,6 +202,7 @@ describe("eventFormSchema", () => {
       address: "",
       zip: "75210",
       city: "Dallas",
+      state: "TX",
       startsAt: "2026-09-25T10:00",
       endsAt: "2026-09-25T20:00",
     });
@@ -224,6 +226,7 @@ describe("eventFormSchema", () => {
       address: "",
       zip: "",
       city: "Dallas",
+      state: "TX",
       startsAt: "2026-09-25T10:00",
       endsAt: "2026-09-25T20:00",
     });

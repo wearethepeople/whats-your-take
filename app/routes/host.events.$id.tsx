@@ -76,6 +76,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         address: String(form.get("address") ?? ""),
         zip: String(form.get("zip") ?? ""),
         city: String(form.get("city") ?? ""),
+        state: String(form.get("state") ?? ""),
         startsAt: String(form.get("startsAt") ?? ""),
         endsAt: String(form.get("endsAt") ?? ""),
         narrative: String(form.get("narrative") ?? ""),
@@ -247,6 +248,16 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
 
             <Field htmlFor="city" label="City">
               <Input id="city" name="city" defaultValue={event.city} required />
+            </Field>
+
+            <Field htmlFor="state" label="State (two-letter, e.g. AL)">
+              <Input
+                id="state"
+                name="state"
+                defaultValue={event.state ?? ""}
+                maxLength={2}
+                required
+              />
             </Field>
 
             <Field htmlFor="zip" label="ZIP (required before the event can open)">

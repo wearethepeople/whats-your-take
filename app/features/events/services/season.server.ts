@@ -170,6 +170,7 @@ export type LedgerEvent = {
   publicSlug: string;
   name: string;
   city: string;
+  state: string | null;
   dateLabel: string;
   takeCount: number;
   status: LedgerStatus;
@@ -177,9 +178,15 @@ export type LedgerEvent = {
 };
 
 export type SeasonStats = {
+  // "So far" — events that have actually happened or are happening now
+  // (open/closed/archived). Deliberately excludes scheduled-but-not-yet-run
+  // events; see upcomingCount for those.
   stopCount: number;
   totalTakes: number;
   townCount: number;
+  // Scheduled events that haven't opened yet — kept separate from
+  // stopCount/townCount so a future-dated stop doesn't inflate "so far".
+  upcomingCount: number;
   // See LiveState — totalTakes is accurate as far as it goes, but a
   // homepage visitor reading "0" while the table is open or just closed
   // would read the guestbook as unused rather than live/mid-ingestion,
@@ -222,6 +229,7 @@ function seasonViewFor(db: Db, season: Season): SeasonView {
       publicSlug: events.publicSlug,
       name: events.name,
       city: events.city,
+      state: events.state,
       startsAt: events.startsAt,
       status: events.status,
     })
@@ -240,16 +248,20 @@ function seasonViewFor(db: Db, season: Season): SeasonView {
     publicSlug: event.publicSlug,
     name: event.name,
     city: event.city,
+    state: event.state,
     dateLabel: formatDateLabel(event.startsAt),
     takeCount: takeCounts.get(event.id) ?? 0,
     status: publicStatus(event.status),
     liveState: liveStateFor(event.status),
   }));
 
+  const pastOrLiveEvents = seasonEvents.filter((event) => event.status !== "scheduled");
+
   const stats: SeasonStats = {
-    stopCount: seasonEvents.length,
+    stopCount: pastOrLiveEvents.length,
     totalTakes: [...takeCounts.values()].reduce((sum, n) => sum + n, 0),
-    townCount: new Set(seasonEvents.map((event) => event.city)).size,
+    townCount: new Set(pastOrLiveEvents.map((event) => event.city)).size,
+    upcomingCount: seasonEvents.filter((event) => event.status === "scheduled").length,
     liveState: aggregateLiveState(seasonEvents.map((event) => event.status)),
   };
 
@@ -307,6 +319,7 @@ function publicEventRows(db: Db): ArchiveEvent[] {
       publicSlug: events.publicSlug,
       name: events.name,
       city: events.city,
+      state: events.state,
       startsAt: events.startsAt,
       status: events.status,
       promptId: events.promptId,
@@ -328,6 +341,7 @@ function publicEventRows(db: Db): ArchiveEvent[] {
     publicSlug: event.publicSlug,
     name: event.name,
     city: event.city,
+    state: event.state,
     dateLabel: formatDateLabel(event.startsAt),
     takeCount: takeCounts.get(event.id) ?? 0,
     status: publicStatus(event.status),
@@ -402,6 +416,7 @@ export type EventDetail = {
   venue: string | null;
   address: string | null;
   city: string;
+  state: string | null;
   zip: string | null;
   narrative: string | null;
   dayLabel: string;
@@ -487,6 +502,7 @@ function buildEventDetail(db: Db, event: PublicEventRow): EventDetail {
     venue: event.venue,
     address: event.address,
     city: event.city,
+    state: event.state,
     zip: event.zip,
     narrative: event.narrative,
     dayLabel: formatDayLabel(event.startsAt),

@@ -63,6 +63,10 @@ export const events = sqliteTable("events", {
   address: text("address"),
   zip: text("zip"),
   city: text("city").notNull(),
+  // Nullable like venue/zip: retrofitted after city (see the schema
+  // comment above) — existing events pick it up on next edit rather than
+  // via a backfilled migration. Two-letter USPS abbreviation, uppercase.
+  state: text("state"),
   startsAt: integer("starts_at", { mode: "timestamp" }).notNull(),
   endsAt: integer("ends_at", { mode: "timestamp" }).notNull(),
   // Host-authored, optional — free text for the public event detail page

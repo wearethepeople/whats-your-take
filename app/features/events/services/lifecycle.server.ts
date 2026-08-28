@@ -53,6 +53,11 @@ export const eventFormSchema = z.object({
     .optional()
     .transform((value) => (value ? value : null)),
   city: z.string().trim().min(1, "City is required."),
+  state: z
+    .string()
+    .trim()
+    .regex(/^[a-zA-Z]{2}$/, "State is a two-letter abbreviation.")
+    .transform((value) => value.toUpperCase()),
   startsAt: z.coerce.date({ message: "Start time is required." }),
   endsAt: z.coerce.date({ message: "End time is required." }),
   narrative: z

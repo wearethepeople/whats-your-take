@@ -121,7 +121,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
     <div className="flex min-h-screen flex-col font-sans text-foreground">
       {nextStop ? (
         <div className="bg-primary px-4 py-2 text-center text-[13px] font-bold text-primary-foreground">
-          Next stop: {nextStop.name}, {nextStop.city} · {nextStop.dateLabel}
+          Next stop: {nextStop.name}, {nextStop.city}
+          {nextStop.state ? `, ${nextStop.state}` : ""} · {nextStop.dateLabel}
         </div>
       ) : null}
 
@@ -199,6 +200,9 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                   liveState={view.stats.liveState}
                 />
                 <StatRow label="Towns" value={String(view.stats.townCount)} />
+                {view.stats.upcomingCount > 0 ? (
+                  <StatRow label="Upcoming events" value={String(view.stats.upcomingCount)} />
+                ) : null}
                 {daysToReveal != null ? (
                   <StatRow label="Days to the reveal" value={String(daysToReveal)} highlight />
                 ) : null}
@@ -377,6 +381,7 @@ function LedgerRow({
     publicSlug: string;
     name: string;
     city: string;
+    state: string | null;
     dateLabel: string;
     takeCount: number;
     status: "up-next" | "scheduled" | "sealed";
@@ -397,7 +402,11 @@ function LedgerRow({
         {event.dateLabel}
       </span>
       <span className="font-semibold">
-        {event.name} <span className="font-normal text-muted-tan">· {event.city}</span>
+        {event.name}{" "}
+        <span className="font-normal text-muted-tan">
+          · {event.city}
+          {event.state ? `, ${event.state}` : ""}
+        </span>
       </span>
       <span className="flex flex-col items-end justify-center text-right leading-tight">
         <span className="font-mono text-sm text-muted-foreground">

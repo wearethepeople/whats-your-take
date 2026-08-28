@@ -190,6 +190,11 @@ Prompt                                  -- a prompt IS a season: one question
 
 Event
   id, slug, prompt_id, name, venue, address (nullable), zip, city,
+  state (nullable)                      -- added 2026-08-28: two-letter USPS
+                                         -- abbreviation; nullable like
+                                         -- venue/zip since retrofitted onto
+                                         -- existing rows, required going
+                                         -- forward via eventFormSchema
   public_slug                           -- added 2026-08-07: date+city
                                          -- composite, generated once at
                                          -- creation, immutable. The public

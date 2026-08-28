@@ -261,6 +261,32 @@ describe("status mapping", () => {
   });
 });
 
+describe("season stats", () => {
+  it("excludes scheduled events from stopCount/townCount but counts them as upcoming", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    seedEvent(db, prompt.id, {
+      slug: "closed-one",
+      status: "closed",
+      startsAt: new Date("2026-08-01T15:00:00Z"),
+      city: "Tulsa",
+    });
+    seedEvent(db, prompt.id, {
+      slug: "scheduled-one",
+      status: "scheduled",
+      startsAt: new Date("2026-11-01T15:00:00Z"),
+      venue: null,
+      zip: null,
+      city: "Birmingham",
+    });
+
+    const view = seasonView(db);
+    expect(view?.stats.stopCount).toBe(1);
+    expect(view?.stats.townCount).toBe(1);
+    expect(view?.stats.upcomingCount).toBe(1);
+  });
+});
+
 describe("eventDetail photo visibility", () => {
   function seedPhoto(db: Db, eventId: number) {
     db.insert(schema.eventPhotos)
