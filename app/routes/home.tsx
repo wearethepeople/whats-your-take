@@ -181,6 +181,14 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               <a href="#how-it-works" className="text-sm underline underline-offset-4">
                 How the table works
               </a>
+              <Button
+                render={<Link to="/bring-the-table" />}
+                nativeButton={false}
+                variant="outline"
+                className={offsetShadow}
+              >
+                Bring the table to your town
+              </Button>
             </div>
           </div>
 
