@@ -30,6 +30,12 @@ const NAV_LINKS: { key: NavKey; label: string; to: string }[] = [
 // or bold-only treatment (per the design handoff's "Nav active states").
 const activeUnderline = "[box-shadow:inset_0_-6px_0_var(--color-accent)]";
 
+// Hover feedback for inactive nav items: a thin underline, lighter than the
+// active-page gold bar above and lighter than the "Find the table" button's
+// hover wash.
+const hoverUnderline =
+  "hover:underline hover:decoration-2 hover:underline-offset-4 hover:decoration-border";
+
 export function SiteHeader({ active }: { active?: NavKey }) {
   return (
     <header className="flex items-center justify-between gap-6 border-b-2 border-foreground px-6 py-5 sm:px-14">
@@ -44,7 +50,7 @@ export function SiteHeader({ active }: { active?: NavKey }) {
           <Link
             key={link.key}
             to={link.to}
-            className={cn("pb-1", active === link.key && activeUnderline)}
+            className={cn("pb-1", active === link.key ? activeUnderline : hoverUnderline)}
           >
             {link.label}
           </Link>
