@@ -77,6 +77,7 @@ function draftKey(slug: string): string {
 const KIOSK_IDLE_COMPOSE_MS = 2 * 60 * 1000;
 const KIOSK_IDLE_CODE_MS = 5 * 60 * 1000;
 const IDLE_WARNING_SECONDS = 10;
+const HOME_REDIRECT_SECONDS = 7;
 
 // React 19 hoists these into <head>; the RR static links export can't see
 // the slug. The manifest bakes the kiosk start URL for add-to-home-screen.
@@ -288,11 +289,9 @@ function ComposeForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <span className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
-          ?
-        </span>
-        <span className="text-[15px] font-bold text-muted-tan">What&rsquo;s your take?</span>
+      <div className="flex items-baseline gap-2 mb-4">
+        <span className="text-[17px] font-bold">What&rsquo;s Your Take?</span>
+        <span className="text-[12.5px] text-muted-tan">A civic mirror project</span>
       </div>
 
       <h1 className="text-[27px] leading-tight font-bold">
@@ -300,7 +299,7 @@ function ComposeForm({
       </h1>
 
       <p className="text-sm text-muted-foreground">
-        Two minutes, no audience, no sides to join. It&rsquo;s anonymous, no names, please.
+        Just you, no audience, no sides to join. It&rsquo;s anonymous, so no names, please.
       </p>
 
       <Form
@@ -319,7 +318,7 @@ function ComposeForm({
           onChange={(event) => handleChange(event.target.value)}
           maxLength={MAX_BODY_LENGTH}
           rows={kiosk ? 8 : 6}
-          placeholder="Say it plainly. They’ll get it."
+          placeholder="Say it plainly."
           className="w-full rounded-2xl border-2 border-[#e6cfa8] p-4 text-base outline-none focus:border-primary"
         />
         {error ? (
@@ -329,9 +328,9 @@ function ComposeForm({
         ) : null}
         <p className="consent">
           All responses are anonymous. By submitting, you give We (ARE) the People permission to
-          share, display, and publish your response in any medium: online, in exhibits, and in
-          print. No names, please.
+          share, display, and publish your response in any medium.
         </p>
+        <p className="consent">No names, please.</p>
         <button
           type="submit"
           className="min-h-[52px] w-full rounded-full bg-primary text-[15px] font-bold text-primary-foreground transition-colors hover:bg-[#a8552e]"
@@ -381,6 +380,7 @@ function CodeScreen({
 }) {
   const [status, setStatus] = useState<"waiting" | "promoted" | "gone">("waiting");
   const [pulseCount, setPulseCount] = useState(0);
+  const [homeRedirectIn, setHomeRedirectIn] = useState(HOME_REDIRECT_SECONDS);
   const navigate = useNavigate();
   const formUrl = kiosk ? `/e/${slug}?kiosk=1` : `/e/${slug}`;
 
@@ -416,6 +416,20 @@ function CodeScreen({
     }
   }, [status, kiosk, slug, formUrl, navigate]);
 
+  // Off-kiosk: this is someone's own phone, so send them back to the
+  // homepage rather than leaving them stranded on the confirmation screen.
+  useEffect(() => {
+    if (status !== "promoted" || kiosk) return;
+    setHomeRedirectIn(HOME_REDIRECT_SECONDS);
+    const tick = setInterval(() => setHomeRedirectIn((seconds) => seconds - 1), 1000);
+    return () => clearInterval(tick);
+  }, [status, kiosk]);
+
+  useEffect(() => {
+    if (status !== "promoted" || kiosk || homeRedirectIn > 0) return;
+    navigate("/", { replace: true });
+  }, [status, kiosk, homeRedirectIn, navigate]);
+
   // Promoted resets itself in 6s; waiting gets the long idle deadline (a
   // reset destroys the only copy of the code), gone the short one.
   const idleGuard =
@@ -444,6 +458,15 @@ function CodeScreen({
         <Link to={formUrl} replace className="text-primary underline underline-offset-4">
           Write another
         </Link>
+        {!kiosk && (
+          <p className="text-sm text-muted-tan">
+            Taking you back to <a href="https://whatsyourtake.us">whatsyourtake.us</a> in{" "}
+            {Math.max(homeRedirectIn, 0)}s.{" "}
+            <Link to="/" replace className="text-primary underline underline-offset-4">
+              Go now
+            </Link>
+          </p>
+        )}
         <EventLabel eventName={eventName} city={city} />
       </div>
     );
