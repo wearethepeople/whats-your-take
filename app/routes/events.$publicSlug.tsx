@@ -3,7 +3,7 @@ import type { Route } from "./+types/events.$publicSlug";
 import { db } from "~/db/client.server";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { DashedDivider, GoldUnderline, LiveStateNote, Stamp } from "~/components/visual-grammar";
-import { formatRevealDate } from "~/features/events/reveal-date";
+import { revealAnnouncement, type RevealAnnouncement } from "~/features/events/reveal-date";
 import { eventDetail } from "~/features/events/services/season.server";
 
 function formatDateStamp(date: Date): string {
@@ -32,6 +32,22 @@ function daysUntil(date: Date): number {
   return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86_400_000));
 }
 
+// Same highlighted-date treatment as the homepage's reveal copy, so a known
+// date reads the same way everywhere it's mentioned, not just on home.tsx.
+// The label and preposition themselves come from revealAnnouncement() (see
+// reveal-date.ts) — the one place that decides "on {day}" vs "in {month}" —
+// so this only has to decide how to lay them out.
+function RevealClause({ announcement }: { announcement: RevealAnnouncement | null }) {
+  return announcement ? (
+    <>
+      , {announcement.preposition}{" "}
+      <span className="bg-accent px-0.5 font-semibold">{announcement.label}</span>
+    </>
+  ) : (
+    ", on a date to be announced"
+  );
+}
+
 // Same "underline the last word" simplification as the homepage's
 // PromptHeadline — event names are host-authored, no reliable clause
 // boundary to detect.
@@ -47,7 +63,7 @@ function EventHeadline({ text }: { text: string }) {
 
 export default function EventDetail({ loaderData }: Route.ComponentProps) {
   const { event } = loaderData;
-  const revealDateLabel = event.revealDate ? formatRevealDate(event.revealDate) : null;
+  const announcement = revealAnnouncement(event.revealDate);
   const daysToReveal = event.revealDate ? daysUntil(event.revealDate.date) : null;
   const sealed = event.status === "sealed";
   const scheduled = event.status === "scheduled";
@@ -77,8 +93,8 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
               <p className="text-muted-foreground">
                 This day&rsquo;s table has closed. Physical cards are still being transcribed, so
                 the count isn&rsquo;t final yet — once it is, these takes join the record and open
-                with every other stop{revealDateLabel ? ` on ${revealDateLabel}` : ""}, at the
-                season premiere.
+                with every other stop
+                <RevealClause announcement={announcement} />, at the season premiere.
               </p>
             </div>
           ) : sealed ? (
@@ -86,7 +102,8 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
               <Stamp className="border-primary text-primary">Sealed</Stamp>
               <p className="text-muted-foreground">
                 This day&rsquo;s {event.takeCount} takes are in the record. They open with every
-                other stop{revealDateLabel ? ` on ${revealDateLabel}` : ""}, at the season premiere.
+                other stop
+                <RevealClause announcement={announcement} />, at the season premiere.
               </p>
             </div>
           ) : scheduled ? (

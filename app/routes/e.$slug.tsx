@@ -11,7 +11,8 @@ import type { Route } from "./+types/e.$slug";
 import { db } from "~/db/client.server";
 import { events, prompts } from "~/db/schema.server";
 import { eq } from "drizzle-orm";
-import { DashedDivider, GoldUnderline, Stamp } from "~/components/visual-grammar";
+import { DashedDivider, GoldUnderline } from "~/components/visual-grammar";
+import { revealAnnouncement, type RevealDate } from "~/features/events/reveal-date";
 import { claimCodeQr } from "~/submissions/qr.server";
 import { MAX_BODY_LENGTH } from "~/submissions/constants";
 import { stageDraft } from "~/submissions/stage.server";
@@ -26,9 +27,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const row = db
     .select({
       eventName: events.name,
+      venue: events.venue,
       city: events.city,
+      state: events.state,
       status: events.status,
       promptText: prompts.text,
+      revealDate: prompts.revealDate,
+      revealPrecision: prompts.revealPrecision,
     })
     .from(events)
     .innerJoin(prompts, eq(events.promptId, prompts.id))
@@ -36,11 +41,17 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     .get();
   if (!row || row.status === "draft") throw data(null, { status: 404 });
   const url = new URL(request.url);
+  const revealDate: RevealDate | null = row.revealDate
+    ? { date: row.revealDate, precision: row.revealPrecision ?? "day" }
+    : null;
   return {
     slug: params.slug,
     eventName: row.eventName,
+    venue: row.venue,
     city: row.city,
+    state: row.state,
     promptText: row.promptText,
+    revealDate,
     open: row.status === "open",
     kiosk: url.searchParams.has("kiosk"),
   };
@@ -170,17 +181,44 @@ function SubmissionShell({ kiosk, children }: { kiosk: boolean; children: React.
   );
 }
 
-// Mono-caps event label used at the foot of the Recorded/Added states.
-function EventLabel({ eventName, city }: { eventName: string; city: string }) {
+// Closing footer for every screen in the flow: which event this is, so a
+// participant is never unsure they're taking at the right table even though
+// in practice there's only ever the one open at a time.
+function EventFooter({
+  eventName,
+  venue,
+  city,
+  state,
+}: {
+  eventName: string;
+  venue: string | null;
+  city: string;
+  state: string | null;
+}) {
+  const location = [venue, state ? `${city}, ${state}` : city].filter(Boolean).join(" · ");
   return (
-    <p className="text-center font-mono text-xs tracking-wide text-muted-tan uppercase">
-      {eventName} · {city}
-    </p>
+    <div className="w-full border-t border-dashed border-(--color-dashed) pt-4 text-center">
+      <p className="text-sm font-bold">{eventName}</p>
+      <p className="font-mono text-xs tracking-wide text-muted-tan uppercase">{location}</p>
+    </div>
+  );
+}
+
+// Same wordmark + tagline pairing as SiteHeader, echoed at the top of every
+// screen in this flow so the submission card reads as the same site, not a
+// separately-branded kiosk app. Always left-aligned, even on the screens
+// below that center everything else.
+function BrandMark() {
+  return (
+    <div className="mb-4 flex items-baseline gap-2 self-start">
+      <span className="text-[17px] font-bold">What&rsquo;s Your Take?</span>
+      <span className="text-[12.5px] text-muted-tan">A civic mirror project</span>
+    </div>
   );
 }
 
 export default function EventSubmit({ loaderData, actionData }: Route.ComponentProps) {
-  const { slug, eventName, city, promptText, open, kiosk } = loaderData;
+  const { slug, eventName, venue, city, state, promptText, revealDate, open, kiosk } = loaderData;
   const navigate = useNavigate();
   const [resetEpoch, setResetEpoch] = useState(0);
   const formUrl = kiosk ? `/e/${slug}?kiosk=1` : `/e/${slug}`;
@@ -215,7 +253,10 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
           slug={slug}
           kiosk={kiosk}
           eventName={eventName}
+          venue={venue}
           city={city}
+          state={state}
+          revealDate={revealDate}
           claimCode={staged.claimCode}
           qrModules={staged.qrModules}
           onIdleReset={handleIdleReset}
@@ -232,6 +273,10 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
         key={resetEpoch}
         slug={slug}
         kiosk={kiosk}
+        eventName={eventName}
+        venue={venue}
+        city={city}
+        state={state}
         promptText={promptText}
         initialBody={(actionData && "body" in actionData ? actionData.body : "") ?? ""}
         error={(actionData && "error" in actionData ? actionData.error : null) ?? null}
@@ -243,12 +288,20 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
 function ComposeForm({
   slug,
   kiosk,
+  eventName,
+  venue,
+  city,
+  state,
   promptText,
   initialBody,
   error,
 }: {
   slug: string;
   kiosk: boolean;
+  eventName: string;
+  venue: string | null;
+  city: string;
+  state: string | null;
   promptText: string;
   initialBody: string;
   error: string | null;
@@ -289,10 +342,7 @@ function ComposeForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-baseline gap-2 mb-4">
-        <span className="text-[17px] font-bold">What&rsquo;s Your Take?</span>
-        <span className="text-[12.5px] text-muted-tan">A civic mirror project</span>
-      </div>
+      <BrandMark />
 
       <h1 className="text-[27px] leading-tight font-bold">
         {words.join(" ")} {lastWord ? <GoldUnderline>{lastWord}</GoldUnderline> : null}
@@ -338,6 +388,8 @@ function ComposeForm({
           Add your voice
         </button>
       </Form>
+
+      <EventFooter eventName={eventName} venue={venue} city={city} state={state} />
     </div>
   );
 }
@@ -365,7 +417,10 @@ function CodeScreen({
   slug,
   kiosk,
   eventName,
+  venue,
   city,
+  state,
+  revealDate,
   claimCode,
   qrModules,
   onIdleReset,
@@ -373,7 +428,10 @@ function CodeScreen({
   slug: string;
   kiosk: boolean;
   eventName: string;
+  venue: string | null;
   city: string;
+  state: string | null;
+  revealDate: RevealDate | null;
   claimCode: string;
   qrModules: boolean[][];
   onIdleReset: () => void;
@@ -442,32 +500,42 @@ function CodeScreen({
     );
 
   if (status === "promoted") {
+    const announcement = revealAnnouncement(revealDate);
     return (
       <div className="flex flex-col items-center gap-4 text-center">
-        <Stamp rotate="3deg" className="border-primary bg-primary text-primary-foreground">
-          Added
-        </Stamp>
-        <h1 className="text-2xl font-bold">You&rsquo;re in the book.</h1>
-        <p className="text-muted-foreground">
-          Thanks. Your take joins the day&rsquo;s corpus. It stays sealed with everything else until
-          the season premiere, when the whole record opens at once at whatsyourtake.us.
-        </p>
+        <BrandMark />
         <div className="flex size-[72px] items-center justify-center rounded-full bg-accent">
           <Check className="size-9 text-foreground" strokeWidth={3} aria-hidden="true" />
         </div>
-        <Link to={formUrl} replace className="text-primary underline underline-offset-4">
-          Write another
-        </Link>
+        <h1 className="text-2xl font-bold">You&rsquo;re in the book.</h1>
+        <p className="text-muted-foreground">
+          Thanks! Your take joins the day&rsquo;s corpus. It stays sealed with everything else until
+          the whole record opens at once
+          {announcement
+            ? `, ${announcement.preposition} ${announcement.label}`
+            : ", on a date to be announced"}
+          , at{" "}
+          <a href="https://whatsyourtake.us" className="text-primary underline underline-offset-4">
+            whatsyourtake.us
+          </a>
+          .
+        </p>
         {!kiosk && (
           <p className="text-sm text-muted-tan">
-            Taking you back to <a href="https://whatsyourtake.us">whatsyourtake.us</a> in{" "}
-            {Math.max(homeRedirectIn, 0)}s.{" "}
+            Taking you back to{" "}
+            <a
+              href="https://whatsyourtake.us"
+              className="text-primary underline underline-offset-4"
+            >
+              whatsyourtake.us
+            </a>{" "}
+            in {Math.max(homeRedirectIn, 0)}s.{" "}
             <Link to="/" replace className="text-primary underline underline-offset-4">
               Go now
             </Link>
           </p>
         )}
-        <EventLabel eventName={eventName} city={city} />
+        <EventFooter eventName={eventName} venue={venue} city={city} state={state} />
       </div>
     );
   }
@@ -495,13 +563,12 @@ function CodeScreen({
 
   return (
     <div className="flex flex-col items-center gap-4 text-center">
+      <BrandMark />
       {idleGuard}
-      <Stamp rotate="-4deg" className="border-primary text-primary">
-        Recorded
-      </Stamp>
       <h1 className="text-2xl font-bold">Now find your host.</h1>
       <p className="text-muted-foreground">
-        One scan adds your take to everything this place said today.
+        The host enters this code to put your take in the book. It expires in 15 minutes
+        {kiosk ? "." : "; your draft stays saved on this device."}
       </p>
 
       <div className="flex w-full flex-col items-center gap-3 rounded-2xl bg-white p-6">
@@ -527,14 +594,10 @@ function CodeScreen({
         <p className="text-sm text-muted-tan">Scan won&rsquo;t take? Your host can type this in.</p>
       </div>
 
-      <p className="text-muted-foreground">
-        The host enters this code to put your take in the book. It expires in 15 minutes
-        {kiosk ? "." : "; your draft stays saved on this device."}
-      </p>
       <Link to={formUrl} replace className="text-primary underline underline-offset-4">
         Back to the form
       </Link>
-      <EventLabel eventName={eventName} city={city} />
+      <EventFooter eventName={eventName} venue={venue} city={city} state={state} />
     </div>
   );
 }

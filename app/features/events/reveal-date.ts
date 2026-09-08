@@ -17,3 +17,17 @@ export function formatRevealDate(reveal: RevealDate): string {
     year: "numeric",
   }).format(reveal.date);
 }
+
+// Prose announcing a reveal date needs a label and a preposition that
+// agrees with it — "on" fits a specific day, but a month-only commitment
+// ("in July 2027") reads wrong with "on". One function decides both so
+// every screen that announces the reveal date agrees with every other.
+export type RevealAnnouncement = { label: string; preposition: "on" | "in" };
+
+export function revealAnnouncement(reveal: RevealDate | null): RevealAnnouncement | null {
+  if (!reveal) return null;
+  return {
+    label: formatRevealDate(reveal),
+    preposition: reveal.precision === "month" ? "in" : "on",
+  };
+}
