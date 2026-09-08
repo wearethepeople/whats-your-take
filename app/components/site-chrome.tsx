@@ -32,9 +32,12 @@ const activeUnderline = "[box-shadow:inset_0_-6px_0_var(--color-accent)]";
 
 // Hover feedback for inactive nav items: a thin underline, lighter than the
 // active-page gold bar above and lighter than the "Find the table" button's
-// hover wash.
+// hover wash. Drawn as a pseudo-element (not text-decoration) so it can
+// animate: scaled to 0 width at rest, expanding from the center on hover.
+// A steep ease-out curve — most of the growth happens in a quick initial
+// burst, then it lingers into the finish — rather than a constant rate.
 const hoverUnderline =
-  "hover:underline hover:decoration-2 hover:underline-offset-4 hover:decoration-border";
+  "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:origin-center after:scale-x-0 after:bg-border after:transition-transform after:duration-750 after:ease-[cubic-bezier(0.16,1,0.3,1)] after:content-[''] hover:after:scale-x-100";
 
 export function SiteHeader({ active }: { active?: NavKey }) {
   return (
