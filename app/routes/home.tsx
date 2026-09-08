@@ -284,7 +284,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 All stops
               </Link>
             </div>
-            <div className="flex flex-col">
+            <div className="grid grid-cols-[auto_1fr_6rem_auto] gap-x-4 sm:gap-x-8">
               {view.ledger.map((event) => (
                 <LedgerRow key={event.id} event={event} />
               ))}
@@ -400,7 +400,7 @@ function LedgerRow({
   return (
     <Link
       to={`/events/${event.publicSlug}`}
-      className={`grid grid-cols-[auto_1fr_6rem_auto] items-center gap-4 border-b border-foreground/10 px-3 py-4 first:border-t sm:gap-8 ${
+      className={`col-span-full grid grid-cols-subgrid items-center border-b border-foreground/10 px-3 py-4 first:border-t ${
         status.rowHighlight ? "bg-card" : ""
       }`}
     >

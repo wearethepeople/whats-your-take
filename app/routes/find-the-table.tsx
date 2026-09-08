@@ -132,8 +132,9 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
             Come find <GoldUnderline>the table.</GoldUnderline>
           </h1>
           <p className="max-w-prose text-[17.5px] text-muted-foreground">
-            Look for the canopy and the long table. Sitting down takes two minutes; watching is
-            welcome too. Answering happens only here. It&rsquo;s the whole point.
+            Some stops have the canopy and the long table &mdash; sit down, it takes two minutes, or
+            just watch. Others are just a host with a sign, taking answers on the spot. Either way,
+            you can only answer in person. That&rsquo;s the point.
           </p>
         </section>
 
@@ -173,8 +174,8 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
               </div>
 
               {upcoming.length > 0 ? (
-                <div className="flex flex-col">
-                  <div className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-4 border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase sm:gap-8">
+                <div className="grid grid-cols-[auto_auto_1fr_auto] gap-x-4 sm:gap-x-8">
+                  <div className="col-span-full grid grid-cols-subgrid items-center border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase">
                     <span>No.</span>
                     <span>Date</span>
                     <span>Stop</span>
@@ -221,7 +222,7 @@ function UpcomingRow({
   return (
     <Link
       to={`/events/${event.publicSlug}`}
-      className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-4 border-b border-foreground/10 px-0 py-4 sm:gap-8"
+      className="col-span-full grid grid-cols-subgrid items-center border-b border-foreground/10 px-0 py-4"
     >
       <span className="font-mono text-sm text-muted-foreground">
         {String(event.stopNumber).padStart(2, "0")}

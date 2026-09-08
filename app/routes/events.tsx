@@ -101,22 +101,25 @@ export default function Events({ loaderData }: Route.ComponentProps) {
         {archive.events.length > 0 ? (
           <section className="flex flex-col gap-8 px-6 py-10 sm:px-14">
             {seasons.map((group) => (
-              <div key={group.promptId}>
+              <div
+                key={group.promptId}
+                className="grid grid-cols-[auto_auto_1fr_auto_auto] gap-x-4 sm:gap-x-8"
+              >
                 {showSeasonHeaders ? (
-                  <h2 className="mb-2 font-serif text-xl font-semibold">{group.seasonLabel}</h2>
+                  <h2 className="col-span-full mb-2 font-serif text-xl font-semibold">
+                    {group.seasonLabel}
+                  </h2>
                 ) : null}
-                <div className="grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-4 border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase sm:gap-8">
+                <div className="col-span-full grid grid-cols-subgrid items-center border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase">
                   <span>No.</span>
                   <span>Date</span>
                   <span>Stop</span>
                   <span>Takes</span>
                   <span>Status</span>
                 </div>
-                <div className="flex flex-col">
-                  {group.events.map((event) => (
-                    <ArchiveRow key={event.id} event={event} />
-                  ))}
-                </div>
+                {group.events.map((event) => (
+                  <ArchiveRow key={event.id} event={event} />
+                ))}
               </div>
             ))}
           </section>
@@ -161,7 +164,7 @@ function ArchiveRow({
   return (
     <Link
       to={`/events/${event.publicSlug}`}
-      className={`grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-4 border-b border-foreground/10 px-0 py-4 sm:gap-8 ${
+      className={`col-span-full grid grid-cols-subgrid items-center border-b border-foreground/10 px-0 py-4 ${
         status.rowHighlight ? "bg-card" : ""
       }`}
     >
