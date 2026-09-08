@@ -284,10 +284,12 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 All stops
               </Link>
             </div>
-            <div className="grid grid-cols-[auto_1fr_6rem_auto] gap-x-4 sm:gap-x-8">
-              {view.ledger.map((event) => (
-                <LedgerRow key={event.id} event={event} />
-              ))}
+            <div className="overflow-x-auto">
+              <div className="grid grid-cols-[auto_1fr_6rem_auto] gap-x-4 sm:gap-x-8">
+                {view.ledger.map((event) => (
+                  <LedgerRow key={event.id} event={event} />
+                ))}
+              </div>
             </div>
           </section>
         ) : null}

@@ -174,16 +174,18 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
               </div>
 
               {upcoming.length > 0 ? (
-                <div className="grid grid-cols-[auto_auto_1fr_auto] gap-x-4 sm:gap-x-8">
-                  <div className="col-span-full grid grid-cols-subgrid items-center border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase">
-                    <span>No.</span>
-                    <span>Date</span>
-                    <span>Stop</span>
-                    <span>Status</span>
+                <div className="overflow-x-auto">
+                  <div className="grid grid-cols-[auto_auto_1fr_auto] gap-x-4 sm:gap-x-8">
+                    <div className="col-span-full grid grid-cols-subgrid items-center border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase">
+                      <span>No.</span>
+                      <span>Date</span>
+                      <span>Stop</span>
+                      <span>Status</span>
+                    </div>
+                    {upcoming.map((event) => (
+                      <UpcomingRow key={event.id} event={event} />
+                    ))}
                   </div>
-                  {upcoming.map((event) => (
-                    <UpcomingRow key={event.id} event={event} />
-                  ))}
                 </div>
               ) : null}
 
