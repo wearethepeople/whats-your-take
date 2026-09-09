@@ -53,6 +53,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     promptText: row.promptText,
     revealDate,
     open: row.status === "open",
+    scheduled: row.status === "scheduled",
     kiosk: url.searchParams.has("kiosk"),
   };
 }
@@ -218,7 +219,8 @@ function BrandMark() {
 }
 
 export default function EventSubmit({ loaderData, actionData }: Route.ComponentProps) {
-  const { slug, eventName, venue, city, state, promptText, revealDate, open, kiosk } = loaderData;
+  const { slug, eventName, venue, city, state, promptText, revealDate, open, scheduled, kiosk } =
+    loaderData;
   const navigate = useNavigate();
   const [resetEpoch, setResetEpoch] = useState(0);
   const formUrl = kiosk ? `/e/${slug}?kiosk=1` : `/e/${slug}`;
@@ -237,9 +239,18 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
         <ManifestTags slug={slug} />
         <h1 className="text-2xl font-bold">{eventName}</h1>
         <p className="mt-3 text-muted-foreground">
-          This table has closed. What was said here stays sealed with every other stop. The portrait
-          and the full corpus open together at the season premiere, not before.
+          {scheduled ? (
+            "This table hasn't opened yet. Come back once the event starts."
+          ) : (
+            <>
+              This table has closed. What was said here stays sealed with every other stop. The
+              portrait and the full corpus open together at the season premiere, not before.
+            </>
+          )}
         </p>
+        <Link to="/" className="mt-4 inline-block text-primary underline underline-offset-4">
+          Back to whatsyourtake.us
+        </Link>
       </SubmissionShell>
     );
   }
