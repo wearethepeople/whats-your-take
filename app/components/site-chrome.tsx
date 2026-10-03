@@ -14,6 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "~/components/ui/sheet";
+import { InstagramIcon } from "~/components/instagram-icon";
 import { WrtpIcon } from "~/components/wrtp-icon";
 import { cn } from "~/lib/utils";
 
@@ -118,12 +119,22 @@ export function SiteFooter() {
           </a>{" "}
           project
         </p>
-        <a
-          href="mailto:info@wearethepeople.us"
-          className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-        >
-          info@wearethepeople.us
-        </a>
+        <div className="flex items-center gap-2 mt-2">
+          <a
+            href="https://www.instagram.com/wrtp.us/"
+            rel="noreferrer"
+            aria-label="We (ARE) the People on Instagram (@wrtp.us)"
+            className="text-muted-foreground hover:text-footer-foreground"
+          >
+            <InstagramIcon className="size-3.5" />
+          </a>
+          <a
+            href="mailto:info@wearethepeople.us"
+            className="hover:text-footer-foreground text-xs text-muted-foreground underline-offset-2 hover:underline"
+          >
+            info@wearethepeople.us
+          </a>
+        </div>
       </div>
       <nav className="flex flex-col gap-2 lg:flex-row lg:gap-6">
         {NAV_LINKS.map((link) => (
