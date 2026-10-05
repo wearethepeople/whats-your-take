@@ -37,8 +37,9 @@ host-promoted by claim code; event-open only) · run the table (host console)
 ## Never do
 
 - Add a field, log, or join that could identify a participant (I1, I2)
-- Store sub-hour timestamps anywhere; public surfaces carry
-  `created_bucket` only (I4)
+- Store sub-hour timestamps for a participant's submission; public surfaces
+  carry `created_bucket` only (I4). Host-action times (e.g.
+  `response_revisions.revised_at`) are real and internal-only
 - Show responses to participants mid-event; count is the only live mirror (I6)
 - Claim data is viewable but not exportable (I3)
 - Delete responses; `hidden` is terminal, append-only (I5)

@@ -249,12 +249,16 @@ Response
                                            -- 2026-08-16)
 
 ResponseRevision                           -- added 2026-10-04: append-only
-  id, response_id, body                    -- log of a card's PRIOR body,
-                                           -- written in the same transaction
+  id, response_id, body,                   -- log of a card's PRIOR body,
+  revised_at                               -- written in the same transaction
                                            -- as each host edit (I5: edits
                                            -- destroy nothing). Host-internal;
                                            -- never exported or rendered.
-                                           -- Deliberately no timestamp (I4).
+                                           -- revised_at is a REAL timestamp:
+                                           -- it is the host's edit time, not
+                                           -- participant submission timing,
+                                           -- so I4's truncation (amended
+                                           -- 2026-10-04) doesn't apply.
 
 PresenceWindow                             -- per 60s clock window: staging
   id, event_id, window_start, window_end,  -- counts for telemetry + the

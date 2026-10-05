@@ -61,6 +61,11 @@ be correlated with photos or video of who was at the table when.
 (Amended 2026-07-19 from "precise time internal": full precision proved to
 serve no validation or abuse-detection need.)
 
+I4 governs a participant's submission timing. Host-action times — e.g.
+`response_revisions.revised_at`, when the host corrected a card — are real
+timestamps and internal-only: they say when the host worked, not when anyone
+was at the table. (Added 2026-10-04.)
+
 ## I5 — Append-only moderation
 
 Responses are `pending` until approved. `hidden` is a terminal state, not
