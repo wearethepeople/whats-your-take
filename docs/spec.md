@@ -207,7 +207,13 @@ Event
   narrative (nullable)                  -- host-authored, added 2026-08-07
                                          -- for the public event detail
                                          -- page ("how the day went");
-                                         -- never response content
+                                         -- never response content.
+                                         -- Markdown source (2026-10-04),
+                                         -- restricted subset: paragraphs,
+                                         -- emphasis, lists, quotes,
+                                         -- headings, links; no images,
+                                         -- no raw HTML (I1/I6: no remote
+                                         -- loads from the public page)
   status: draft | open | closed | archived,
   created_at
 

@@ -1,6 +1,7 @@
 import { data } from "react-router";
 import type { Route } from "./+types/events.$publicSlug";
 import { db } from "~/db/client.server";
+import { NarrativeMarkdown } from "~/components/narrative-markdown";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { DashedDivider, GoldUnderline, LiveStateNote, Stamp } from "~/components/visual-grammar";
 import { revealAnnouncement, type RevealAnnouncement } from "~/features/events/reveal-date";
@@ -81,11 +82,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           </p>
           <EventHeadline text={event.name} />
 
-          {event.narrative ? (
-            <p className="max-w-prose whitespace-pre-wrap text-muted-foreground">
-              {event.narrative}
-            </p>
-          ) : null}
+          {event.narrative ? <NarrativeMarkdown source={event.narrative} /> : null}
 
           {sealed && liveState === "transcribing" ? (
             <div className="flex flex-wrap items-center gap-4 border border-dashed border-primary p-5">

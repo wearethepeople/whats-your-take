@@ -63,6 +63,7 @@ export const eventFormSchema = z.object({
   narrative: z
     .string()
     .trim()
+    .max(10_000, "Narrative is limited to 10,000 characters.")
     .optional()
     .transform((value) => (value ? value : null)),
 });

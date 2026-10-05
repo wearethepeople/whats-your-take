@@ -286,13 +286,13 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
 
             <Field
               htmlFor="narrative"
-              label="Narrative (optional: how the day went, for the public event page)"
+              label="Narrative (optional: how the day went, for the public event page). Markdown: emphasis, lists, quotes, headings, links. No images or HTML."
             >
               <Textarea
                 id="narrative"
                 name="narrative"
                 defaultValue={event.narrative ?? ""}
-                rows={5}
+                rows={8}
               />
             </Field>
 

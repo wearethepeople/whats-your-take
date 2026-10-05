@@ -235,4 +235,25 @@ describe("eventFormSchema", () => {
     expect(parsed.data.venue).toBeNull();
     expect(parsed.data.zip).toBeNull();
   });
+
+  it("keeps Markdown narrative source verbatim and rejects an over-long one", () => {
+    const form = {
+      slug: "fair-2026",
+      name: "State Fair",
+      venue: "Fairgrounds",
+      address: "",
+      zip: "75210",
+      city: "Dallas",
+      state: "TX",
+      startsAt: "2026-09-25T10:00",
+      endsAt: "2026-09-25T20:00",
+    };
+    const markdown = "A **good** day.\n\n- one\n- two";
+    const ok = eventFormSchema.safeParse({ ...form, narrative: markdown });
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.narrative).toBe(markdown);
+
+    const tooLong = eventFormSchema.safeParse({ ...form, narrative: "x".repeat(10_001) });
+    expect(tooLong.success).toBe(false);
+  });
 });
