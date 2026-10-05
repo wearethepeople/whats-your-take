@@ -29,6 +29,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const result = enterCard(db, {
     eventId: Number(params.id),
     body: form.get("body"),
+    nameFlag: form.get("nameFlag") === "on",
     now: new Date(),
   });
   const entered = Number(form.get("entered") ?? 0) + (result.ok ? 1 : 0);
@@ -86,6 +87,10 @@ function CardForm({ actionData }: { actionData: Route.ComponentProps["actionData
       <Field htmlFor="body" label="Card text (one card per entry; Ctrl/Cmd+Enter to submit)">
         <Textarea id="body" name="body" rows={6} maxLength={MAX_BODY_LENGTH} autoFocus required />
       </Field>
+      <label htmlFor="nameFlag" className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <input id="nameFlag" name="nameFlag" type="checkbox" className="size-4" />
+        Name or identifier was written on card
+      </label>
       {actionData ? (
         <p
           className={`banner ${actionData.ok ? "banner-ok" : "banner-error"}`}

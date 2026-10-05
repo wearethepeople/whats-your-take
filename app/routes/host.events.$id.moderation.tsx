@@ -1,10 +1,19 @@
-import { data, Form, Link } from "react-router";
+import { Fragment, useEffect, useState } from "react";
+import { data, Form, Link, useFetcher } from "react-router";
 import type { Route } from "./+types/host.events.$id.moderation";
 import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
 import { db } from "~/db/client.server";
 import { getEvent } from "~/features/events/services/lifecycle.server";
+import { Field } from "~/host/field";
 import { HostSection } from "~/host/section";
-import { approveResponse, hideResponse, listForModeration } from "~/submissions/moderate.server";
+import { MAX_BODY_LENGTH } from "~/submissions/constants";
+import {
+  approveResponse,
+  editCard,
+  hideResponse,
+  listForModeration,
+} from "~/submissions/moderate.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return [{ title: `Moderation · ${loaderData?.event.name ?? "Event"} · What’s Your Take?` }];
@@ -18,6 +27,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     body: row.body,
     channel: row.channel,
     status: row.status,
+    nameFlag: row.nameFlag,
     createdBucket: row.createdBucket,
   }));
   return {
@@ -39,46 +49,132 @@ export async function action({ request, params }: Route.ActionArgs) {
       ? approveResponse(db, responseId)
       : intent === "hide"
         ? hideResponse(db, responseId)
-        : ({ ok: false, message: "Unknown action." } as const);
+        : intent === "edit"
+          ? editCard(db, responseId, {
+              body: form.get("body"),
+              nameFlag: form.get("nameFlag") === "on",
+            })
+          : ({ ok: false, message: "Unknown action." } as const);
+  const done = { approve: "Approved.", hide: "Hidden.", edit: "Saved." }[intent];
   return result.ok
-    ? { ok: true as const, message: intent === "approve" ? "Approved." : "Hidden." }
+    ? { ok: true as const, message: done ?? "Done." }
     : { ok: false as const, message: result.message };
+}
+
+type ModerationRow = {
+  id: number;
+  body: string;
+  channel: string;
+  nameFlag: boolean;
+  createdBucket: string | null;
+};
+
+function EditCardForm({ row, onDone }: { row: ModerationRow; onDone: () => void }) {
+  const fetcher = useFetcher<typeof action>();
+  const saved = fetcher.state === "idle" && fetcher.data?.ok === true;
+  useEffect(() => {
+    if (saved) onDone();
+  }, [saved, onDone]);
+  return (
+    <fetcher.Form method="post" className="flex flex-col items-start gap-3">
+      <input type="hidden" name="intent" value="edit" />
+      <input type="hidden" name="responseId" value={row.id} />
+      <Field htmlFor={`body-${row.id}`} label="Card text">
+        <Textarea
+          id={`body-${row.id}`}
+          name="body"
+          rows={6}
+          maxLength={MAX_BODY_LENGTH}
+          defaultValue={row.body}
+          required
+        />
+      </Field>
+      <label
+        htmlFor={`nameFlag-${row.id}`}
+        className="flex items-center gap-1.5 text-sm text-muted-foreground"
+      >
+        <input
+          id={`nameFlag-${row.id}`}
+          name="nameFlag"
+          type="checkbox"
+          defaultChecked={row.nameFlag}
+          className="size-4"
+        />
+        Name or identifier was written on card
+      </label>
+      {fetcher.data && !fetcher.data.ok ? (
+        <p className="banner banner-error" role="alert">
+          {fetcher.data.message}
+        </p>
+      ) : null}
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={fetcher.state !== "idle"}>
+          Save
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={onDone}>
+          Cancel
+        </Button>
+      </div>
+    </fetcher.Form>
+  );
 }
 
 function ResponseList({
   rows,
   actions,
+  editable = false,
 }: {
-  rows: { id: number; body: string; channel: string; createdBucket: string | null }[];
+  rows: ModerationRow[];
   actions: ("approve" | "hide")[];
+  editable?: boolean;
 }) {
+  const [editingId, setEditingId] = useState<number | null>(null);
   if (rows.length === 0) return <p className="text-muted-foreground">None.</p>;
   return (
     <ul className="flex flex-col gap-4">
       {rows.map((row) => (
         <li key={row.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
-          <blockquote className="m-0 border-l-2 border-border py-0 pl-3 whitespace-pre-wrap">
-            {row.body}
-          </blockquote>
-          <p className="mt-1 mb-2 text-sm text-muted-foreground">
-            {row.channel}
-            {row.createdBucket ? ` · ${row.createdBucket}` : ""}
-          </p>
-          <div className="flex gap-2">
-            {actions.map((intent) => (
-              <Form method="post" key={intent}>
-                <input type="hidden" name="intent" value={intent} />
-                <input type="hidden" name="responseId" value={row.id} />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant={intent === "hide" ? "destructive" : "outline"}
-                >
-                  {intent === "approve" ? "Approve" : "Hide"}
-                </Button>
-              </Form>
-            ))}
-          </div>
+          {editingId === row.id ? (
+            <EditCardForm row={row} onDone={() => setEditingId(null)} />
+          ) : (
+            <>
+              <blockquote className="m-0 border-l-2 border-border py-0 pl-3 whitespace-pre-wrap">
+                {row.body}
+              </blockquote>
+              <p className="mt-1 mb-2 text-sm text-muted-foreground">
+                {row.channel}
+                {row.createdBucket ? ` · ${row.createdBucket}` : ""}
+                {row.nameFlag ? " · name or identifier on card" : ""}
+              </p>
+              <div className="flex gap-2">
+                {actions.map((intent) => (
+                  <Fragment key={intent}>
+                    {intent === "hide" && editable && row.channel === "card" ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingId(row.id)}
+                      >
+                        Edit
+                      </Button>
+                    ) : null}
+                    <Form method="post">
+                      <input type="hidden" name="intent" value={intent} />
+                      <input type="hidden" name="responseId" value={row.id} />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        variant={intent === "hide" ? "destructive" : "outline"}
+                      >
+                        {intent === "approve" ? "Approve" : "Hide"}
+                      </Button>
+                    </Form>
+                  </Fragment>
+                ))}
+              </div>
+            </>
+          )}
         </li>
       ))}
     </ul>
@@ -118,11 +214,11 @@ export default function HostModeration({ loaderData, actionData }: Route.Compone
 
       <div className="flex flex-col gap-4">
         <HostSection title={`Pending (${pending.length})`}>
-          <ResponseList rows={pending} actions={["approve", "hide"]} />
+          <ResponseList rows={pending} actions={["approve", "hide"]} editable />
         </HostSection>
 
         <HostSection title={`Approved (${approved.length})`}>
-          <ResponseList rows={approved} actions={["hide"]} />
+          <ResponseList rows={approved} actions={["hide"]} editable />
         </HostSection>
 
         <HostSection title={`Hidden (${hidden.length}): terminal, kept in the archive`}>
