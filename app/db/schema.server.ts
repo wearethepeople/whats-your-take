@@ -95,6 +95,11 @@ export const responses = sqliteTable("responses", {
     .notNull()
     .default("pending"),
   showcase: integer("showcase", { mode: "boolean" }).notNull().default(false),
+  // INTERNAL ONLY: the physical card carried a name or other identifier (the
+  // body says "[name written]"; the name itself is never stored — the scan
+  // is the record). Marks card images to mask at release. Never exported,
+  // rendered, or returned by a public surface (I3).
+  nameFlag: integer("name_flag", { mode: "boolean" }).notNull().default(false),
   // I4: hour-truncated at write via truncateToHour — sub-hour submission
   // timing is never stored. No DB default on purpose: every insert must go
   // through the time helpers.
@@ -104,6 +109,22 @@ export const responses = sqliteTable("responses", {
   // typed it in, not when the participant wrote it at the table, so a
   // day-part bucket would be fabricated. See card.server.ts.
   createdBucket: text("created_bucket"),
+});
+
+// Append-only log of a card's prior body, written in the same transaction as
+// each host edit (I5: an edit destroys nothing). Host-internal, never
+// exported or rendered. revised_at is a real timestamp: it is the host's
+// edit time, not participant submission timing, so I4's truncation doesn't
+// apply.
+export const responseRevisions = sqliteTable("response_revisions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  responseId: integer("response_id")
+    .notNull()
+    .references(() => responses.id),
+  body: text("body").notNull(),
+  revisedAt: integer("revised_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
 });
 
 // Host-uploaded venue/atmosphere photos (the table, the space, the crowd
