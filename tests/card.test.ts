@@ -26,6 +26,24 @@ describe("enterCard", () => {
     expect(row?.createdBucket).toBeNull();
   });
 
+  it("defaults name_flag to false and records it when set", () => {
+    const { db } = freshDb();
+    const { event } = seedOpenEvent(db);
+    expect(enterCard(db, { eventId: event.id, body: "no name", now: NOW }).ok).toBe(true);
+    expect(
+      enterCard(db, {
+        eventId: event.id,
+        body: "[name written] was here",
+        nameFlag: true,
+        now: NOW,
+      }).ok,
+    ).toBe(true);
+
+    const rows = db.select().from(responses).all();
+    expect(rows.find((row) => row.body === "no name")?.nameFlag).toBe(false);
+    expect(rows.find((row) => row.body.startsWith("[name written]"))?.nameFlag).toBe(true);
+  });
+
   it("accepts cards while the event is open or closed", () => {
     for (const status of ["open", "closed"] as const) {
       const { db } = freshDb();

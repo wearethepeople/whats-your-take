@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { responses } from "~/db/schema.server";
 import type { Db } from "~/db/types.server";
 import { exportRows, toCsv, toJson } from "~/submissions/export.server";
-import { approveResponse, hideResponse } from "~/submissions/moderate.server";
+import { approveResponse, editCard, hideResponse } from "~/submissions/moderate.server";
 import { insertResponse } from "~/submissions/write.server";
 import { freshDb, seedOpenEvent } from "./helpers";
 
@@ -68,6 +68,38 @@ describe("exportRows", () => {
       created_bucket: null,
       showcase: false,
     });
+  });
+
+  it("never exports name_flag or revision history (I3: internal-only)", () => {
+    const { db } = freshDb();
+    const { prompt, event } = seedOpenEvent(db);
+    const card = insertResponse(db, {
+      promptId: prompt.id,
+      eventId: event.id,
+      body: "original wording",
+      channel: "card",
+      nameFlag: true,
+      now: NOW,
+    });
+    expect(approveResponse(db, card.id).ok).toBe(true);
+    // An edit leaves the prior body in response_revisions; it must not surface.
+    expect(editCard(db, card.id, { body: "corrected [name written]", nameFlag: true }).ok).toBe(
+      true,
+    );
+
+    const rows = exportRows(db, event.id);
+    expect(rows).toEqual([
+      {
+        body: "corrected [name written]",
+        channel: "card",
+        created_bucket: null,
+        showcase: false,
+      },
+    ]);
+    for (const output of [toCsv(rows), toJson(rows)]) {
+      expect(output).not.toMatch(/name_?flag|revis/i);
+      expect(output).not.toContain("original wording");
+    }
   });
 
   it("orders by (created_at, body), never by insertion sequence", () => {
