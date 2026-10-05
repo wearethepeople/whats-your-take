@@ -218,6 +218,16 @@ Response
   status          pending | approved | hidden,
   showcase        boolean default false,   -- candidate for curated quotes /
                                            -- social panels
+  name_flag       boolean default false,   -- INTERNAL ONLY (added 2026-10-04):
+                                           -- the physical card carried a
+                                           -- name or other identifier, so
+                                           -- its scan must be masked at
+                                           -- release. The name itself is
+                                           -- NEVER stored (the body carries
+                                           -- "[name written]"; the scan is
+                                           -- the record). Never exported,
+                                           -- rendered, or returned by any
+                                           -- public surface (I3/I1).
   created_at      timestamptz,             -- TRUNCATED TO THE HOUR at write;
                                            -- sub-hour submission times are
                                            -- never recorded (amended
@@ -237,6 +247,14 @@ Response
                                            -- table, so no day-part bucket
                                            -- is fabricated for it (amended
                                            -- 2026-08-16)
+
+ResponseRevision                           -- added 2026-10-04: append-only
+  id, response_id, body                    -- log of a card's PRIOR body,
+                                           -- written in the same transaction
+                                           -- as each host edit (I5: edits
+                                           -- destroy nothing). Host-internal;
+                                           -- never exported or rendered.
+                                           -- Deliberately no timestamp (I4).
 
 PresenceWindow                             -- per 60s clock window: staging
   id, event_id, window_start, window_end,  -- counts for telemetry + the
@@ -436,6 +454,15 @@ accepted, stated here so it stays a decision and not a surprise.)
   append-only habit. The queue is available mid-event behind a prominent
   warning — discipline, not a lock, by deliberate choice (2026-08-11): if
   a host reads early it's a norm violation, not a system failure to fix.
+- Card edit (added 2026-10-04): the host can correct a transcribed card's
+  body (in place) and toggle `name_flag`, only for `channel=card` rows that
+  are `pending` or `approved` (`hidden` stays terminal; kiosk/site bodies are
+  the participant's own words and are never host-edited). Status is
+  unchanged by an edit — an approved card stays approved — and `created_at`
+  is never touched. The prior body is first appended to `ResponseRevision`,
+  which is the audit trail. Card entry can set `name_flag` at entry time;
+  moderation shows a host-only "name or identifier" badge so flagged cards'
+  images can be masked at release.
 - Corpus export: `approved` responses for an event as JSON/CSV (body, channel,
   created_bucket, showcase only). Rows are ordered (created_at, body) so row
   order never reconstructs intra-hour submission sequence — the same rule
@@ -513,7 +540,8 @@ submission path.
    of writing: anonymous, and shared publicly.
 4. **Coarse time only — sub-hour timing is never stored.** `created_at` is
    hour-truncated at write; no public artifact exposes sub-bucket timing.
-5. **Append-only moderation.** Hidden, not deleted.
+5. **Append-only moderation.** Hidden, not deleted. Card edits log the
+   prior body to an append-only revisions table.
 6. **The process cannot betray the stated goal.** No analytics on the
    submission path, no engagement mechanics, no dark patterns.
 

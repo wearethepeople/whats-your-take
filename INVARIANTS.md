@@ -44,6 +44,13 @@ aggregate counts and status, never response bodies.
 per-event model — see `docs/spec.md` Part II, "Publication posture," for the
 prior design and the note marking it superseded.)
 
+Internal-only fields never reach a public surface. `responses.name_flag`
+(the card carried a name or other identifier; its scan must be masked at
+release) and the `response_revisions` log are host-internal: never exported,
+never rendered on a public page, never returned by a public API. Public
+queries select explicit columns, never a bare `select()` on `responses`.
+(Added 2026-10-04.)
+
 ## I4 — Coarse time only; sub-hour timing is never stored
 
 `created_at` is truncated to the hour at write time — sub-hour submission
@@ -59,6 +66,11 @@ serve no validation or abuse-detection need.)
 Responses are `pending` until approved. `hidden` is a terminal state, not
 deletion. Nothing is destroyed; only `approved` rows reach any public surface
 or export.
+
+The host may correct a transcribed card (`channel=card`, `pending` or
+`approved`) after entry. The prior body is first appended to
+`response_revisions`, so an edit destroys nothing, and status is unchanged.
+`hidden` rows and non-card responses are never edited. (Added 2026-10-04.)
 
 ## I6 — The process cannot betray the stated goal
 

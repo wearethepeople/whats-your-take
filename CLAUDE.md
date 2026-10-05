@@ -43,3 +43,7 @@ host-promoted by claim code; event-open only) · run the table (host console)
 - Claim data is viewable but not exportable (I3)
 - Delete responses; `hidden` is terminal, append-only (I5)
 - Add analytics or engagement mechanics to the submission path (I6)
+- Export, render, or return `name_flag` or revisions on any public surface (I3)
+- Store a name written on a card — the scan is the record; the body says
+  "[name written]" (I1)
+- Edit a hidden row or a non-card response (I5)
