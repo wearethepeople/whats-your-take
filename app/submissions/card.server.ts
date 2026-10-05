@@ -15,7 +15,7 @@ export type CardEntryResult = { ok: true } | { ok: false; error: CardEntryError;
 
 export function enterCard(
   db: Db,
-  input: { eventId: number; body: unknown; now: Date },
+  input: { eventId: number; body: unknown; nameFlag?: boolean; now: Date },
 ): CardEntryResult {
   const event = db.select().from(events).where(eq(events.id, input.eventId)).get();
   if (!event) {
@@ -41,6 +41,7 @@ export function enterCard(
     eventId: event.id,
     body: parsed.data,
     channel: "card",
+    nameFlag: input.nameFlag ?? false,
     now: input.now,
   });
   return { ok: true };

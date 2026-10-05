@@ -20,6 +20,7 @@ export function insertResponse(
     eventId: number;
     body: string;
     channel: "kiosk" | "site" | "card";
+    nameFlag?: boolean;
     now: Date;
   },
 ) {
@@ -30,6 +31,7 @@ export function insertResponse(
       eventId: input.eventId,
       body: input.body,
       channel: input.channel,
+      nameFlag: input.nameFlag ?? false,
       createdAt: truncateToHour(input.now),
       createdBucket: input.channel === "card" ? null : bucketFor(input.now),
     })
