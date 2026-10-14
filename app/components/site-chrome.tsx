@@ -16,6 +16,7 @@ import {
 } from "~/components/ui/sheet";
 import { InstagramIcon } from "~/components/instagram-icon";
 import { WrtpIcon } from "~/components/wrtp-icon";
+import { WordmarkLine, WytLockup } from "~/components/wordmark";
 import { cn } from "~/lib/utils";
 
 export type NavKey = "question" | "events" | "about" | "find-the-table";
@@ -43,13 +44,26 @@ const hoverUnderline =
 export function SiteHeader({ active }: { active?: NavKey }) {
   return (
     <header className="flex items-center justify-between gap-6 border-b-2 border-foreground px-6 py-5 sm:px-14">
-      <div className="flex items-baseline gap-2">
-        <Link to="/" className="text-[17px] font-bold">
-          What&rsquo;s Your Take?
+      {/* The poster's top row compressed to one line: WrTP stripes, then the
+          wordmark, then the tagline hanging off the wordmark's baseline. The
+          link carries the accessible name; both marks are decorative inside
+          it. Heights step up with the viewport so the lockup clears the
+          hamburger on phones and the nav links on laptops. The full nav
+          needs about 820px beside the lockup, so tablets use the sheet. */}
+      <div className="flex items-baseline gap-3">
+        <Link
+          to="/"
+          aria-label="What’s Your Take? — home"
+          className="flex items-center gap-2.5 text-black"
+        >
+          <WrtpIcon className="h-5 w-auto text-wrtp-brand-orange lg:h-6" />
+          <WordmarkLine decorative className="h-5 w-auto lg:h-6" />
         </Link>
-        <span className="text-[12.5px] text-muted-tan">A civic mirror project</span>
+        <span className="hidden text-[12.5px] text-muted-tan xl:inline">
+          A civic mirror project.
+        </span>
       </div>
-      <nav className="hidden items-center gap-6 text-sm sm:flex">
+      <nav className="hidden items-center gap-6 text-sm whitespace-nowrap lg:flex">
         {NAV_LINKS.filter((link) => link.key !== "find-the-table").map((link) => (
           <Link
             key={link.key}
@@ -79,19 +93,22 @@ export function SiteHeader({ active }: { active?: NavKey }) {
 function MobileNav({ active }: { active?: NavKey }) {
   return (
     <Sheet>
-      <SheetTrigger render={<Button variant="outline" size="icon" />} className="sm:hidden">
+      <SheetTrigger render={<Button variant="outline" size="icon" />} className="lg:hidden">
         <MenuIcon />
         <span className="sr-only">Open menu</span>
       </SheetTrigger>
       <SheetContent side="right" className="w-3/4">
-        <SheetHeader>
-          <SheetTitle>Menu</SheetTitle>
+        <SheetHeader className="pr-12">
+          <SheetTitle className="sr-only">Menu</SheetTitle>
+          {/* Room for the stacked mark here, where the header has none. */}
+          <WytLockup decorative className="[--mark-h:80px]" />
         </SheetHeader>
         <nav className="flex flex-col gap-1 px-4 pb-4 text-base">
           {NAV_LINKS.map((link) => (
             <SheetClose
               key={link.key}
               render={<Link to={link.to} />}
+              nativeButton={false}
               className={cn(
                 "rounded-md px-2 py-3",
                 active === link.key
