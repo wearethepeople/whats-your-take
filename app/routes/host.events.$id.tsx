@@ -4,9 +4,9 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { db } from "~/db/client.server";
+import { CLAIM_NOTE_MAX } from "~/features/events/claim-note";
 import { liveCount } from "~/features/events/services/counts.server";
 import {
-  CLAIM_NOTE_MAX,
   eventFormSchema,
   getEvent,
   TRANSITION_SOURCES,

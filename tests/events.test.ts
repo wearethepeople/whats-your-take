@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import { events, prompts, stagedDrafts } from "~/db/schema.server";
 import {
   createEvent,
-  CLAIM_NOTE_MAX,
   eventFormSchema,
   transitionEvent,
   updateClaimNote,
   updateEvent,
   type EventStatus,
 } from "~/features/events/services/lifecycle.server";
+import { CLAIM_NOTE_MAX } from "~/features/events/claim-note";
 import { stageDraft } from "~/submissions/stage.server";
 import { freshDb, seedOpenEvent } from "./helpers";
 

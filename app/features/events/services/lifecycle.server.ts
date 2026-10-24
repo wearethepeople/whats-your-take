@@ -8,6 +8,7 @@ import { z } from "zod";
 import { isUniqueViolation } from "~/db/errors.server";
 import { events, prompts, responses } from "~/db/schema.server";
 import type { Db, Tx } from "~/db/types.server";
+import { CLAIM_NOTE_MAX } from "../claim-note";
 import { seasonLabels, type RevealDate } from "./season.server";
 import { sweepExpired } from "~/submissions/stage.server";
 
@@ -216,8 +217,6 @@ export function updateEvent(db: Db, input: { id: number; fields: EventFields }):
     throw cause;
   }
 }
-
-export const CLAIM_NOTE_MAX = 280;
 
 export type UpdateClaimNoteResult = { ok: true } | { ok: false; message: string };
 
