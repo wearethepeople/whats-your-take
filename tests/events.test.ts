@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { events, prompts, stagedDrafts } from "~/db/schema.server";
 import {
   createEvent,
+  CLAIM_NOTE_MAX,
   eventFormSchema,
   transitionEvent,
+  updateClaimNote,
   updateEvent,
   type EventStatus,
 } from "~/features/events/services/lifecycle.server";
@@ -255,5 +257,53 @@ describe("eventFormSchema", () => {
 
     const tooLong = eventFormSchema.safeParse({ ...form, narrative: "x".repeat(10_001) });
     expect(tooLong.success).toBe(false);
+  });
+});
+
+describe("updateClaimNote", () => {
+  const noteOf = (db: ReturnType<typeof freshDb>["db"], id: number) =>
+    db.select().from(events).where(eq(events.id, id)).get()?.claimNote;
+
+  it("starts empty, saves trimmed text, and blank clears it", () => {
+    const { db } = freshDb();
+    const { event } = seedOpenEvent(db);
+    expect(noteOf(db, event.id)).toBeNull();
+
+    expect(updateClaimNote(db, { id: event.id, note: "  Return to block 17 of 21  " }).ok).toBe(
+      true,
+    );
+    expect(noteOf(db, event.id)).toBe("Return to block 17 of 21");
+
+    expect(updateClaimNote(db, { id: event.id, note: "   " }).ok).toBe(true);
+    expect(noteOf(db, event.id)).toBeNull();
+  });
+
+  it("can change while the event is open, leaving every other field alone", () => {
+    const { db } = freshDb();
+    const { event } = seedOpenEvent(db, { status: "open" });
+    updateClaimNote(db, { id: event.id, note: "Return to block 17 of 21" });
+    updateClaimNote(db, { id: event.id, note: "Return to block 18 of 21" });
+
+    const after = db.select().from(events).where(eq(events.id, event.id)).get();
+    expect(after?.claimNote).toBe("Return to block 18 of 21");
+    expect(after?.status).toBe("open");
+    expect(after?.name).toBe(event.name);
+    expect(after?.startsAt).toEqual(event.startsAt);
+  });
+
+  it("rejects an over-long note and keeps the old one", () => {
+    const { db } = freshDb();
+    const { event } = seedOpenEvent(db);
+    updateClaimNote(db, { id: event.id, note: "keep me" });
+
+    const result = updateClaimNote(db, { id: event.id, note: "x".repeat(CLAIM_NOTE_MAX + 1) });
+    expect(result.ok).toBe(false);
+    expect(noteOf(db, event.id)).toBe("keep me");
+    expect(updateClaimNote(db, { id: event.id, note: "x".repeat(CLAIM_NOTE_MAX) }).ok).toBe(true);
+  });
+
+  it("refuses a missing event", () => {
+    const { db } = freshDb();
+    expect(updateClaimNote(db, { id: 999, note: "hi" }).ok).toBe(false);
   });
 });

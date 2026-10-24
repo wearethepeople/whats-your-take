@@ -73,6 +73,10 @@ export const events = sqliteTable("events", {
   // (how the day went). Never response content; the page works fine
   // without it.
   narrative: text("narrative"),
+  // Host-authored plain text (max 280, enforced in updateClaimNote) shown on
+  // the participant's code screen after staging — e.g. which block to return
+  // to. Editable while the event is open. Not response content.
+  claimNote: text("claim_note"),
   status: text("status", { enum: ["draft", "scheduled", "open", "closed", "archived"] })
     .notNull()
     .default("draft"),

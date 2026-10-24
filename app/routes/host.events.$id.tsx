@@ -6,10 +6,12 @@ import { Textarea } from "~/components/ui/textarea";
 import { db } from "~/db/client.server";
 import { liveCount } from "~/features/events/services/counts.server";
 import {
+  CLAIM_NOTE_MAX,
   eventFormSchema,
   getEvent,
   TRANSITION_SOURCES,
   transitionEvent,
+  updateClaimNote,
   updateEvent,
   type EventStatus,
 } from "~/features/events/services/lifecycle.server";
@@ -88,6 +90,15 @@ export async function action({ request, params }: Route.ActionArgs) {
       const result = updateEvent(db, { id: event.id, fields: parsed.data });
       return result.ok
         ? { ok: true as const, message: "Saved.", submittedAt }
+        : { ok: false as const, message: result.message, submittedAt };
+    }
+    case "claimNote": {
+      const result = updateClaimNote(db, {
+        id: event.id,
+        note: String(form.get("claimNote") ?? ""),
+      });
+      return result.ok
+        ? { ok: true as const, message: "Note saved.", submittedAt }
         : { ok: false as const, message: result.message, submittedAt };
     }
     default:
@@ -184,6 +195,25 @@ export default function HostEventDetail({ loaderData, actionData }: Route.Compon
               </a>
             </li>
           </ul>
+        </HostSection>
+
+        <HostSection title="Note on the code screen">
+          <Form method="post" className="flex flex-col items-start gap-3">
+            <input type="hidden" name="intent" value="claimNote" />
+            <Field
+              htmlFor="claimNote"
+              label="Shown to participants after they submit, above their code (e.g. “Return to block 17 of 21”). Plain text. Blank shows nothing. Takes effect on their next submit."
+            >
+              <Input
+                id="claimNote"
+                name="claimNote"
+                defaultValue={event.claimNote ?? ""}
+                maxLength={CLAIM_NOTE_MAX}
+                autoComplete="off"
+              />
+            </Field>
+            <Button type="submit">Save note</Button>
+          </Form>
         </HostSection>
 
         <HostSection title="Status">

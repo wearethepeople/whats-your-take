@@ -217,6 +217,29 @@ export function updateEvent(db: Db, input: { id: number; fields: EventFields }):
   }
 }
 
+export const CLAIM_NOTE_MAX = 280;
+
+export type UpdateClaimNoteResult = { ok: true } | { ok: false; message: string };
+
+// Its own writer, not part of eventFormSchema: the host changes this during
+// the event (block 17 → 18), and a full-form save would re-submit every other
+// field with it. Blank clears the note.
+export function updateClaimNote(
+  db: Db,
+  input: { id: number; note: string },
+): UpdateClaimNoteResult {
+  const note = input.note.trim();
+  if (note.length > CLAIM_NOTE_MAX) {
+    return { ok: false, message: `The note is limited to ${CLAIM_NOTE_MAX} characters.` };
+  }
+  const changes = db
+    .update(events)
+    .set({ claimNote: note || null })
+    .where(eq(events.id, input.id))
+    .run().changes;
+  return changes === 0 ? { ok: false, message: "No such event." } : { ok: true };
+}
+
 export type TransitionError = "invalid-transition" | "incomplete";
 export type TransitionResult =
   | { ok: true }

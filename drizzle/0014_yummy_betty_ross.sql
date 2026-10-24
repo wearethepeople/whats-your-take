@@ -1,0 +1,1 @@
+ALTER TABLE `events` ADD `claim_note` text;

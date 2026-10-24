@@ -214,6 +214,17 @@ Event
                                          -- headings, links; no images,
                                          -- no raw HTML (I1/I6: no remote
                                          -- loads from the public page)
+  claim_note (nullable)                 -- host-authored, added 2026-10-24:
+                                         -- a short plain-text line (max 280)
+                                         -- shown on the participant's code
+                                         -- screen after staging, e.g. "Return
+                                         -- to block 17 of 21". Editable at
+                                         -- any time, including while the
+                                         -- event is open (its own form on the
+                                         -- event page, so changing it doesn't
+                                         -- re-save the whole event); never
+                                         -- response content, no participant
+                                         -- data
   status: draft | open | closed | archived,
   created_at
 

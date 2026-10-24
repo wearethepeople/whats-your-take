@@ -31,6 +31,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       city: events.city,
       state: events.state,
       status: events.status,
+      claimNote: events.claimNote,
       promptText: prompts.text,
       revealDate: prompts.revealDate,
       revealPrecision: prompts.revealPrecision,
@@ -51,6 +52,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     city: row.city,
     state: row.state,
     promptText: row.promptText,
+    claimNote: row.claimNote,
     revealDate,
     open: row.status === "open",
     scheduled: row.status === "scheduled",
@@ -219,8 +221,19 @@ function BrandMark() {
 }
 
 export default function EventSubmit({ loaderData, actionData }: Route.ComponentProps) {
-  const { slug, eventName, venue, city, state, promptText, revealDate, open, scheduled, kiosk } =
-    loaderData;
+  const {
+    slug,
+    eventName,
+    venue,
+    city,
+    state,
+    promptText,
+    claimNote,
+    revealDate,
+    open,
+    scheduled,
+    kiosk,
+  } = loaderData;
   const navigate = useNavigate();
   const [resetEpoch, setResetEpoch] = useState(0);
   const formUrl = kiosk ? `/e/${slug}?kiosk=1` : `/e/${slug}`;
@@ -268,6 +281,7 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
           city={city}
           state={state}
           revealDate={revealDate}
+          claimNote={claimNote}
           claimCode={staged.claimCode}
           qrModules={staged.qrModules}
           onIdleReset={handleIdleReset}
@@ -396,7 +410,7 @@ function ComposeForm({
           type="submit"
           className="min-h-[52px] w-full rounded-full bg-primary text-[15px] font-bold text-primary-foreground transition-colors hover:bg-[#a8552e]"
         >
-          Add your voice
+          Submit your response
         </button>
       </Form>
 
@@ -432,6 +446,7 @@ function CodeScreen({
   city,
   state,
   revealDate,
+  claimNote,
   claimCode,
   qrModules,
   onIdleReset,
@@ -443,6 +458,7 @@ function CodeScreen({
   city: string;
   state: string | null;
   revealDate: RevealDate | null;
+  claimNote: string | null;
   claimCode: string;
   qrModules: boolean[][];
   onIdleReset: () => void;
@@ -576,18 +592,24 @@ function CodeScreen({
     <div className="flex flex-col items-center gap-4 text-center">
       <BrandMark />
       {idleGuard}
-      <h1 className="text-2xl font-bold">Now find your host.</h1>
+      <h1 className="text-2xl font-bold">Now find the table.</h1>
       <p className="text-muted-foreground">
-        The host enters this code to put your take in the book. It expires in 15 minutes
+        Bring this code to the table to have it scanned and put your take in the book. It expires in
+        15 minutes
         {kiosk ? "." : "; your draft stays saved on this device."}
       </p>
+      {claimNote ? (
+        <p className="w-full rounded-2xl border-2 border-dashed border-(--color-dashed) p-3 font-bold whitespace-pre-line">
+          {claimNote}
+        </p>
+      ) : null}
 
       <div className="flex w-full flex-col items-center gap-3 rounded-2xl bg-white p-6">
         <button
           type="button"
           className="qr-trigger"
           onClick={() => setPulseCount((count) => count + 1)}
-          aria-label="Tap to light up the code for the host"
+          aria-label="Tap to light up the code for scanning"
         >
           <span className="qr-frame">
             <span
@@ -602,7 +624,7 @@ function CodeScreen({
         <p className="claim-code" aria-label="Your claim code">
           {claimCode}
         </p>
-        <p className="text-sm text-muted-tan">Scan won&rsquo;t take? Your host can type this in.</p>
+        <p className="text-sm text-muted-tan">Scan won&rsquo;t take? The table can type this in.</p>
       </div>
 
       <Link to={formUrl} replace className="text-primary underline underline-offset-4">
