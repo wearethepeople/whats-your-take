@@ -10,6 +10,10 @@ Participants are never asked for name, email, or phone. No field exists to
 hold them. The claim "we store no PII" must survive inspection, including
 infrastructure logs (no IP logging in the app layer; proxy log retention at
 minimum). Admin auth is a single host account — no user management system.
+(Amended 2026-10-24: a second shared secret, `VOLUNTEER_PASSWORD`, grants
+promote-only access to the one event the host selects. It is a restricted
+capability, not an account: no per-volunteer identity, nothing logged, no
+user management. The host-account sentence otherwise stands.)
 
 This governs the submission process. A participant who later chooses, on their
 own, to follow or subscribe from signage — outside the act of submitting —

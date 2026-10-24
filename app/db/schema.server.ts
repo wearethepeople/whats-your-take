@@ -1,5 +1,5 @@
 import { isNull, sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Schema source of truth is docs/spec.md Part II; changes land there first.
 
@@ -253,3 +253,19 @@ export const tableRequests = sqliteTable("table_requests", {
     .notNull()
     .default(sql`(unixepoch())`),
 });
+
+// Single row (the CHECK is what makes it one): which ONE event the
+// promote-only volunteer password may work for. A volunteer session carries
+// (eventId, epoch) and is valid only while both match this row; every change
+// bumps the epoch, so old sessions die at once. No row = no volunteer
+// access. Holds no participant data and no secret (the password is an env
+// var).
+export const hostSettings = sqliteTable(
+  "host_settings",
+  {
+    id: integer("id").primaryKey(),
+    volunteerEventId: integer("volunteer_event_id").references(() => events.id),
+    volunteerEpoch: integer("volunteer_epoch").notNull().default(0),
+  },
+  (table) => [check("host_settings_singleton", sql`${table.id} = 1`)],
+);

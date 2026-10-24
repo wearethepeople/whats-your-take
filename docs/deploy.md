@@ -18,6 +18,13 @@ fly secrets set ADMIN_PASSWORD=$(openssl rand -hex 32) \
                                 # Host-console auth. Rotating SESSION_SECRET
                                 # just logs the host out; rotating
                                 # ADMIN_PASSWORD requires telling the host.
+fly secrets set VOLUNTEER_PASSWORD=$(openssl rand -hex 32)
+                                # Optional. Promote-only password for event
+                                # volunteers; unset = volunteer access off.
+                                # Which event it works for is chosen in the
+                                # host console (Volunteers). Rotating it
+                                # does not sign out existing volunteers; use
+                                # "Sign out volunteers" there.
 fly deploy --ha=false           # REQUIRED flag: prevents Fly's two-machine
                                 # default. SQLite means exactly one machine.
 fly scale count 1               # verify/enforce; must stay 1 forever

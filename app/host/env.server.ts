@@ -1,5 +1,7 @@
-// Host-console configuration. Both values are required — there is no dev
-// fallback on purpose: a silent default would eventually guard production.
+// Host-console configuration. ADMIN_PASSWORD and SESSION_SECRET are required —
+// there is no dev fallback on purpose: a silent default would eventually guard
+// production. VOLUNTEER_PASSWORD is optional: unset simply means volunteer
+// access is off.
 
 function required(name: string): string {
   const value = process.env[name];
@@ -18,4 +20,8 @@ export function adminPassword(): string {
 
 export function sessionSecret(): string {
   return required("SESSION_SECRET");
+}
+
+export function volunteerPassword(): string | null {
+  return process.env.VOLUNTEER_PASSWORD || null;
 }

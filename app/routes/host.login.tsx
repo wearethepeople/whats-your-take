@@ -3,7 +3,16 @@ import type { Route } from "./+types/host.login";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { createHostSession, isHost, verifyPassword } from "~/host/auth.server";
+import { db } from "~/db/client.server";
+import {
+  createHostSession,
+  createVolunteerSession,
+  getVolunteer,
+  isHost,
+  verifyPassword,
+  verifyVolunteerPassword,
+} from "~/host/auth.server";
+import { getVolunteerAccess } from "~/host/volunteer-access.server";
 import { HostSection } from "~/host/section";
 
 export function meta() {
@@ -12,16 +21,24 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   if (await isHost(request)) throw redirect("/host/events");
+  if (await getVolunteer(request, db)) throw redirect("/host/volunteer");
   return null;
 }
 
 export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const password = String(form.get("password") ?? "");
-  if (!verifyPassword(password)) {
-    return { error: "That’s not it." };
+  // Both checks always run. Every failure — wrong password, or the volunteer
+  // password while access is off or no event is chosen — gets the same answer,
+  // so a right-but-closed volunteer password is never confirmed.
+  const isAdmin = verifyPassword(password);
+  const isVolunteer = verifyVolunteerPassword(password);
+  if (isAdmin) return createHostSession("/host/events");
+  if (isVolunteer) {
+    const access = getVolunteerAccess(db);
+    if (access.eventId !== null) return createVolunteerSession(access, "/host/volunteer");
   }
-  return createHostSession("/host/events");
+  return { error: "That’s not it." };
 }
 
 export default function HostLogin({ actionData }: Route.ComponentProps) {

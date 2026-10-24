@@ -92,6 +92,13 @@
       "when": 1791172431948,
       "tag": "0012_living_iron_monger",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1792840367859,
+      "tag": "0013_blushing_red_wolf",
+      "breakpoints": true
     }
   ]
 }

@@ -9,6 +9,7 @@ export function HostNav() {
       <NavLink to="/host/events">Events</NavLink>
       <NavLink to="/host/promote">Promote</NavLink>
       <NavLink to="/host/prompts">Prompts</NavLink>
+      <NavLink to="/host/volunteers">Volunteers</NavLink>
       <NavLink to="/host/table-requests">Table requests</NavLink>
     </nav>
   );

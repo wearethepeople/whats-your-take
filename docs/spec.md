@@ -349,8 +349,29 @@ TableRequest                               -- added 2026-08: anonymous "bring
                                            -- this data is host-facing only.
 ```
 
+HostSettings                               -- added 2026-10-24: single-row
+  id (PK, CHECK id = 1),                   -- table (the CHECK is what makes
+  volunteer_event_id (nullable, FK         -- it one row) holding which ONE
+    -> events),                            -- event the promote-only volunteer
+  volunteer_epoch (default 0)              -- password may work for. A
+                                           -- volunteer session carries
+                                           -- (event_id, epoch) and is valid
+                                           -- only while both match this row,
+                                           -- checked per request. Every
+                                           -- change (select, clear, "sign
+                                           -- out volunteers") bumps the
+                                           -- epoch, so old sessions die at
+                                           -- once. No row = no access. Holds
+                                           -- no participant data and no
+                                           -- secret (the password is an env
+                                           -- var).
+
 No users table for participants. Admin auth is a single host account (passkey
-or long random secret) — do not build user management.
+or long random secret) — do not build user management. (Amended 2026-10-24:
+plus one restricted, event-scoped volunteer secret, `VOLUNTEER_PASSWORD`. It
+can reach the promote screen for the `HostSettings.volunteer_event_id` event
+and nothing else; it is a capability, not an account — no volunteer identity
+is stored or logged.)
 
 **Deliberate absences:** no IP logging in the app layer (put Fly's proxy logs on
 the shortest retention available and say so honestly — "we store no PII" must
@@ -365,7 +386,8 @@ identity. Prefer short-lived, single-use-ish, human-scale, never linkable to a p
 **Site flow — compose first, hand off at submit** (amended 2026-07-19:
 direction reversed from "host displays a rotating HMAC-QR token; participant
 scans it; OTP fallback." In the reversed flow nothing public writes into the
-corpus — promotion requires host credentials, so a photographed or leaked
+corpus — promotion requires host credentials (or, amended 2026-10-24, the
+event-scoped volunteer credential), so a photographed or leaked
 code is useless, one-per-person is technically enforced rather than social,
 junk lands in an auto-expiring staging table instead of the moderation
 queue, and the token + OTP machinery is deleted outright):
@@ -453,6 +475,14 @@ accepted, stated here so it stays a decision and not a surprise.)
 - Promote console — the submit handshake: host enters (slice 4: scans) a
   participant's claim code to promote their staged draft into a `pending`
   response. Built in slice 2 with minimal single-account auth.
+- Volunteer access (added 2026-10-24): for staffed events the host can hand
+  volunteers a separate promote-only password instead of the admin one. The
+  host picks the single event it works for on the Volunteers screen; the
+  volunteer sees that event's name and count and the code entry/scan form,
+  nothing else (no moderation, no bodies, no other host route). Promotion
+  from a volunteer session is scoped to the session's event — a code staged
+  for any other event answers "unknown". Changing or clearing the event, or
+  "sign out volunteers", ends every volunteer session at once.
 - Live count (count only — the host shouldn't be reading responses mid-event
   either; the mirror waits for close).
 - Card entry: batch form for typing in physical cards (`channel=card`) —

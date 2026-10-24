@@ -14,6 +14,10 @@ export default [
   route("e/:slug/status/:code", "routes/e.$slug.status.$code.ts"),
   route("e/:slug/manifest.webmanifest", "routes/e.$slug.manifest.ts"),
   route("host/login", "routes/host.login.tsx"),
+  route("host/logout", "routes/host.logout.ts"),
+  // Promote-only screen for the event-scoped volunteer password, in its own
+  // layout so nothing under the host layout below is reachable from it.
+  layout("routes/layouts/volunteer.tsx", [route("host/volunteer", "routes/host.volunteer.tsx")]),
   // Shared nav + error shell for every authenticated host page (see
   // routes/layouts/host.tsx). Login stays outside: it has no nav to show
   // and isn't authenticated yet. The export resource route also stays
@@ -22,6 +26,7 @@ export default [
     route("host/promote", "routes/host.promote.tsx"),
     route("host/table-requests", "routes/host.table-requests.tsx"),
     route("host/prompts", "routes/host.prompts.tsx"),
+    route("host/volunteers", "routes/host.volunteers.tsx"),
     route("host/events", "routes/host.events.tsx"),
     route("host/events/new", "routes/host.events.new.tsx"),
     route("host/events/:id", "routes/host.events.$id.tsx"),

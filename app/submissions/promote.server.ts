@@ -17,11 +17,17 @@ function err(error: PromoteError, message: string): PromoteResult {
   return { ok: false, error, message };
 }
 
-export function promoteDraft(db: Db, input: { code: string; now: Date }): PromoteResult {
+// `eventId` scopes the promotion (volunteer sessions): a draft staged for any
+// other event answers `unknown`, exactly as if the code didn't exist, so a
+// volunteer can't probe other events. Host promotion omits it.
+export function promoteDraft(
+  db: Db,
+  input: { code: string; now: Date; eventId?: number },
+): PromoteResult {
   const code = input.code.trim();
   const draft = db.select().from(stagedDrafts).where(eq(stagedDrafts.code, code)).get();
 
-  if (!draft) {
+  if (!draft || (input.eventId !== undefined && draft.eventId !== input.eventId)) {
     return err("unknown", "No draft matches that code. Ask them to re-check their screen.");
   }
   if (draft.promotedAt) {
