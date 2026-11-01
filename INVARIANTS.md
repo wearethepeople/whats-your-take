@@ -15,6 +15,12 @@ promote-only access to the one event the host selects. It is a restricted
 capability, not an account: no per-volunteer identity, nothing logged, no
 user management. The host-account sentence otherwise stands.)
 
+A free-text body can still carry a name the participant typed despite the
+submit-screen request; the host redacts it on review (I5). Until then, and in
+any replica or snapshot made before redaction, the name can exist
+temporarily. The claim is that names are redacted before anything is
+published, and that replica retention is kept short. (Added 2026-10-31.)
+
 This governs the submission process. A participant who later chooses, on their
 own, to follow or subscribe from signage — outside the act of submitting —
 does not touch this rule. The corollary: because nothing is captured at
@@ -49,9 +55,10 @@ per-event model — see `docs/spec.md` Part II, "Publication posture," for the
 prior design and the note marking it superseded.)
 
 Internal-only fields never reach a public surface. `responses.name_flag`
-(the card carried a name or other identifier; its scan must be masked at
-release) and the `response_revisions` log are host-internal: never exported,
-never rendered on a public page, never returned by a public API. Public
+(the card carried a name or other identifier, or a name was redacted from a
+digital body; a card's scan must be masked at release) and the
+`response_revisions` log are host-internal: never exported, never rendered on
+a public page, never returned by a public API. Public
 queries select explicit columns, never a bare `select()` on `responses`.
 (Added 2026-10-04.)
 
@@ -79,7 +86,13 @@ or export.
 The host may correct a transcribed card (`channel=card`, `pending` or
 `approved`) after entry. The prior body is first appended to
 `response_revisions`, so an edit destroys nothing, and status is unchanged.
-`hidden` rows and non-card responses are never edited. (Added 2026-10-04.)
+`hidden` rows and non-card responses are never edited, with one exception:
+a name typed into a digital (`kiosk`/`site`) body is stored PII (I1), so the
+host may redact it on a `pending` or `approved` row. The redaction replaces
+the name with `[name written]`, sets `name_flag`, and leaves status
+unchanged. It does not retain the prior body: I1 outranks the audit trail
+for PII, so `response_revisions` records that a redaction happened and when,
+with no text. (Added 2026-10-04; redaction exception added 2026-10-31.)
 
 ## I6 — The process cannot betray the stated goal
 

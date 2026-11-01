@@ -245,6 +245,12 @@ Response
                                            -- the record). Never exported,
                                            -- rendered, or returned by any
                                            -- public surface (I3/I1).
+                                           -- Also set (amended 2026-10-31)
+                                           -- when the host redacts a name
+                                           -- from a kiosk/site body: the
+                                           -- body then carries "[name
+                                           -- written]" in its place, the
+                                           -- same as a transcribed card.
   created_at      timestamptz,             -- TRUNCATED TO THE HOUR at write;
                                            -- sub-hour submission times are
                                            -- never recorded (amended
@@ -266,10 +272,16 @@ Response
                                            -- 2026-08-16)
 
 ResponseRevision                           -- added 2026-10-04: append-only
-  id, response_id, body,                   -- log of a card's PRIOR body,
+  id, response_id, body (nullable),        -- log of a card's PRIOR body,
   revised_at                               -- written in the same transaction
                                            -- as each host edit (I5: edits
-                                           -- destroy nothing). Host-internal;
+                                           -- destroy nothing). body is NULL
+                                           -- for a kiosk/site name redaction
+                                           -- (amended 2026-10-31): the row
+                                           -- records THAT a redaction
+                                           -- happened and when, never the
+                                           -- name (I1 outranks the audit
+                                           -- trail for PII). Host-internal;
                                            -- never exported or rendered.
                                            -- revised_at is a REAL timestamp:
                                            -- it is the host's edit time, not
@@ -514,6 +526,28 @@ accepted, stated here so it stays a decision and not a surprise.)
   which is the audit trail. Card entry can set `name_flag` at entry time;
   moderation shows a host-only "name or identifier" badge so flagged cards'
   images can be masked at release.
+- Name redaction (added 2026-10-31): a name typed into a digital (`kiosk` or
+  `site`) body is stored PII, so the host can redact it. Allowed only on
+  `pending` or `approved` rows; `hidden` stays terminal. The host replaces
+  the name with `[name written]`; the edit is refused unless the new body
+  contains that placeholder and differs from the old one, so redaction
+  can't be used to rewrite a participant's words. Status, `created_at` and
+  `created_bucket` are untouched, and `name_flag` is set. Unlike a card
+  edit, the prior body is NOT retained: `ResponseRevision` gets a row with a
+  NULL body (that a redaction happened, and when), because logging the old
+  text would copy the name into a second table. Participant-facing copy on
+  the submit screen says no names and that any name will be redacted, even
+  one the participant meant to share.
+- Redaction and replicas: redaction clears the name from the live row and
+  the revision log, but not from copies that already exist. A digital
+  response is in the corpus (and so possibly in Litestream snapshots, WAL
+  segments, and object-storage retention) from promotion until it is
+  redacted, and the name also exists in the staged draft until promotion
+  nulls it. So PII can exist temporarily in replicas until they age out
+  under the retention window. The claim is "we redact names on review and
+  never publish one", not "a name never touched storage". Keep replica
+  retention short and state it; redaction happens before any public
+  release (I3).
 - Corpus export: `approved` responses for an event as JSON/CSV (body, channel,
   created_bucket, showcase only). Rows are ordered (created_at, body) so row
   order never reconstructs intra-hour submission sequence — the same rule
@@ -592,7 +626,8 @@ submission path.
 4. **Coarse time only — sub-hour timing is never stored.** `created_at` is
    hour-truncated at write; no public artifact exposes sub-bucket timing.
 5. **Append-only moderation.** Hidden, not deleted. Card edits log the
-   prior body to an append-only revisions table.
+   prior body to an append-only revisions table. Digital name redactions
+   log that they happened, never the name.
 6. **The process cannot betray the stated goal.** No analytics on the
    submission path, no engagement mechanics, no dark patterns.
 
