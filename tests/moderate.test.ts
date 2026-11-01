@@ -2,12 +2,13 @@ import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { responseRevisions, responses } from "~/db/schema.server";
 import type { Db } from "~/db/types.server";
-import { MAX_BODY_LENGTH } from "~/submissions/constants";
+import { MAX_BODY_LENGTH, NAME_PLACEHOLDER } from "~/submissions/constants";
 import {
   approveResponse,
   editCard,
   hideResponse,
   listForModeration,
+  redactName,
 } from "~/submissions/moderate.server";
 import { insertResponse } from "~/submissions/write.server";
 import { freshDb, seedOpenEvent } from "./helpers";
@@ -183,5 +184,95 @@ describe("editCard", () => {
     }
     expect(rowOf(db, card.id)).toMatchObject({ body: "trimmed", nameFlag: false });
     expect(db.select().from(responseRevisions).all()).toHaveLength(revisionsAfterGoodEdit);
+  });
+});
+
+describe("redactName", () => {
+  const NAMED = "I'm Jordan Rivera and I think the park needs lights";
+  const REDACTED = `I'm ${NAME_PLACEHOLDER} and I think the park needs lights`;
+
+  it("redacts pending and approved site/kiosk rows, flags them, keeps status", () => {
+    const { db } = freshDb();
+    const { prompt, event } = seedOpenEvent(db);
+    const pending = seedResponse(db, prompt.id, event.id, NAMED);
+    const approved = insertResponse(db, {
+      promptId: prompt.id,
+      eventId: event.id,
+      body: NAMED,
+      channel: "kiosk",
+      now: NOW,
+    });
+    expect(approveResponse(db, approved.id).ok).toBe(true);
+
+    expect(redactName(db, pending.id, { body: REDACTED }).ok).toBe(true);
+    expect(redactName(db, approved.id, { body: REDACTED }).ok).toBe(true);
+
+    expect(rowOf(db, pending.id)).toMatchObject({
+      body: REDACTED,
+      status: "pending",
+      nameFlag: true,
+    });
+    expect(rowOf(db, approved.id)).toMatchObject({
+      body: REDACTED,
+      status: "approved",
+      nameFlag: true,
+    });
+  });
+
+  it("never retains the name: the revision row has a NULL body (I1)", () => {
+    const { db } = freshDb();
+    const { prompt, event } = seedOpenEvent(db);
+    const row = seedResponse(db, prompt.id, event.id, NAMED);
+
+    expect(redactName(db, row.id, { body: REDACTED }).ok).toBe(true);
+
+    const revisions = db.select().from(responseRevisions).all();
+    expect(revisions).toHaveLength(1);
+    expect(revisions[0]).toMatchObject({ responseId: row.id, body: null });
+    expect(JSON.stringify(revisions)).not.toContain("Jordan");
+  });
+
+  it("refuses hidden rows, cards, and unknown ids, changing nothing", () => {
+    const { db } = freshDb();
+    const { prompt, event } = seedOpenEvent(db);
+    const hidden = seedResponse(db, prompt.id, event.id, NAMED);
+    expect(hideResponse(db, hidden.id).ok).toBe(true);
+    const card = seedCard(db, prompt.id, event.id, "a card");
+
+    for (const id of [hidden.id, card.id, 999]) {
+      expect(redactName(db, id, { body: REDACTED }), String(id)).toMatchObject({
+        ok: false,
+        error: "not-editable",
+      });
+    }
+    expect(rowOf(db, hidden.id)).toMatchObject({ body: NAMED, nameFlag: false });
+    expect(rowOf(db, card.id)).toMatchObject({ body: "a card", nameFlag: false });
+    expect(db.select().from(responseRevisions).all()).toHaveLength(0);
+  });
+
+  it("refuses a body without the placeholder, an unchanged body, or an invalid one", () => {
+    const { db } = freshDb();
+    const { prompt, event } = seedOpenEvent(db);
+    const row = seedResponse(db, prompt.id, event.id, NAMED);
+
+    for (const body of [
+      "I think the park needs lights",
+      NAMED,
+      "   ",
+      "x".repeat(MAX_BODY_LENGTH + 1),
+    ]) {
+      expect(redactName(db, row.id, { body }), body.slice(0, 20)).toMatchObject({
+        ok: false,
+        error: "invalid-body",
+      });
+    }
+    // An unchanged body that already holds the placeholder is also refused.
+    expect(redactName(db, row.id, { body: REDACTED }).ok).toBe(true);
+    expect(redactName(db, row.id, { body: REDACTED })).toMatchObject({
+      ok: false,
+      error: "invalid-body",
+    });
+    expect(rowOf(db, row.id)?.body).toBe(REDACTED);
+    expect(db.select().from(responseRevisions).all()).toHaveLength(1);
   });
 });

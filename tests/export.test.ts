@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { responses } from "~/db/schema.server";
 import type { Db } from "~/db/types.server";
 import { exportRows, toCsv, toJson } from "~/submissions/export.server";
-import { approveResponse, editCard, hideResponse } from "~/submissions/moderate.server";
+import { approveResponse, editCard, hideResponse, redactName } from "~/submissions/moderate.server";
 import { insertResponse } from "~/submissions/write.server";
 import { freshDb, seedOpenEvent } from "./helpers";
 
@@ -99,6 +99,20 @@ describe("exportRows", () => {
     for (const output of [toCsv(rows), toJson(rows)]) {
       expect(output).not.toMatch(/name_?flag|revis/i);
       expect(output).not.toContain("original wording");
+    }
+  });
+
+  it("exports a redacted digital body without the name, flag, or revision (I1/I3)", () => {
+    const { db } = freshDb();
+    const { prompt, event } = seedOpenEvent(db);
+    const row = seedApproved(db, prompt.id, event.id, "I am Jordan Rivera and I want lights");
+    expect(redactName(db, row.id, { body: "I am [name written] and I want lights" }).ok).toBe(true);
+
+    const rows = exportRows(db, event.id);
+    expect(rows.map((r) => r.body)).toEqual(["I am [name written] and I want lights"]);
+    for (const output of [toCsv(rows), toJson(rows)]) {
+      expect(output).not.toMatch(/name_?flag|revis/i);
+      expect(output).not.toContain("Jordan");
     }
   });
 

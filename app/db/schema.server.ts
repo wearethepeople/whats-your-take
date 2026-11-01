@@ -101,7 +101,8 @@ export const responses = sqliteTable("responses", {
   showcase: integer("showcase", { mode: "boolean" }).notNull().default(false),
   // INTERNAL ONLY: the physical card carried a name or other identifier (the
   // body says "[name written]"; the name itself is never stored — the scan
-  // is the record). Marks card images to mask at release. Never exported,
+  // is the record). Marks card images to mask at release. Also set when the
+  // host redacts a name from a kiosk/site body ("[name written]"). Never exported,
   // rendered, or returned by a public surface (I3).
   nameFlag: integer("name_flag", { mode: "boolean" }).notNull().default(false),
   // I4: hour-truncated at write via truncateToHour — sub-hour submission
@@ -116,7 +117,9 @@ export const responses = sqliteTable("responses", {
 });
 
 // Append-only log of a card's prior body, written in the same transaction as
-// each host edit (I5: an edit destroys nothing). Host-internal, never
+// each host edit (I5: an edit destroys nothing). body is NULL for a
+// kiosk/site name redaction: the row records that it happened and when, never
+// the name (I1 outranks the audit trail for PII). Host-internal, never
 // exported or rendered. revised_at is a real timestamp: it is the host's
 // edit time, not participant submission timing, so I4's truncation doesn't
 // apply.
@@ -125,7 +128,7 @@ export const responseRevisions = sqliteTable("response_revisions", {
   responseId: integer("response_id")
     .notNull()
     .references(() => responses.id),
-  body: text("body").notNull(),
+  body: text("body"),
   revisedAt: integer("revised_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

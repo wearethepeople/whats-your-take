@@ -2,13 +2,15 @@
 // approved→hidden. hidden is terminal — it is absent from every source
 // list below, so terminality is structural, and the legal-source check
 // lives in the UPDATE's WHERE clause (no read-then-write race). Nothing
-// here (or anywhere) deletes a response. editCard is the one content
-// mutation: card rows only, pending/approved only, with the prior body
-// appended to response_revisions in the same transaction (I5).
+// here (or anywhere) deletes a response. editCard and redactName are the only
+// content mutations, both pending/approved only: editCard on card rows, with
+// the prior body appended to response_revisions in the same transaction (I5);
+// redactName on kiosk/site rows, logging that it happened but not the text.
 
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { responseRevisions, responses } from "~/db/schema.server";
 import type { Db } from "~/db/types.server";
+import { NAME_PLACEHOLDER } from "./constants";
 import { bodySchema } from "./stage.server";
 
 export type ResponseRow = typeof responses.$inferSelect;
@@ -100,6 +102,60 @@ export function editCard(
       tx.insert(responseRevisions).values({ responseId: id, body: current.body }).run();
     }
     tx.update(responses).set({ body, nameFlag: input.nameFlag }).where(eq(responses.id, id)).run();
+    return { ok: true } as const;
+  });
+}
+
+// Name redaction for digital rows (I1/I5). The new body must carry the
+// placeholder and differ from the old one, so this can't be used to rewrite a
+// participant's words. The revision row has a NULL body on purpose: logging
+// the prior text would copy the name into a second table. Same transaction
+// and row-state guard as editCard.
+export function redactName(db: Db, id: number, input: { body: unknown }): ModerateResult {
+  const parsed = bodySchema.safeParse(input.body);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "invalid-body",
+      message: parsed.error.issues[0]?.message ?? "That response can't be used.",
+    };
+  }
+  const body = parsed.data;
+  if (!body.includes(NAME_PLACEHOLDER)) {
+    return {
+      ok: false,
+      error: "invalid-body",
+      message: `Replace the name with ${NAME_PLACEHOLDER}.`,
+    };
+  }
+  return db.transaction((tx) => {
+    const current = tx
+      .select({ body: responses.body })
+      .from(responses)
+      .where(
+        and(
+          eq(responses.id, id),
+          inArray(responses.channel, ["kiosk", "site"]),
+          inArray(responses.status, ["pending", "approved"]),
+        ),
+      )
+      .get();
+    if (!current) {
+      return {
+        ok: false,
+        error: "not-editable",
+        message: "Only a pending or approved digital response can be redacted.",
+      } as const;
+    }
+    if (current.body === body) {
+      return {
+        ok: false,
+        error: "invalid-body",
+        message: "Nothing was redacted. The text is unchanged.",
+      } as const;
+    }
+    tx.insert(responseRevisions).values({ responseId: id, body: null }).run();
+    tx.update(responses).set({ body, nameFlag: true }).where(eq(responses.id, id)).run();
     return { ok: true } as const;
   });
 }
