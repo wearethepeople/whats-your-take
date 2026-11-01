@@ -7,12 +7,13 @@ import { db } from "~/db/client.server";
 import { getEvent } from "~/features/events/services/lifecycle.server";
 import { Field } from "~/host/field";
 import { HostSection } from "~/host/section";
-import { MAX_BODY_LENGTH } from "~/submissions/constants";
+import { MAX_BODY_LENGTH, NAME_PLACEHOLDER } from "~/submissions/constants";
 import {
   approveResponse,
   editCard,
   hideResponse,
   listForModeration,
+  redactName,
 } from "~/submissions/moderate.server";
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -54,8 +55,12 @@ export async function action({ request, params }: Route.ActionArgs) {
               body: form.get("body"),
               nameFlag: form.get("nameFlag") === "on",
             })
-          : ({ ok: false, message: "Unknown action." } as const);
-  const done = { approve: "Approved.", hide: "Hidden.", edit: "Saved." }[intent];
+          : intent === "redact"
+            ? redactName(db, responseId, { body: form.get("body") })
+            : ({ ok: false, message: "Unknown action." } as const);
+  const done = { approve: "Approved.", hide: "Hidden.", edit: "Saved.", redact: "Redacted." }[
+    intent
+  ];
   return result.ok
     ? { ok: true as const, message: done ?? "Done." }
     : { ok: false as const, message: result.message };
@@ -119,6 +124,49 @@ function EditCardForm({ row, onDone }: { row: ModerationRow; onDone: () => void 
   );
 }
 
+function RedactForm({ row, onDone }: { row: ModerationRow; onDone: () => void }) {
+  const fetcher = useFetcher<typeof action>();
+  const saved = fetcher.state === "idle" && fetcher.data?.ok === true;
+  useEffect(() => {
+    if (saved) onDone();
+  }, [saved, onDone]);
+  return (
+    <fetcher.Form method="post" className="flex flex-col items-start gap-3">
+      <input type="hidden" name="intent" value="redact" />
+      <input type="hidden" name="responseId" value={row.id} />
+      <Field
+        htmlFor={`body-${row.id}`}
+        label={`Replace each name with ${NAME_PLACEHOLDER}. Change nothing else.`}
+      >
+        <Textarea
+          id={`body-${row.id}`}
+          name="body"
+          rows={6}
+          maxLength={MAX_BODY_LENGTH}
+          defaultValue={row.body}
+          required
+        />
+      </Field>
+      <p className="text-sm text-muted-foreground">
+        The original text is not kept. Only the fact of the redaction is logged.
+      </p>
+      {fetcher.data && !fetcher.data.ok ? (
+        <p className="banner banner-error" role="alert">
+          {fetcher.data.message}
+        </p>
+      ) : null}
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={fetcher.state !== "idle"}>
+          Redact
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={onDone}>
+          Cancel
+        </Button>
+      </div>
+    </fetcher.Form>
+  );
+}
+
 function ResponseList({
   rows,
   actions,
@@ -135,7 +183,11 @@ function ResponseList({
       {rows.map((row) => (
         <li key={row.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
           {editingId === row.id ? (
-            <EditCardForm row={row} onDone={() => setEditingId(null)} />
+            row.channel === "card" ? (
+              <EditCardForm row={row} onDone={() => setEditingId(null)} />
+            ) : (
+              <RedactForm row={row} onDone={() => setEditingId(null)} />
+            )
           ) : (
             <>
               <blockquote className="m-0 border-l-2 border-border py-0 pl-3 whitespace-pre-wrap">
@@ -144,19 +196,23 @@ function ResponseList({
               <p className="mt-1 mb-2 text-sm text-muted-foreground">
                 {row.channel}
                 {row.createdBucket ? ` · ${row.createdBucket}` : ""}
-                {row.nameFlag ? " · name or identifier on card" : ""}
+                {row.nameFlag
+                  ? row.channel === "card"
+                    ? " · name or identifier on card"
+                    : " · name redacted"
+                  : ""}
               </p>
               <div className="flex gap-2">
                 {actions.map((intent) => (
                   <Fragment key={intent}>
-                    {intent === "hide" && editable && row.channel === "card" ? (
+                    {intent === "hide" && editable ? (
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => setEditingId(row.id)}
                       >
-                        Edit
+                        {row.channel === "card" ? "Edit" : "Redact name"}
                       </Button>
                     ) : null}
                     <Form method="post">
