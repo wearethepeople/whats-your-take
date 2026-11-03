@@ -296,6 +296,22 @@ export function listEvents(db: Db): EventRow[] {
   return db.select().from(events).orderBy(desc(events.createdAt), desc(events.id)).all();
 }
 
+// Splits events for the host list. Status is manual (see the header), so
+// "past" means the table has closed (closed/archived), not that its date
+// has passed — an event the host hasn't opened yet stays upcoming however
+// late it runs, and a closed table can reopen. Upcoming reads soonest
+// first; past reads most recent first.
+export function splitEventsByTime<T extends { id: number; status: string; startsAt: Date }>(
+  rows: T[],
+): { upcoming: T[]; past: T[] } {
+  const byStart = (a: T, b: T) => a.startsAt.getTime() - b.startsAt.getTime() || a.id - b.id;
+  const isPast = (row: T) => row.status === "closed" || row.status === "archived";
+  return {
+    upcoming: rows.filter((row) => !isPast(row)).sort(byStart),
+    past: rows.filter(isPast).sort(byStart).reverse(),
+  };
+}
+
 export function getEvent(db: Db, id: number): EventRow | undefined {
   return db.select().from(events).where(eq(events.id, id)).get();
 }

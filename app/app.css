@@ -308,6 +308,37 @@ body {
   }
 }
 
+/* "We are here" dot on the homepage season timeline: a halo that swells and
+   fades on a slow loop. Reduced motion keeps a static halo instead. */
+.timeline-dot-current::after {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border-radius: 9999px;
+  background: var(--primary);
+  animation: timeline-pulse 3.6s ease-out infinite;
+}
+
+@keyframes timeline-pulse {
+  0% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-dot-current::after {
+    animation: none;
+    opacity: 0.25;
+    transform: scale(2);
+  }
+}
+
 .kiosk .qr-ring {
   inset: -1.75rem;
   padding: 0.7rem;

@@ -187,6 +187,14 @@ export type SeasonStats = {
   // Scheduled events that haven't opened yet — kept separate from
   // stopCount/townCount so a future-dated stop doesn't inflate "so far".
   upcomingCount: number;
+  // Month and year of the earliest stop that has happened or is happening
+  // (null before the first table), and the stop/town counts of every such
+  // stop after it — the homepage timeline shows the first table on its own,
+  // then "n tables, n cities" for the rest. A later stop in the first stop's
+  // town still counts toward laterTownCount.
+  firstStopLabel: string | null;
+  laterStopCount: number;
+  laterTownCount: number;
   // See LiveState — totalTakes is accurate as far as it goes, but a
   // homepage visitor reading "0" while the table is open or just closed
   // would read the guestbook as unused rather than live/mid-ingestion,
@@ -205,6 +213,16 @@ function formatDateLabel(date: Date): string {
     weekday: "short",
     month: "long",
     day: "numeric",
+  }).format(date);
+}
+
+// UTC, like formatRevealDate(): a month label shouldn't shift with the
+// server's timezone.
+function formatMonthYear(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
+    month: "long",
+    year: "numeric",
   }).format(date);
 }
 
@@ -257,11 +275,18 @@ function seasonViewFor(db: Db, season: Season): SeasonView {
 
   const pastOrLiveEvents = seasonEvents.filter((event) => event.status !== "scheduled");
 
+  // seasonEvents is newest-first, so the earliest stop is the last entry.
+  const firstStop = pastOrLiveEvents.at(-1);
+  const laterEvents = pastOrLiveEvents.slice(0, -1);
+
   const stats: SeasonStats = {
     stopCount: pastOrLiveEvents.length,
     totalTakes: [...takeCounts.values()].reduce((sum, n) => sum + n, 0),
     townCount: new Set(pastOrLiveEvents.map((event) => event.city)).size,
     upcomingCount: seasonEvents.filter((event) => event.status === "scheduled").length,
+    firstStopLabel: firstStop ? formatMonthYear(firstStop.startsAt) : null,
+    laterStopCount: laterEvents.length,
+    laterTownCount: new Set(laterEvents.map((event) => event.city)).size,
     liveState: aggregateLiveState(seasonEvents.map((event) => event.status)),
   };
 

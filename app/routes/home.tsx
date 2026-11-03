@@ -18,6 +18,7 @@ import {
   closedSeasonView,
   seasonView,
   type LiveState,
+  type SeasonStats,
 } from "~/features/events/services/season.server";
 import { checkRateLimit, getClientIp } from "~/newsletter/rate-limit.server";
 import { newsletterFormSchema } from "~/newsletter/schema";
@@ -250,12 +251,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               then the guestbook stays closed: what you write today carries the same weight as
               everything written before it.
             </p>
-            <p className="font-mono text-sm text-primary">
-              {revealDateLabel ? <>{revealDateLabel.toUpperCase()} </> : null}
-              <span className="font-sans font-normal text-muted-foreground">
-                premiere details as the season closes
-              </span>
-            </p>
+            <SeasonTimeline
+              stats={view?.stats ?? null}
+              sealed={sealed}
+              revealDateLabel={revealDateLabel}
+            />
           </div>
           <div className="flex flex-col gap-5 sm:pl-10">
             <p className="text-sm text-muted-tan">How it works</p>
@@ -371,6 +371,83 @@ function StatRow({
       </span>
       <span className={`font-serif text-2xl ${highlight ? "text-primary" : ""}`}>{value}</span>
     </div>
+  );
+}
+
+function pluralize(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? "" : "s"}`;
+}
+
+// The season in three beats — first table, everything since, the premiere —
+// with a slowly pulsing dot where we are now: on the running tally while the
+// table is touring, on the premiere once the season has closed. Counts only
+// (I6): nothing here is a response or a goal to grow toward (I7).
+function SeasonTimeline({
+  stats,
+  sealed,
+  revealDateLabel,
+}: {
+  stats: SeasonStats | null;
+  sealed: boolean;
+  revealDateLabel: string | null;
+}) {
+  const firstStopLabel = stats?.firstStopLabel ?? null;
+  const hasLaterStops = stats != null && stats.laterStopCount > 0;
+  const current = sealed ? "premiere" : hasLaterStops ? "so-far" : firstStopLabel ? "first" : null;
+
+  return (
+    <ol className="mt-2 flex flex-col" aria-label="The season, start to premiere">
+      {firstStopLabel ? (
+        <TimelineItem reached current={current === "first"}>
+          <p className="font-mono text-sm text-primary">{firstStopLabel.toUpperCase()}</p>
+          <p className="text-muted-foreground">The first table</p>
+        </TimelineItem>
+      ) : null}
+      {stats && hasLaterStops ? (
+        <TimelineItem reached current={current === "so-far"}>
+          <p className="font-semibold">
+            {pluralize(stats.laterStopCount, "table")}, {pluralize(stats.laterTownCount, "city")}
+          </p>
+        </TimelineItem>
+      ) : null}
+      <TimelineItem reached={false} current={current === "premiere"} last>
+        <p className="font-mono text-sm text-primary">
+          {revealDateLabel ? revealDateLabel.toUpperCase() : "DATE TBA"}
+        </p>
+        <p className="text-muted-foreground">All responses are published</p>
+      </TimelineItem>
+    </ol>
+  );
+}
+
+function TimelineItem({
+  reached,
+  current,
+  last = false,
+  children,
+}: {
+  reached: boolean;
+  current: boolean;
+  last?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className={`relative pl-8 ${last ? "" : "pb-6"}`}>
+      {last ? null : (
+        <span
+          className="absolute top-[1.125rem] -bottom-1 left-[5.5px] border-l border-dashed border-foreground/40"
+          aria-hidden="true"
+        />
+      )}
+      <span
+        className={`absolute top-1.5 left-0 size-3 rounded-full border-[1.5px] ${
+          reached ? "border-primary bg-primary" : "border-foreground bg-background"
+        } ${current ? "timeline-dot-current" : ""}`}
+        aria-hidden="true"
+      />
+      {current ? <span className="sr-only">We are here. </span> : null}
+      {children}
+    </li>
   );
 }
 

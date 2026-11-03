@@ -285,6 +285,59 @@ describe("season stats", () => {
     expect(view?.stats.townCount).toBe(1);
     expect(view?.stats.upcomingCount).toBe(1);
   });
+
+  it("splits the first stop from the stops after it for the timeline", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    seedEvent(db, prompt.id, {
+      slug: "first",
+      status: "archived",
+      startsAt: new Date("2026-08-01T15:00:00Z"),
+      city: "Tulsa",
+    });
+    seedEvent(db, prompt.id, {
+      slug: "second",
+      status: "archived",
+      startsAt: new Date("2026-08-15T15:00:00Z"),
+      city: "Tulsa",
+    });
+    seedEvent(db, prompt.id, {
+      slug: "third",
+      status: "closed",
+      startsAt: new Date("2026-09-12T15:00:00Z"),
+      city: "Waco",
+    });
+    seedEvent(db, prompt.id, {
+      slug: "not-yet",
+      status: "scheduled",
+      startsAt: new Date("2026-12-01T15:00:00Z"),
+      venue: null,
+      zip: null,
+      city: "Austin",
+    });
+
+    const stats = seasonView(db)?.stats;
+    expect(stats?.firstStopLabel).toBe("August 2026");
+    expect(stats?.laterStopCount).toBe(2);
+    expect(stats?.laterTownCount).toBe(2);
+  });
+
+  it("has no first stop, and no later stops, before any table has run", () => {
+    const { db } = freshDb();
+    const prompt = seedPrompt(db);
+    seedEvent(db, prompt.id, {
+      slug: "not-yet",
+      status: "scheduled",
+      startsAt: new Date("2026-12-01T15:00:00Z"),
+      venue: null,
+      zip: null,
+    });
+
+    const stats = seasonView(db)?.stats;
+    expect(stats?.firstStopLabel).toBeNull();
+    expect(stats?.laterStopCount).toBe(0);
+    expect(stats?.laterTownCount).toBe(0);
+  });
 });
 
 describe("eventDetail photo visibility", () => {

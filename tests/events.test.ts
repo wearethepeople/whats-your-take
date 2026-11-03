@@ -4,6 +4,7 @@ import { events, prompts, stagedDrafts } from "~/db/schema.server";
 import {
   createEvent,
   eventFormSchema,
+  splitEventsByTime,
   transitionEvent,
   updateClaimNote,
   updateEvent,
@@ -305,5 +306,42 @@ describe("updateClaimNote", () => {
   it("refuses a missing event", () => {
     const { db } = freshDb();
     expect(updateClaimNote(db, { id: 999, note: "hi" }).ok).toBe(false);
+  });
+});
+
+describe("splitEventsByTime", () => {
+  const row = (id: number, status: string, startsAt: string) => ({
+    id,
+    status,
+    startsAt: new Date(startsAt),
+  });
+
+  it("puts closed and archived in past, everything else in upcoming", () => {
+    const { upcoming, past } = splitEventsByTime([
+      row(1, "draft", "2026-12-01T15:00:00Z"),
+      row(2, "scheduled", "2026-11-01T15:00:00Z"),
+      row(3, "open", "2026-10-01T15:00:00Z"),
+      row(4, "closed", "2026-09-01T15:00:00Z"),
+      row(5, "archived", "2026-08-01T15:00:00Z"),
+    ]);
+    expect(upcoming.map((e) => e.id).sort()).toEqual([1, 2, 3]);
+    expect(past.map((e) => e.id).sort()).toEqual([4, 5]);
+  });
+
+  it("orders upcoming soonest first and past most recent first", () => {
+    const { upcoming, past } = splitEventsByTime([
+      row(1, "scheduled", "2026-12-01T15:00:00Z"),
+      row(2, "scheduled", "2026-11-01T15:00:00Z"),
+      row(3, "archived", "2026-08-01T15:00:00Z"),
+      row(4, "archived", "2026-09-01T15:00:00Z"),
+    ]);
+    expect(upcoming.map((e) => e.id)).toEqual([2, 1]);
+    expect(past.map((e) => e.id)).toEqual([4, 3]);
+  });
+
+  it("goes by status, not date: an unopened event whose date has passed stays upcoming", () => {
+    const { upcoming, past } = splitEventsByTime([row(1, "scheduled", "2020-01-01T15:00:00Z")]);
+    expect(upcoming).toHaveLength(1);
+    expect(past).toHaveLength(0);
   });
 });
