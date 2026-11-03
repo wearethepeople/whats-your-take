@@ -163,6 +163,7 @@ export default function BringTheTable({ actionData }: Route.ComponentProps) {
                     placeholder="12345 or Springfield, IL"
                     required
                     showTrigger={false}
+                    className="bg-card"
                   />
                   <ComboboxContent>
                     <ComboboxEmpty>No matches yet.</ComboboxEmpty>
@@ -190,6 +191,7 @@ export default function BringTheTable({ actionData }: Route.ComponentProps) {
                   name="note"
                   rows={4}
                   maxLength={500}
+                  className="bg-card"
                   placeholder="A specific festival or market, timing, whatever’s relevant"
                 />
               </div>
@@ -207,7 +209,7 @@ export default function BringTheTable({ actionData }: Route.ComponentProps) {
               ) : null}
 
               <Button type="submit" className={`w-fit ${offsetShadow}`} disabled={!selectedArea}>
-                Send the pointer
+                Point us there
               </Button>
             </Form>
           )}

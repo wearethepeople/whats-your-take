@@ -363,12 +363,12 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           </section>
         ) : null}
 
-        <section className="grid gap-8 bg-secondary px-6 py-12 sm:grid-cols-2 sm:px-14">
+        <section className="grid gap-8 bg-secondary px-6 py-16 sm:grid-cols-2 sm:items-center sm:gap-14 sm:px-14 sm:py-20">
           <div>
-            <h2 className="font-serif text-2xl font-semibold">Hear where it&rsquo;s headed</h2>
-            <p className="mt-2 max-w-prose text-muted-foreground">
-              An occasional letter from We (ARE) the People: where the table goes next, and what the
-              country has been writing. Easy to leave.
+            <h2 className="font-serif text-3xl font-semibold">Hear from We (ARE) the People</h2>
+            <p className="mt-3 max-w-prose text-muted-foreground">
+              An occasional letter on where the table goes next, what else we&rsquo;re building, and
+              an announcement when the record opens. Easy to leave.
             </p>
           </div>
           <div>
@@ -383,8 +383,9 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                     type="email"
                     name="email"
                     placeholder="you@example.com"
+                    aria-label="Email address"
                     required
-                    className="bg-card"
+                    className="h-10 bg-card"
                     suppressHydrationWarning
                   />
 
@@ -399,17 +400,15 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                     />
                   </div>
 
-                  <Button type="submit">Stay engaged</Button>
+                  <Button type="submit" className="h-10 px-4">
+                    Keep me posted
+                  </Button>
                 </Form>
                 {actionData && !actionData.ok ? (
                   <p className="banner banner-error mt-2" role="alert">
                     {actionData.error}
                   </p>
                 ) : null}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Your email is for the letter and nothing else. It never connects to what anyone
-                  wrote.
-                </p>
               </>
             )}
           </div>
