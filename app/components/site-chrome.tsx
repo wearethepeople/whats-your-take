@@ -119,18 +119,21 @@ export function SiteFooter() {
           </a>{" "}
           project
         </p>
-        <div className="flex items-center gap-2 mt-2">
+        {/* Each link carries its own padding so the tap targets are ~42px and
+            sit apart; the negative margins cancel that padding so the row
+            still lines up with the text above it. */}
+        <div className="-mb-3 flex items-center gap-3">
           <a
             href="https://www.instagram.com/wrtp.us/"
             rel="noreferrer"
             aria-label="We (ARE) the People on Instagram (@wrtp.us)"
-            className="text-muted-foreground hover:text-footer-foreground"
+            className="-ml-3 p-3 text-muted-foreground hover:text-footer-foreground"
           >
-            <InstagramIcon className="size-3.5" />
+            <InstagramIcon className="size-[18px]" />
           </a>
           <a
             href="mailto:info@wearethepeople.us"
-            className="hover:text-footer-foreground text-xs text-muted-foreground underline-offset-2 hover:underline"
+            className="hover:text-footer-foreground py-3 text-xs text-muted-foreground underline-offset-2 hover:underline"
           >
             info@wearethepeople.us
           </a>

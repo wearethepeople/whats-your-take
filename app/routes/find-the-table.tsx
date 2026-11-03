@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { GoldUnderline, ledgerStatusMeta, offsetShadow, Stamp } from "~/components/visual-grammar";
 import { db } from "~/db/client.server";
+import { formatCityState } from "~/features/events/location";
 import { nextStop, upcomingLedger } from "~/features/events/services/season.server";
 import { DEFAULT_TIME_ZONE } from "~/lib/timezone";
 
@@ -72,10 +73,13 @@ function buildIcsDataUrl(event: {
   venue: string | null;
   address: string | null;
   city: string;
+  state: string | null;
   startsAt: Date;
   endsAt: Date;
 }): string {
-  const location = [event.venue, event.address, event.city].filter(Boolean).join(", ");
+  const location = [event.venue, event.address, formatCityState(event.city, event.state)]
+    .filter(Boolean)
+    .join(", ");
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -98,9 +102,12 @@ function directionsUrl(event: {
   venue: string | null;
   address: string | null;
   city: string;
+  state: string | null;
   zip: string | null;
 }): string {
-  const query = [event.venue, event.address, event.city, event.zip].filter(Boolean).join(", ");
+  const query = [event.venue, event.address, formatCityState(event.city, event.state), event.zip]
+    .filter(Boolean)
+    .join(", ");
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
@@ -132,10 +139,12 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
             Come find <GoldUnderline>the table.</GoldUnderline>
           </h1>
           <p className="max-w-prose text-[17.5px] text-muted-foreground">
-            Some stops have the canopy and the long table &mdash; sit down, it takes two minutes, or
-            just watch. Others are just a host with a sign, taking answers on the spot. Either way,
-            you can only answer in person. That&rsquo;s the point.
+            Find the table and have a seat. It takes a couple minutes on average. You can only
+            answer in person. That&rsquo;s the point.
           </p>
+          <Link to="/events" className="w-fit text-primary underline underline-offset-4">
+            See every stop, past and upcoming
+          </Link>
         </section>
 
         <section className="flex flex-col gap-8 px-6 py-14 sm:px-14">
@@ -152,7 +161,8 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
                   </p>
                   <p className="text-muted-foreground">
                     {featured.venue ?? "Venue to be announced"}
-                    {featured.address ? `, ${featured.address}` : ""}, {featured.city}
+                    {featured.address ? `, ${featured.address}` : ""},{" "}
+                    {formatCityState(featured.city, featured.state)}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:w-56">
@@ -175,8 +185,8 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
 
               {upcoming.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <div className="grid grid-cols-[auto_auto_1fr_auto] gap-x-4 sm:gap-x-8">
-                    <div className="col-span-full grid grid-cols-subgrid items-center border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase">
+                  <div className="flex flex-col sm:grid sm:grid-cols-[auto_auto_1fr_auto] sm:gap-x-8">
+                    <div className="col-span-full hidden grid-cols-subgrid items-center border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase sm:grid">
                       <span>No.</span>
                       <span>Date</span>
                       <span>Stop</span>
@@ -215,6 +225,7 @@ function UpcomingRow({
     publicSlug: string;
     name: string;
     city: string;
+    state: string | null;
     dateLabel: string;
     status: "up-next" | "scheduled" | "sealed";
     stopNumber: number;
@@ -224,16 +235,21 @@ function UpcomingRow({
   return (
     <Link
       to={`/events/${event.publicSlug}`}
-      className="col-span-full grid grid-cols-subgrid items-center border-b border-foreground/10 px-0 py-4"
+      className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-foreground/10 px-0 py-4 sm:col-span-full sm:grid sm:grid-cols-subgrid sm:items-center"
     >
-      <span className="font-mono text-sm text-muted-foreground">
+      <span className="order-1 font-mono text-sm text-muted-foreground sm:order-none">
         {String(event.stopNumber).padStart(2, "0")}
       </span>
-      <span className="text-sm text-muted-foreground">{event.dateLabel}</span>
-      <span className="font-semibold">
-        {event.name} <span className="font-normal text-muted-tan">· {event.city}</span>
+      <span className="order-2 text-sm text-muted-foreground sm:order-none">{event.dateLabel}</span>
+      <span className="order-4 basis-full font-semibold sm:order-none sm:basis-auto">
+        {event.name}{" "}
+        <span className="font-normal text-muted-tan">
+          · {formatCityState(event.city, event.state)}
+        </span>
       </span>
-      <span className={`font-mono text-xs uppercase ${status.statusClassName}`}>
+      <span
+        className={`order-3 ml-auto font-mono text-xs uppercase sm:order-none sm:ml-0 ${status.statusClassName}`}
+      >
         {status.statusLabel}
       </span>
     </Link>

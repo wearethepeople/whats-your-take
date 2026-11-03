@@ -2,10 +2,10 @@
 
 *A pop-up civic guestbook from We (ARE) the People*
 
-Under a shaded canopy, a table asks one question. This season's: **"What would
-you remind an American in 2075?"** There is nothing to sign up for, nothing to
+Under a shaded canopy, a table asks one question. Right now: **"What would
+you remind an American in 2076?"** There is nothing to sign up for, nothing to
 buy, and no label to wear. It happens before labels. You can write your answer on a card and decorate it
-with markers and stamps, type it at the table, or submit it from your phone.
+with markers and stamps, or submit it from your phone.
 You can also just watch. Every way of participating — including not
 participating — is welcome.
 
@@ -48,5 +48,5 @@ experience. We come as a community activation, not a vendor.
 
 ---
 
-We (ARE) the People is a nonpartisan civic project based in Dallas, Texas.
+We (ARE) the People is a nonpartisan civic identity project based in Dallas, Texas.
 Learn more at **wearethepeople.us** · contact: [info@wearethepeople.us]

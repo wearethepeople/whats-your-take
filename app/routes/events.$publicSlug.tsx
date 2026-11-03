@@ -4,6 +4,7 @@ import { db } from "~/db/client.server";
 import { NarrativeMarkdown } from "~/components/narrative-markdown";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { DashedDivider, GoldUnderline, LiveStateNote, Stamp } from "~/components/visual-grammar";
+import { formatCityState } from "~/features/events/location";
 import { revealAnnouncement, type RevealAnnouncement } from "~/features/events/reveal-date";
 import { eventDetail } from "~/features/events/services/season.server";
 
@@ -78,7 +79,6 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
         <div className="flex flex-col gap-5">
           <p className="font-mono text-xs text-primary uppercase">
             Stop No. {String(event.stopNumber).padStart(2, "0")}
-            {event.seasonLabel ? ` · ${event.seasonLabel}` : ""}
           </p>
           <EventHeadline text={event.name} />
 
@@ -91,7 +91,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
                 This day&rsquo;s table has closed. Physical cards are still being transcribed, so
                 the count isn&rsquo;t final yet — once it is, these takes join the record and open
                 with every other stop
-                <RevealClause announcement={announcement} />, at the season premiere.
+                <RevealClause announcement={announcement} />, at the reveal.
               </p>
             </div>
           ) : sealed ? (
@@ -100,7 +100,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
               <p className="text-muted-foreground">
                 This day&rsquo;s {event.takeCount} takes are in the record. They open with every
                 other stop
-                <RevealClause announcement={announcement} />, at the season premiere.
+                <RevealClause announcement={announcement} />, at the reveal.
               </p>
             </div>
           ) : scheduled ? (
@@ -135,7 +135,11 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
 
             <FactRow label="Place">
               <p>{event.venue ?? "Venue to be announced"}</p>
-              <p>{event.address ? `${event.address}, ${event.city}` : event.city}</p>
+              <p>
+                {event.address
+                  ? `${event.address}, ${formatCityState(event.city, event.state)}`
+                  : formatCityState(event.city, event.state)}
+              </p>
             </FactRow>
             <DashedDivider />
 

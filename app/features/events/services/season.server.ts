@@ -317,6 +317,8 @@ export type ArchiveEvent = LedgerEvent & {
   // without one flat list needing a header when there's only ever been
   // one season.
   promptId: number;
+  // That prompt's question, for the archive's per-question group headers.
+  promptText: string;
   // Kept (not just the formatted dateLabel) so callers can sort/range
   // without re-querying — see archiveView()'s dateRangeLabel and
   // upcomingLedger().
@@ -359,6 +361,13 @@ function publicEventRows(db: Db): ArchiveEvent[] {
     allEvents.map((event) => event.id),
   );
   const labels = seasonLabels(db);
+  const promptTexts = new Map(
+    db
+      .select({ id: prompts.id, text: prompts.text })
+      .from(prompts)
+      .all()
+      .map((prompt) => [prompt.id, prompt.text]),
+  );
   const total = allEvents.length;
 
   return allEvents.map((event, index) => ({
@@ -373,6 +382,7 @@ function publicEventRows(db: Db): ArchiveEvent[] {
     liveState: liveStateFor(event.status),
     stopNumber: total - index,
     seasonLabel: labels.get(event.promptId) ?? "",
+    promptText: promptTexts.get(event.promptId) ?? "",
     promptId: event.promptId,
     startsAt: event.startsAt,
   }));

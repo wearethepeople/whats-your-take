@@ -5,15 +5,20 @@ import { db } from "~/db/client.server";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
+import heroPhoto800 from "~/assets/photos/hero-800.webp";
+import heroPhoto1400 from "~/assets/photos/hero-1400.webp";
+import heroPhoto2000 from "~/assets/photos/hero-2000.webp";
+import writingPhoto from "~/assets/photos/writing.webp";
 import {
   CircledStep,
   GoldUnderline,
   LiveStateNote,
+  PhotoFrame,
   ledgerStatusMeta,
-  Stamp,
   offsetShadow,
 } from "~/components/visual-grammar";
-import { formatRevealDate } from "~/features/events/reveal-date";
+import { formatCityState } from "~/features/events/location";
+import { formatRevealDate, revealAnnouncement } from "~/features/events/reveal-date";
 import {
   closedSeasonView,
   seasonView,
@@ -91,11 +96,24 @@ function PromptHeadline({ text }: { text: string }) {
   const words = text.trim().split(/\s+/);
   const last = words.pop();
   return (
-    <h1 className="font-serif text-4xl leading-tight font-semibold text-balance sm:text-5xl">
-      {words.join(" ")} {last ? <GoldUnderline>{last}</GoldUnderline> : null}
+    <h1 className={headlineClass}>
+      {words.join(" ")}{" "}
+      {last ? <GoldUnderline className={headlineUnderline}>{last}</GoldUnderline> : null}
     </h1>
   );
 }
+
+// The hero headline is the page: set as large as the width allows, with the
+// gold underline scaled to the type (em, not the fixed 8px of body headlines).
+const headlineClass =
+  "mx-auto max-w-5xl font-serif text-5xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-7xl lg:text-8xl";
+const heroCta = "h-12 px-6 text-base";
+// One scale below the hero and the reveal: for the sections that carry
+// content (steps, the tour table) rather than a statement of their own.
+const sectionHeadlineClass =
+  "max-w-3xl font-serif text-3xl leading-[1.1] font-semibold tracking-tight text-balance sm:text-5xl";
+const sectionHeadlineUnderline = "[box-shadow:inset_0_-0.14em_0_var(--color-accent)]";
+const headlineUnderline = "[box-shadow:inset_0_-0.16em_0_var(--color-accent)]";
 
 function daysUntil(date: Date): number {
   return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86_400_000));
@@ -105,6 +123,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const { view, sealed } = loaderData;
   const reveal = view?.season.revealDate ?? null;
   const revealDateLabel = reveal ? formatRevealDate(reveal) : null;
+  // "on" a day, "in" a month — see revealAnnouncement().
+  const announcement = revealAnnouncement(reveal);
+  // The prompt is host-authored and changes, so the "Why 2076?" line only
+  // appears while the live question actually mentions 2076.
+  const asksAboutTricentennial = view?.season.promptText.includes("2076") ?? false;
   const daysToReveal = reveal ? daysUntil(reveal.date) : null;
   const subscribed = actionData?.ok === true;
   const nextStop = view?.ledger.find((event) => event.status === "up-next");
@@ -122,8 +145,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
     <div className="flex min-h-screen flex-col font-sans text-foreground">
       {nextStop ? (
         <div className="bg-primary px-4 py-2 text-center text-[13px] font-bold text-primary-foreground">
-          Next stop: {nextStop.name}, {nextStop.city}
-          {nextStop.state ? `, ${nextStop.state}` : ""} · {nextStop.dateLabel}
+          Next stop: {nextStop.name}, {formatCityState(nextStop.city, nextStop.state)} ·{" "}
+          {nextStop.dateLabel}
         </div>
       ) : null}
 
@@ -132,96 +155,99 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
       <main className="flex-1">
         <section
           id="question"
-          className="grid gap-10 border-b border-dashed border-(--color-dashed) px-6 py-14 sm:grid-cols-[1fr_300px] sm:px-14 sm:py-16"
+          className="flex flex-col items-center px-6 pt-16 text-center sm:px-14 sm:pt-24"
         >
-          <div className="flex flex-col gap-6">
-            <p className="text-sm text-muted-tan">
-              A pop-up civic guestbook · One table. One question. Before labels.
-            </p>
+          <p className="scroll-reveal text-sm text-muted-tan">
+            A pop-up civic guestbook · One table. One question. Before labels.
+          </p>
+          <div className="mt-6">
             {view ? (
               <PromptHeadline text={view.season.promptText} />
             ) : (
-              <h1 className="font-serif text-4xl font-semibold">
-                A pop-up civic guestbook is on its way.
-              </h1>
+              <h1 className={headlineClass}>A pop-up civic guestbook is on its way.</h1>
             )}
-            <p className="max-w-prose text-[17.5px] text-muted-foreground">
-              {sealed ? (
-                <>
-                  That season&rsquo;s table has finished its tour of festivals and markets. Every
-                  take is sealed, anonymous and unedited, until the whole record opens together.
-                </>
-              ) : (
-                <>
-                  All through America&rsquo;s 250th year, a shaded table travels to festivals and
-                  markets. People stop for two minutes and answer in their own words: anonymous,
-                  unpolled, unedited.
-                </>
-              )}
-            </p>
-            <p className="max-w-prose text-[15px] text-muted-foreground">
-              You can&rsquo;t answer from here. The table only happens in person, one place at a
-              time. Nothing is published or shared until the whole record opens at once
-              {revealDateLabel ? (
-                <>
-                  : <span className="bg-accent px-0.5 font-semibold">{revealDateLabel}</span>
-                </>
-              ) : (
-                ", on a date to be announced"
-              )}
-              .
-            </p>
-            <div className="flex flex-wrap items-center gap-5">
-              <Button
-                render={<Link to="/find-the-table" />}
-                nativeButton={false}
-                className={offsetShadow}
-              >
-                Where the table goes next
-              </Button>
-              <a href="#how-it-works" className="text-sm underline underline-offset-4">
-                How the table works
-              </a>
-              <Button
-                render={<Link to="/bring-the-table" />}
-                nativeButton={false}
-                variant="outline"
-                className={offsetShadow}
-              >
-                Bring the table to your town
-              </Button>
-            </div>
           </div>
+          <p className="scroll-reveal mt-8 max-w-2xl text-xl text-muted-foreground sm:text-2xl">
+            {sealed ? (
+              <>
+                The table has finished its tour of festivals and markets. Every take is sealed,
+                anonymous and unedited, until the whole record opens together.
+              </>
+            ) : (
+              <>
+                We&rsquo;re taking one question around the country, to festivals and markets, and
+                asking everyone who stops by. Every answer is anonymous, and sealed until{" "}
+                {revealDateLabel ? (
+                  <span className="bg-accent px-0.5 font-semibold">{revealDateLabel}</span>
+                ) : (
+                  "the whole record opens"
+                )}
+                .
+              </>
+            )}
+          </p>
+          <div className="scroll-reveal mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
+            <Button
+              render={<Link to="/find-the-table" />}
+              nativeButton={false}
+              className={`${offsetShadow} ${heroCta}`}
+            >
+              Where the table goes next
+            </Button>
+            <a href="#how-it-works" className="text-base underline underline-offset-4">
+              How the table works
+            </a>
+          </div>
+          <div className="scroll-reveal mt-12 flex max-w-xl flex-col gap-1 text-[15px] text-muted-foreground">
+            <p>
+              You can&rsquo;t answer from here. The table only happens in person, one place at a
+              time.
+            </p>
+            {asksAboutTricentennial ? (
+              <p className="text-muted-tan">Why 2076? It&rsquo;s America&rsquo;s 300th birthday.</p>
+            ) : null}
+          </div>
+        </section>
 
-          {view ? (
-            <div className="relative h-fit border-[1.5px] border-foreground bg-card p-5">
-              <Stamp className="absolute -top-3 right-4 bg-primary text-primary-foreground">
-                {view.season.label}
-              </Stamp>
-              <p className="mb-3 text-sm font-semibold text-primary">
-                {sealed ? "The season, sealed" : "The record so far"}
-              </p>
-              <dl className="flex flex-col">
-                <StatRow label="Stops so far" value={String(view.stats.stopCount)} />
-                <StatRow
-                  label="Takes recorded"
-                  value={String(view.stats.totalTakes)}
-                  liveState={view.stats.liveState}
-                />
-                <StatRow label="Towns" value={String(view.stats.townCount)} />
-                {view.stats.upcomingCount > 0 ? (
-                  <StatRow label="Upcoming events" value={String(view.stats.upcomingCount)} />
-                ) : null}
-                {daysToReveal != null ? (
-                  <StatRow label="Days to the reveal" value={String(daysToReveal)} highlight />
-                ) : null}
-              </dl>
-              <p className="mt-3 text-xs text-muted-foreground">
-                No names, no accounts. One scan at the table is the whole system. The record stays
-                sealed until it opens all at once.
-              </p>
+        <PhotoFrame
+          src={heroPhoto1400}
+          srcSet={`${heroPhoto800} 800w, ${heroPhoto1400} 1400w, ${heroPhoto2000} 2000w`}
+          sizes="100vw"
+          alt="Two hosts in cream pocket tees stand behind the table: a What’s Your Take? sign on an easel, a stand asking “What would you remind an American in 2076?”, and rows of rubber stamps, crayons, markers and stickers on a linen tablecloth."
+          width={2000}
+          height={961}
+          loading="eager"
+          bordered={false}
+          className="hero-photo mt-14 aspect-[4/3] w-full sm:mt-20 sm:aspect-[2000/961]"
+          imgClassName="object-[100%_50%] sm:object-center"
+        />
+
+        {view ? (
+          <section className="bg-(--footer) px-6 py-20 text-(--footer-foreground) sm:px-14 sm:py-28">
+            <div className="scroll-reveal mx-auto flex max-w-5xl flex-col items-center gap-3 text-center">
+              <h2 className="text-sm font-semibold text-accent">
+                {sealed ? "The record, sealed" : "The record so far"}
+              </h2>
+            </div>
+            <dl className="mx-auto mt-12 flex max-w-5xl flex-wrap justify-center gap-x-16 gap-y-12 text-center">
+              <BigStat label="Stops so far" value={String(view.stats.stopCount)} />
+              <BigStat
+                label="Takes recorded"
+                value={String(view.stats.totalTakes)}
+                liveState={view.stats.liveState}
+              />
+              <BigStat label="Towns" value={String(view.stats.townCount)} />
+              {view.stats.upcomingCount > 0 ? (
+                <BigStat label="Upcoming events" value={String(view.stats.upcomingCount)} />
+              ) : null}
+              {daysToReveal != null ? (
+                <BigStat label="Days to the reveal" value={String(daysToReveal)} highlight />
+              ) : null}
+            </dl>
+            <div className="scroll-reveal mx-auto mt-14 flex max-w-xl flex-col gap-3 text-center text-sm text-(--footer-foreground)/70">
+              <p>No names, no accounts. The record stays sealed until it opens all at once.</p>
               {view.stats.liveState ? (
-                <p className="mt-3 border border-border bg-muted p-2 text-xs text-muted-tan">
+                <p>
                   {view.stats.liveState === "open" ? (
                     <>&ldquo;In process&rdquo; means a table is currently open.</>
                   ) : (
@@ -233,59 +259,102 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 </p>
               ) : null}
             </div>
-          ) : null}
-        </section>
+          </section>
+        ) : null}
 
-        <section
-          id="how-it-works"
-          className="grid gap-10 border-b border-dashed border-(--color-dashed) px-6 py-14 sm:grid-cols-[7fr_5fr] sm:divide-x sm:divide-dashed sm:divide-(--color-dashed) sm:px-14"
-        >
-          <div className="flex flex-col gap-4 sm:pr-10">
-            <p className="text-sm text-muted-tan">The reveal</p>
-            <h2 className="font-serif text-3xl font-semibold">
-              One year of answers, opened <GoldUnderline>all at once.</GoldUnderline>
-            </h2>
-            <p className="max-w-prose text-muted-foreground">
-              {revealDateLabel ? <>On {revealDateLabel}, the</> : "The"} sealed record opens at a
-              public premiere: every take from every stop, read together for the first time. Until
-              then the guestbook stays closed: what you write today carries the same weight as
-              everything written before it.
-            </p>
+        <section id="the-reveal" className="px-6 py-24 text-center sm:px-14 sm:py-40">
+          <p className="scroll-reveal text-sm text-muted-tan">The reveal</p>
+          <h2 className="scroll-reveal mx-auto mt-6 max-w-4xl font-serif text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
+            Every answer, opened{" "}
+            <GoldUnderline className={headlineUnderline}>all at once.</GoldUnderline>
+          </h2>
+          <p className="scroll-reveal mx-auto mt-10 max-w-2xl text-xl text-muted-foreground sm:mt-12">
+            {announcement ? (
+              <>
+                {announcement.preposition === "in" ? "In" : "On"} {announcement.label}, the
+              </>
+            ) : (
+              "The"
+            )}{" "}
+            whole record is released, alongside a short film that tries to answer two questions:
+          </p>
+          <div className="scroll-reveal mx-auto mt-10 flex flex-col gap-2 font-serif text-3xl leading-tight font-semibold sm:text-5xl">
+            <p>Who are we?</p>
+            <p>What do we believe?</p>
+          </div>
+          <p className="scroll-reveal mx-auto mt-10 max-w-2xl text-xl text-muted-foreground">
+            With no pressure to wear a label, the answers become a kind of mirror: the country,
+            reflected back to itself.
+          </p>
+          <div className="scroll-reveal mx-auto mt-14 w-fit text-left">
             <SeasonTimeline
               stats={view?.stats ?? null}
               sealed={sealed}
               revealDateLabel={revealDateLabel}
             />
           </div>
-          <div className="flex flex-col gap-5 sm:pl-10">
+        </section>
+
+        <section
+          id="how-it-works"
+          className="border-t border-dashed border-(--color-dashed) px-6 py-24 sm:px-14 sm:py-32"
+        >
+          <div className="scroll-reveal flex flex-col items-center gap-4 text-center">
             <p className="text-sm text-muted-tan">How it works</p>
-            <ol className="flex flex-col gap-4">
+            <h2 className={sectionHeadlineClass}>
+              Your voice{" "}
+              <GoldUnderline className={sectionHeadlineUnderline}>outside of feeds.</GoldUnderline>
+            </h2>
+          </div>
+          <div className="mx-auto mt-14 grid max-w-6xl items-center gap-12 sm:grid-cols-2 sm:gap-16">
+            <ol className="flex flex-col gap-10">
               <Step n={1}>
-                Find the canopy. Nothing to sign up for, nothing to buy. Watching counts too.
+                Find the table. Nothing to sign up for. You&rsquo;re welcome to just watch.
               </Step>
-              <Step n={2}>
-                Write your take: card and marker, keyboard at the table, or your own phone. No name,
-                ever.
-              </Step>
+              <Step n={2}>Write your take on a card, or on your phone. Anonymous by design.</Step>
               <Step n={3}>
-                Your host scans it into the day&rsquo;s record: proof a real person was really here.
+                Your take is added into the day&rsquo;s record: proof a real person was really here.
               </Step>
             </ol>
+            <PhotoFrame
+              src={writingPhoto}
+              alt="Two people sit side by side at the table, bent over their cards with pencils, with rubber stamps, markers and a cup of pencils laid out beside them."
+              width={1200}
+              height={1169}
+              className="scroll-reveal aspect-square"
+            />
           </div>
         </section>
 
         {view && view.ledger.length > 0 ? (
-          <section className="px-6 py-14 sm:px-14">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-sm text-muted-tan">
-                {sealed ? "Where the table went" : "The season so far, and where it’s going"}
-              </h2>
-              <Link to="/events" className="text-sm underline underline-offset-4">
-                All stops
-              </Link>
+          <section className="border-t border-dashed border-(--color-dashed) px-6 py-20 sm:px-14 sm:py-28">
+            <div className="scroll-reveal mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+              <div className="flex flex-col gap-4">
+                <p className="text-sm text-muted-tan">{sealed ? "The tour" : "The tour so far"}</p>
+                <h2 className={sectionHeadlineClass}>
+                  {sealed ? (
+                    "Where we’ve been."
+                  ) : (
+                    <>
+                      Where we&rsquo;ve been,{" "}
+                      <GoldUnderline className={sectionHeadlineUnderline}>
+                        where we&rsquo;re headed.
+                      </GoldUnderline>
+                    </>
+                  )}
+                </h2>
+              </div>
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <Link to="/events" className="underline underline-offset-4">
+                  All stops
+                </Link>
+                <Link to="/bring-the-table" className="underline underline-offset-4">
+                  Bring the table to your town
+                </Link>
+              </div>
             </div>
             <div className="overflow-x-auto">
-              <div className="grid grid-cols-[auto_1fr_6rem_auto] gap-x-4 sm:gap-x-8">
+              <div className="flex flex-col sm:grid sm:grid-cols-[auto_1fr_6rem_auto] sm:gap-x-8">
                 {view.ledger.map((event) => (
                   <LedgerRow key={event.id} event={event} />
                 ))}
@@ -352,7 +421,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   );
 }
 
-function StatRow({
+function BigStat({
   label,
   value,
   highlight = false,
@@ -364,12 +433,25 @@ function StatRow({
   liveState?: LiveState;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-dashed border-(--color-dashed) py-2 last:border-0">
-      <span className="flex flex-col justify-center leading-tight">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        {liveState ? <LiveStateNote state={liveState} /> : null}
-      </span>
-      <span className={`font-serif text-2xl ${highlight ? "text-primary" : ""}`}>{value}</span>
+    <div className="scroll-reveal flex min-w-32 flex-col-reverse items-center gap-2">
+      {/* The live-state note hangs below the label, out of flow, so it can't
+          change this stat's height and lift its numeral off the shared baseline. */}
+      <dt className="relative text-sm text-(--footer-foreground)/70">
+        {label}
+        {liveState ? (
+          <LiveStateNote
+            state={liveState}
+            className="absolute inset-x-0 top-full mt-1.5 justify-center text-accent"
+          />
+        ) : null}
+      </dt>
+      <dd
+        className={`font-serif text-6xl leading-none font-semibold tracking-tight sm:text-8xl ${
+          highlight ? "text-accent" : "text-(--footer-foreground)"
+        }`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }
@@ -396,7 +478,7 @@ function SeasonTimeline({
   const current = sealed ? "premiere" : hasLaterStops ? "so-far" : firstStopLabel ? "first" : null;
 
   return (
-    <ol className="mt-2 flex flex-col" aria-label="The season, start to premiere">
+    <ol className="mt-2 flex flex-col" aria-label="From the first table to the reveal">
       {firstStopLabel ? (
         <TimelineItem reached current={current === "first"}>
           <p className="font-mono text-sm text-primary">{firstStopLabel.toUpperCase()}</p>
@@ -406,7 +488,7 @@ function SeasonTimeline({
       {stats && hasLaterStops ? (
         <TimelineItem reached current={current === "so-far"}>
           <p className="font-semibold">
-            {pluralize(stats.laterStopCount, "table")}, {pluralize(stats.laterTownCount, "city")}
+            {pluralize(stats.laterStopCount, "table")}, {pluralize(stats.laterTownCount, "town")}
           </p>
         </TimelineItem>
       ) : null}
@@ -453,9 +535,9 @@ function TimelineItem({
 
 function Step({ n, children }: { n: number; children: React.ReactNode }) {
   return (
-    <li className="flex items-start gap-3">
-      <CircledStep n={n} />
-      <p className="text-muted-foreground">{children}</p>
+    <li className="scroll-reveal flex items-start gap-5">
+      <CircledStep n={n} className="size-12 text-2xl" />
+      <p className="pt-1 text-xl leading-snug text-foreground sm:text-2xl">{children}</p>
     </li>
   );
 }
@@ -479,29 +561,34 @@ function LedgerRow({
   return (
     <Link
       to={`/events/${event.publicSlug}`}
-      className={`col-span-full grid grid-cols-subgrid items-center border-b border-foreground/10 px-3 py-4 first:border-t ${
+      className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-foreground/10 px-3 py-4 first:border-t sm:col-span-full sm:grid sm:grid-cols-subgrid sm:items-center ${
         status.rowHighlight ? "bg-card" : ""
       }`}
     >
       <span
-        className={`text-sm ${status.rowHighlight ? "font-semibold text-primary" : "text-muted-foreground"}`}
+        className={`order-1 text-sm sm:order-none ${status.rowHighlight ? "font-semibold text-primary" : "text-muted-foreground"}`}
       >
         {event.dateLabel}
       </span>
-      <span className="font-semibold">
+      <span className="order-3 basis-full font-semibold sm:order-none sm:basis-auto">
         {event.name}{" "}
         <span className="font-normal text-muted-tan">
-          · {event.city}
-          {event.state ? `, ${event.state}` : ""}
+          · {formatCityState(event.city, event.state)}
         </span>
       </span>
-      <span className="flex flex-col items-end justify-center text-right leading-tight">
+      <span
+        className={`order-4 basis-full flex-col items-start leading-tight sm:order-none sm:flex sm:basis-auto sm:items-end sm:justify-center sm:text-right ${
+          event.status === "scheduled" ? "hidden" : "flex"
+        }`}
+      >
         <span className="font-mono text-sm text-muted-foreground">
           {status.countLabel ?? `${event.takeCount} takes`}
         </span>
         {event.liveState ? <LiveStateNote state={event.liveState} /> : null}
       </span>
-      <span className={`font-mono text-xs uppercase ${status.statusClassName}`}>
+      <span
+        className={`order-2 ml-auto font-mono text-xs uppercase sm:order-none sm:ml-0 ${status.statusClassName}`}
+      >
         {status.statusLabel}
       </span>
     </Link>

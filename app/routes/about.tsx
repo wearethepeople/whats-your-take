@@ -1,13 +1,14 @@
 import { Link } from "react-router";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
-import { DashedDivider, GoldUnderline } from "~/components/visual-grammar";
+import { DashedDivider, GoldUnderline, PhotoFrame } from "~/components/visual-grammar";
+import tablePhoto from "~/assets/photos/the-table.webp";
 
 export function meta() {
   return [
     { title: "About · What’s Your Take?" },
     {
       name: "description",
-      content: "A guestbook for the country’s 250th year: in person, anonymous, and sealed.",
+      content: "A guestbook for the country’s 250th birthday: in person, anonymous, and sealed.",
     },
   ];
 }
@@ -18,37 +19,52 @@ export default function About() {
       <SiteHeader active="about" />
 
       <main className="flex-1">
-        <section className="flex flex-col gap-6 border-b border-dashed border-(--color-dashed) px-6 py-14 sm:px-14 sm:py-16">
-          <p className="text-sm text-muted-tan">About the project</p>
-          <h1 className="max-w-2xl font-serif text-4xl leading-tight font-semibold text-balance sm:text-5xl">
-            A guestbook for the country&rsquo;s <GoldUnderline>250th year.</GoldUnderline>
-          </h1>
-          <p className="max-w-prose text-[17.5px] text-muted-foreground">
-            What&rsquo;s Your Take? is one shaded table with one question, set up where people
-            already are: festivals, markets, park days. No stage, no debate, nothing to sign up for.
-            Before labels. You sit, you write, you drop it in the box. Two minutes, and you were
-            part of it.
-          </p>
-          <p className="max-w-prose text-[17.5px] text-muted-foreground">
-            Every answer is anonymous by design: there is nowhere to put your name. And every answer
-            stays sealed. No feed, no reactions, no running tally of what &ldquo;people like
-            you&rdquo; think. The record opens once, all together, at the season premiere.
-          </p>
+        <section className="grid gap-10 border-b border-dashed border-(--color-dashed) px-6 py-14 sm:grid-cols-[1fr_360px] sm:px-14 sm:py-16">
+          <div className="flex flex-col gap-6">
+            <p className="text-sm text-muted-tan">About the project</p>
+            <h1 className="max-w-2xl font-serif text-4xl leading-tight font-semibold text-balance sm:text-5xl">
+              A guestbook for the country&rsquo;s <GoldUnderline>250th birthday.</GoldUnderline>
+            </h1>
+            <p className="max-w-prose text-[17.5px] text-muted-foreground">
+              What&rsquo;s Your Take? is a table we set up where people already are: festivals,
+              markets, park days. It asks one question. You sit down, write your answer on a card or
+              on your own phone, and drop it in the box. There&rsquo;s no stage, no debate, and
+              nothing to sign up for, and it takes about two minutes.
+            </p>
+            <p className="max-w-prose text-[17.5px] text-muted-foreground">
+              We&rsquo;re taking that question around the country, and everything people write stays
+              sealed until the reveal. Then every answer is released at once, alongside a short film
+              that tries to answer two questions: Who are we? What do we believe?
+            </p>
+            <p className="max-w-prose text-[17.5px] text-muted-foreground">
+              With no pressure to wear a label, the answers add up to a kind of civic mirror: the
+              country, reflected back to itself. It's "know thyself" at scale.
+            </p>
+          </div>
+          <PhotoFrame
+            src={tablePhoto}
+            alt="The table under its canopy: a What’s Your Take? sign on an easel, a stand with a QR code and the question, and rows of rubber stamps, ink pads, crayons and stickers on a linen tablecloth."
+            width={900}
+            height={1351}
+            loading="eager"
+            className="aspect-[3/4] sm:relative sm:aspect-auto"
+            imgClassName="sm:absolute sm:inset-0"
+          />
         </section>
 
-        <section className="grid gap-10 px-6 py-14 sm:grid-cols-3 sm:divide-x sm:divide-dashed sm:divide-(--color-dashed) sm:px-14">
-          <WhyColumn heading="Why in person?">
-            Because a stranger&rsquo;s handwriting is harder to dismiss than a username. Every take
-            is scanned in by a host at the table: proof a real person was really here, on a real
-            day.
+        <section className="grid gap-10 px-6 py-14 sm:grid-cols-3 sm:gap-x-0 sm:divide-x sm:divide-dashed sm:divide-(--color-dashed) sm:px-14">
+          <WhyColumn heading="Why in person?" className="sm:pr-8">
+            Agency is felt, not explained. Showing up in a real place, next to real people, gives
+            your whole body the experience. Every take is proof a real person was actually there.
+            Bots need not apply.
           </WhyColumn>
-          <WhyColumn heading="Why anonymous?" className="sm:pl-10">
-            Names turn answers into positions. Without one, you&rsquo;re not performing for anyone.
-            You&rsquo;re just telling the truth to somebody fifty years away.
+          <WhyColumn heading="Why anonymous?" className="sm:px-8">
+            Privacy is worth protecting. We never ask for your name, email or phone when you answer,
+            and nothing ties a take to a person.
           </WhyColumn>
-          <WhyColumn heading="Why sealed?" className="sm:pl-10">
-            So no take can trend, and no take can lose. A year of answers read together says more
-            about us than any single day&rsquo;s argument could.
+          <WhyColumn heading="Why sealed?" className="sm:pl-8">
+            So everyone responds to the question, instead of replying to someone else&rsquo;s
+            answer. Each take carries the same weight.
           </WhyColumn>
         </section>
 
@@ -58,9 +74,8 @@ export default function About() {
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold text-foreground">Who&rsquo;s behind it</h2>
             <p className="max-w-prose text-muted-foreground">
-              We (ARE) the People is a nonpartisan civic project from Dallas, Texas. We&rsquo;re not
-              red, we&rsquo;re not blue, and we&rsquo;re not selling anything. We build small ways
-              for people to be heard and to hear each other.
+              We (ARE) the People is a nonpartisan civic identity project from Dallas, Texas. We
+              build ways for people to be heard and to hear each other.
             </p>
             <a
               href="https://wearethepeople.us"
@@ -72,8 +87,8 @@ export default function About() {
           <div className="flex flex-col gap-2 border-[1.5px] border-foreground bg-card p-5">
             <h2 className="font-semibold">Want the table at your event?</h2>
             <p className="text-muted-foreground">
-              We travel with a canopy, a table, and a box. If your festival, market, or block party
-              has shade for us, or you just want to point us toward a town,{" "}
+              We travel with a canopy, a table, and a couple boxes. If your festival, market, or
+              block party has shade for us, or you just want to point us toward a town,{" "}
               <Link to="/bring-the-table" className="text-primary underline underline-offset-4">
                 let us know
               </Link>

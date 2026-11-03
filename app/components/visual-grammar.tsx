@@ -108,6 +108,55 @@ export function ledgerStatusMeta(status: PublicLedgerStatus): {
   }
 }
 
+// Photograph in the same 1.5px ink border as the stat card. The caller sets
+// the crop (aspect ratio via className, focal point via imgClassName) since
+// the same portrait photo reads differently as a tall column or a wide band.
+export function PhotoFrame({
+  src,
+  srcSet,
+  sizes,
+  alt,
+  width,
+  height,
+  loading = "lazy",
+  bordered = true,
+  className,
+  imgClassName,
+}: {
+  src: string;
+  srcSet?: string;
+  sizes?: string;
+  alt: string;
+  width: number;
+  height: number;
+  loading?: "lazy" | "eager";
+  bordered?: boolean;
+  className?: string;
+  imgClassName?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "overflow-hidden bg-muted",
+        bordered && "border-[1.5px] border-foreground",
+        className,
+      )}
+    >
+      <img
+        src={src}
+        srcSet={srcSet}
+        sizes={sizes}
+        alt={alt}
+        width={width}
+        height={height}
+        loading={loading}
+        decoding="async"
+        className={cn("size-full object-cover", imgClassName)}
+      />
+    </div>
+  );
+}
+
 // Circled step number used in "How it works" steps: 26px circle, 1.5px ink
 // border, bold number.
 export function CircledStep({ n, className }: { n: number; className?: string }) {

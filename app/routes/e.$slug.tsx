@@ -12,6 +12,7 @@ import { db } from "~/db/client.server";
 import { events, prompts } from "~/db/schema.server";
 import { eq } from "drizzle-orm";
 import { DashedDivider, GoldUnderline } from "~/components/visual-grammar";
+import { formatCityState } from "~/features/events/location";
 import { revealAnnouncement, type RevealDate } from "~/features/events/reveal-date";
 import { claimCodeQr } from "~/submissions/qr.server";
 import { MAX_BODY_LENGTH } from "~/submissions/constants";
@@ -198,7 +199,7 @@ function EventFooter({
   city: string;
   state: string | null;
 }) {
-  const location = [venue, state ? `${city}, ${state}` : city].filter(Boolean).join(" · ");
+  const location = [venue, formatCityState(city, state)].filter(Boolean).join(" · ");
   return (
     <div className="w-full border-t border-dashed border-(--color-dashed) pt-4 text-center">
       <p className="text-sm font-bold">{eventName}</p>
@@ -257,7 +258,7 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
           ) : (
             <>
               This table has closed. What was said here stays sealed with every other stop. The
-              portrait and the full corpus open together at the season premiere, not before.
+              portrait and the full corpus open together at the reveal, not before.
             </>
           )}
         </p>
