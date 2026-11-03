@@ -25,8 +25,9 @@ export default function About() {
           </h1>
           <p className="max-w-prose text-[17.5px] text-muted-foreground">
             What&rsquo;s Your Take? is one shaded table with one question, set up where people
-            already are: festivals, markets, park days. No stage, no debate, no sides to join. You
-            sit, you write, you drop it in the box. Two minutes, and you were part of it.
+            already are: festivals, markets, park days. No stage, no debate, nothing to sign up for.
+            Before labels. You sit, you write, you drop it in the box. Two minutes, and you were
+            part of it.
           </p>
           <p className="max-w-prose text-[17.5px] text-muted-foreground">
             Every answer is anonymous by design: there is nowhere to put your name. And every answer

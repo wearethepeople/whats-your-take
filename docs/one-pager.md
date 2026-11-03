@@ -4,7 +4,7 @@
 
 Under a shaded canopy, a table asks one question. This season's: **"What would
 you remind an American in 2075?"** There is nothing to sign up for, nothing to
-buy, and no side to join. You can write your answer on a card and decorate it
+buy, and no label to wear. It happens before labels. You can write your answer on a card and decorate it
 with markers and stamps, type it at the table, or submit it from your phone.
 You can also just watch. Every way of participating — including not
 participating — is welcome.

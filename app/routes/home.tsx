@@ -135,7 +135,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
         >
           <div className="flex flex-col gap-6">
             <p className="text-sm text-muted-tan">
-              A pop-up civic guestbook · One table. One question. No sides to join.
+              A pop-up civic guestbook · One table. One question. Before labels.
             </p>
             {view ? (
               <PromptHeadline text={view.season.promptText} />
