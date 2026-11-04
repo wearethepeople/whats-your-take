@@ -172,6 +172,9 @@ export type LedgerEvent = {
   city: string;
   state: string | null;
   dateLabel: string;
+  // Kept alongside dateLabel so callers can reason about timing (the
+  // homepage's "within a week" banner) without re-querying.
+  startsAt: Date;
   takeCount: number;
   status: LedgerStatus;
   liveState: LiveState;
@@ -268,6 +271,7 @@ function seasonViewFor(db: Db, season: Season): SeasonView {
     city: event.city,
     state: event.state,
     dateLabel: formatDateLabel(event.startsAt),
+    startsAt: event.startsAt,
     takeCount: takeCounts.get(event.id) ?? 0,
     status: publicStatus(event.status),
     liveState: liveStateFor(event.status),
@@ -319,10 +323,6 @@ export type ArchiveEvent = LedgerEvent & {
   promptId: number;
   // That prompt's question, for the archive's per-question group headers.
   promptText: string;
-  // Kept (not just the formatted dateLabel) so callers can sort/range
-  // without re-querying — see archiveView()'s dateRangeLabel and
-  // upcomingLedger().
-  startsAt: Date;
 };
 
 export type ArchiveView = {
@@ -377,6 +377,7 @@ function publicEventRows(db: Db): ArchiveEvent[] {
     city: event.city,
     state: event.state,
     dateLabel: formatDateLabel(event.startsAt),
+    startsAt: event.startsAt,
     takeCount: takeCounts.get(event.id) ?? 0,
     status: publicStatus(event.status),
     liveState: liveStateFor(event.status),
@@ -384,7 +385,6 @@ function publicEventRows(db: Db): ArchiveEvent[] {
     seasonLabel: labels.get(event.promptId) ?? "",
     promptText: promptTexts.get(event.promptId) ?? "",
     promptId: event.promptId,
-    startsAt: event.startsAt,
   }));
 }
 

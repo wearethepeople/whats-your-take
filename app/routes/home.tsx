@@ -18,6 +18,7 @@ import {
   StripeBackdrop,
   stripeButton,
 } from "~/components/visual-grammar";
+import { bannerStop } from "~/features/events/banner-stop";
 import { formatCityState } from "~/features/events/location";
 import { formatRevealDate, revealAnnouncement } from "~/features/events/reveal-date";
 import {
@@ -49,7 +50,9 @@ export async function loader() {
   const live = seasonView(db);
   const view = live ?? closedSeasonView(db);
   const sealed = !live && view != null;
-  return { view, sealed };
+  // Computed server-side so "within a week" is judged against one clock.
+  const nextStop = view ? (bannerStop(view.ledger) ?? null) : null;
+  return { view, sealed, nextStop };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -120,7 +123,7 @@ function daysUntil(date: Date): number {
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
-  const { view, sealed } = loaderData;
+  const { view, sealed, nextStop } = loaderData;
   const reveal = view?.season.revealDate ?? null;
   const revealDateLabel = reveal ? formatRevealDate(reveal) : null;
   // "on" a day, "in" a month — see revealAnnouncement().
@@ -130,7 +133,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const asksAboutTricentennial = view?.season.promptText.includes("2076") ?? false;
   const daysToReveal = reveal ? daysUntil(reveal.date) : null;
   const subscribed = actionData?.ok === true;
-  const nextStop = view?.ledger.find((event) => event.status === "up-next");
 
   // The form is well below the fold — after a successful subscribe, bring
   // the confirmation into view rather than leaving the visitor to guess
