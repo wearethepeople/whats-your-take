@@ -140,10 +140,17 @@ body {
   background: color-mix(in srgb, var(--wrtp-brand-orange) 22%, transparent);
 }
 
+/* Wraps on phones instead of running off the right edge; each label stays
+   on one line ("Table requests" used to break mid-label). */
 .host-nav {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
   margin-bottom: 2rem;
+}
+
+.host-nav a {
+  white-space: nowrap;
 }
 
 .status-badge {
