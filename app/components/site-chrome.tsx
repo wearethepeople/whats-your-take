@@ -123,8 +123,8 @@ function MobileNav({ active }: { active?: NavKey }) {
             carries everything the footer does (minus the nav links, which
             are right above). Padded to share the nav items' text edge. */}
         <SheetFooter className="gap-0 border-t px-7 pt-4 text-sm">
-          <FooterIdentity hover="hover:text-foreground" />
-          <FooterCopyright className="mt-3" />
+          <FooterIdentity muted="text-muted-foreground" hover="hover:text-foreground" />
+          <FooterCopyright className="mt-3 text-muted-foreground" />
         </SheetFooter>
       </SheetContent>
     </Sheet>
@@ -133,7 +133,7 @@ function MobileNav({ active }: { active?: NavKey }) {
 
 /** Org line plus Instagram and email links. `hover` is the link hover color,
  *  since the footer's ink and the sheet's differ. */
-function FooterIdentity({ hover }: { hover: string }) {
+function FooterIdentity({ muted, hover }: { muted: string; hover: string }) {
   return (
     <div className="flex flex-col gap-1">
       <p>
@@ -151,16 +151,13 @@ function FooterIdentity({ hover }: { hover: string }) {
           href="https://www.instagram.com/wrtp.us/"
           rel="noreferrer"
           aria-label="We (ARE) the People on Instagram (@wrtp.us)"
-          className={cn("-ml-3 p-3 text-muted-foreground", hover)}
+          className={cn("-ml-3 p-3", muted, hover)}
         >
           <InstagramIcon className="size-[18px]" />
         </a>
         <a
           href="mailto:info@wearethepeople.us"
-          className={cn(
-            "py-3 text-xs text-muted-foreground underline-offset-2 hover:underline",
-            hover,
-          )}
+          className={cn("py-3 text-xs underline-offset-2 hover:underline", muted, hover)}
         >
           info@wearethepeople.us
         </a>
@@ -170,13 +167,13 @@ function FooterIdentity({ hover }: { hover: string }) {
 }
 
 function FooterCopyright({ className }: { className?: string }) {
-  return <p className={cn("text-muted-foreground", className)}>&copy; 2026 We (ARE) the People</p>;
+  return <p className={className}>&copy; 2026 We (ARE) the People</p>;
 }
 
 export function SiteFooter() {
   return (
     <footer className="flex flex-col gap-4 bg-footer px-6 py-8 text-sm text-footer-foreground sm:px-14 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
-      <FooterIdentity hover="hover:text-footer-foreground" />
+      <FooterIdentity muted="text-footer-foreground/70" hover="hover:text-footer-foreground" />
       <nav className="flex flex-col gap-2 lg:flex-row lg:gap-6">
         {NAV_LINKS.map((link) => (
           <Link key={link.key} to={link.to} className="underline-offset-2 hover:underline">
@@ -184,7 +181,7 @@ export function SiteFooter() {
           </Link>
         ))}
       </nav>
-      <FooterCopyright />
+      <FooterCopyright className="text-footer-foreground/70" />
     </footer>
   );
 }

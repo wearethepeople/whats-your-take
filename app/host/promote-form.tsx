@@ -1,11 +1,11 @@
 // Code entry + scan form shared by the host console and the volunteer
 // screen. Both post to their own route's action.
 
+import { BookPlusIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Form } from "react-router";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { ScanPanel } from "~/host/scan-panel";
 import { HostSection } from "~/host/section";
 
@@ -52,21 +52,37 @@ export function PromoteForm({
         key={actionData?.submittedAt ?? "initial"}
       >
         <div className="flex w-full flex-col gap-1.5">
-          <Label htmlFor="code">Participant&rsquo;s code</Label>
-          <Input
-            id="code"
-            name="code"
-            ref={codeInputRef}
-            className="code-input h-auto"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            autoComplete="off"
-            autoFocus
-          />
+          {/* From sm up the button sits on the input's line and matches its
+              height, at the scan button's width so the right column lines up; on
+              phones it stacks so a full 6-digit code isn't clipped. */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <Input
+              id="code"
+              name="code"
+              ref={codeInputRef}
+              // Placeholder instead of a visible label; aria-label keeps the
+              // accessible name once a code is typed. Smaller and untracked so
+              // it fits beside the button at the code's 2rem size.
+              aria-label="Participant’s code"
+              placeholder="Participant’s code"
+              className="code-input h-auto min-w-0 flex-1 placeholder:text-lg placeholder:tracking-normal"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              autoComplete="off"
+              autoFocus
+            />
+            <Button
+              type="submit"
+              className="h-11 px-5 text-base sm:h-auto sm:w-48 sm:shrink-0 [&_svg:not([class*='size-'])]:size-5"
+            >
+              {/* "Put your take in the book" is the participant-facing phrase. */}
+              <BookPlusIcon data-icon="inline-start" aria-hidden="true" />
+              Promote
+            </Button>
+          </div>
         </div>
         {actionData ? <PromoteBanner ok={actionData.ok} message={actionData.message} /> : null}
-        <Button type="submit">Promote</Button>
       </Form>
       {/* Kept outside the keyed Form above so remounting it on every submit
           (to clear the typed input) doesn't also restart the camera stream. */}
