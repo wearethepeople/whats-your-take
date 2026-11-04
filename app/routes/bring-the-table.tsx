@@ -14,7 +14,7 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 import { db } from "~/db/client.server";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
-import { GoldUnderline, offsetShadow } from "~/components/visual-grammar";
+import { GoldUnderline } from "~/components/visual-grammar";
 import { checkRateLimit, getClientIp } from "~/features/table-requests/services/rate-limit.server";
 import {
   resolveArea,
@@ -208,7 +208,7 @@ export default function BringTheTable({ actionData }: Route.ComponentProps) {
                 </p>
               ) : null}
 
-              <Button type="submit" className={`w-fit ${offsetShadow}`} disabled={!selectedArea}>
+              <Button type="submit" className="h-10 w-fit px-4" disabled={!selectedArea}>
                 Point us there
               </Button>
             </Form>

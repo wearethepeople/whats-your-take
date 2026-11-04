@@ -8,6 +8,53 @@ import { cn } from "~/lib/utils";
 // Offset hard shadow for primary CTAs — not a soft/blurred shadow.
 export const offsetShadow = "shadow-[4px_4px_0_var(--color-accent)]";
 
+// One bar of the WrTP stripes (the top bar of WrtpIcon) as a button
+// silhouette: the same offset-shadow idea as above, but the shadow and the
+// fill both take the bar's wave. In the logo the bar climbs toward the right
+// (a least-squares slope of about -0.12), which made a label set over it
+// look tilted, so here it is turned 6.79° clockwise about its center until
+// its centerline is level. The wave stays; the climb goes. The viewBox is
+// the turned bar's bounds (5:1), and the bar stretches to the button's box
+// (preserveAspectRatio="none"); stretching keeps a level line level, so the
+// band stays level at any button width.
+const STRIPE_BAR_PATH =
+  "M0,17.61c13.92-.46,27.52-.7,41-1.4,19-.98,37.11-3.54,54.31-7.27C124.86,2.53,156.05-.33,188.8.03c1.15.01,2.31.03,3.46.08.42.02.81.16,1.65.33v34.08c-7.23,0-14.11-.09-20.98.02-27.5.41-53.39,3.6-78.16,8.89-28.55,6.1-58.81,8.6-90.38,8.07-1.34-.02-2.67-.14-4.38-.23V17.61Z";
+
+function StripeBar({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="-2.32 6.2 198.54 39.72"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      className={cn("pointer-events-none absolute inset-0 size-full overflow-visible", className)}
+    >
+      <path d={STRIPE_BAR_PATH} transform="rotate(6.79 96.955 25.785)" />
+    </svg>
+  );
+}
+
+// Classes for the element that hosts StripeBackdrop: a link or button with
+// no box of its own, so only the stripe shows. The turned bar fills about
+// 86% of its box's height, so the 56px box gives a band about as thick as
+// a standard 48px button, and a hero-length label keeps the box near the
+// bar's own 5:1. The focus outline stays a plain rectangle, offset clear of
+// the shape.
+export const stripeButton =
+  "group relative isolate inline-flex h-14 items-center justify-center px-10 text-base font-bold text-accent-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring";
+
+// Brand-orange stripe over an ink stripe shadow, the poster's pairing. The
+// label is ink: light text measures only 2.6:1 on the brand orange, while
+// ink passes at 5.2:1. Place it as the first child of a `stripeButton`
+// element; the label follows it as ordinary text.
+export function StripeBackdrop() {
+  return (
+    <>
+      <StripeBar className="-z-10 translate-x-1 translate-y-1 fill-foreground" />
+      <StripeBar className="-z-10 fill-accent transition-colors group-hover:fill-accent-hover" />
+    </>
+  );
+}
+
 // Gold inset-underline highlight for key phrases in headlines: a low-sitting
 // bar so text floats on top, not a background highlight.
 export function GoldUnderline({ className, ...props }: ComponentProps<"span">) {

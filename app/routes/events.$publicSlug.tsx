@@ -43,7 +43,9 @@ function RevealClause({ announcement }: { announcement: RevealAnnouncement | nul
   return announcement ? (
     <>
       , {announcement.preposition}{" "}
-      <span className="bg-accent px-0.5 font-semibold">{announcement.label}</span>
+      <span className="bg-accent px-0.5 font-semibold text-accent-foreground">
+        {announcement.label}
+      </span>
     </>
   ) : (
     ", on a date to be announced"

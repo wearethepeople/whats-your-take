@@ -25,6 +25,21 @@ function marks(source) {
   return { w, h, paths: ds.map((d) => `<path d="${d}"/>`).join("") };
 }
 
+// Colors come from the site's tokens in app.css, so a palette change
+// reaches the share card on the next run instead of drifting.
+const css = read("app/app.css");
+function token(name) {
+  const m = css.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})\\s*;`));
+  if (!m) throw new Error(`app.css has no hex value for --${name}`);
+  return m[1];
+}
+const color = {
+  paper: token("background"),
+  ink: token("black"),
+  orange: token("wrtp-brand-orange"),
+  tagline: token("muted-tan"),
+};
+
 const stripes = marks(read("app/components/wrtp-icon.tsx"));
 const wordmarkSource = read("app/components/wordmark.tsx");
 // The stacked mark is the second <svg> in the file.
@@ -33,11 +48,19 @@ const stacked = marks(wordmarkSource.slice(wordmarkSource.indexOf("WordmarkStack
 const W = 1200;
 const H = 630;
 const markH = 300; // wordmark height; everything else derives from it (see WytLockup)
-const gap = markH * 0.09;
+const gap = markH * 0.13; // keep in step with WytLockup's gap-x
 const taglineGap = markH * 0.06;
 const taglineSize = markH * 0.085;
 
-const stripesW = (markH * stripes.w) / stripes.h;
+// The stripes' right edge frames the text: the bottom bar's bottom-right
+// corner (y=191.23 of the 208.28 viewBox; the bars are wavy and that bar ends
+// higher than it starts) at the tagline's bottom, the top-right corner a
+// smidge above the wordmark. Keep the overhang in step with
+// STRIPES_TOP_OVERHANG in wordmark.tsx.
+const textH = markH + taglineGap + taglineSize;
+const topOverhang = textH * 0.03;
+const stripesH = (textH + topOverhang) * (208.28 / 191.23);
+const stripesW = (stripesH * stripes.w) / stripes.h;
 const stackedW = (markH * stacked.w) / stacked.h;
 const lockupW = stripesW + gap + stackedW;
 const lockupH = markH + taglineGap + taglineSize;
@@ -46,10 +69,10 @@ const y0 = (H - lockupH) / 2;
 const wordmarkX = x0 + stripesW + gap;
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <rect width="${W}" height="${H}" fill="#fdf6ec"/>
-  <g transform="translate(${x0} ${y0}) scale(${markH / stripes.h})" fill="#f1673b">${stripes.paths}</g>
-  <g transform="translate(${wordmarkX} ${y0}) scale(${markH / stacked.h})" fill="#231f20">${stacked.paths}</g>
-  <text x="${wordmarkX}" y="${y0 + markH + taglineGap + taglineSize * 0.95}" font-family="Public Sans" font-size="${taglineSize}" fill="#8a5a34">A civic mirror project.</text>
+  <rect width="${W}" height="${H}" fill="${color.paper}"/>
+  <g transform="translate(${x0} ${y0 - topOverhang}) scale(${stripesH / stripes.h})" fill="${color.orange}">${stripes.paths}</g>
+  <g transform="translate(${wordmarkX} ${y0}) scale(${markH / stacked.h})" fill="${color.ink}">${stacked.paths}</g>
+  <text x="${wordmarkX}" y="${y0 + markH + taglineGap + taglineSize * 0.95}" font-family="Public Sans" font-size="${taglineSize}" fill="${color.tagline}">A civic mirror project.</text>
 </svg>`;
 
 // Point fontconfig at the bundled Public Sans so the tagline matches the site.

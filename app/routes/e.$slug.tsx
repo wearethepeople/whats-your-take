@@ -11,8 +11,10 @@ import type { Route } from "./+types/e.$slug";
 import { db } from "~/db/client.server";
 import { events, prompts } from "~/db/schema.server";
 import { eq } from "drizzle-orm";
+import { Button } from "~/components/ui/button";
 import { DashedDivider, GoldUnderline } from "~/components/visual-grammar";
 import { formatCityState } from "~/features/events/location";
+import { WytLockupLine } from "~/components/wordmark";
 import { revealAnnouncement, type RevealDate } from "~/features/events/reveal-date";
 import { claimCodeQr } from "~/submissions/qr.server";
 import { MAX_BODY_LENGTH } from "~/submissions/constants";
@@ -208,17 +210,12 @@ function EventFooter({
   );
 }
 
-// Same wordmark + tagline pairing as SiteHeader, echoed at the top of every
-// screen in this flow so the submission card reads as the same site, not a
-// separately-branded kiosk app. Always left-aligned, even on the screens
-// below that center everything else.
+// Same lockup as SiteHeader, echoed at the top of every screen in this flow
+// so the submission card reads as the same site (and the same poster that
+// sent the participant here), not a separately-branded kiosk app. Always
+// left-aligned, even on the screens below that center everything else.
 function BrandMark() {
-  return (
-    <div className="mb-4 flex items-baseline gap-2 self-start">
-      <span className="text-[17px] font-bold">What&rsquo;s Your Take?</span>
-      <span className="text-[12.5px] text-muted-tan">A civic mirror project</span>
-    </div>
-  );
+  return <WytLockupLine className="mb-4 self-start [--mark-h:20px]" />;
 }
 
 export default function EventSubmit({ loaderData, actionData }: Route.ComponentProps) {
@@ -395,7 +392,7 @@ function ComposeForm({
           maxLength={MAX_BODY_LENGTH}
           rows={kiosk ? 8 : 6}
           placeholder="Say it plainly."
-          className="w-full rounded-2xl border-2 border-[#e6cfa8] p-4 text-base outline-none focus:border-primary"
+          className="w-full rounded-2xl border-2 border-input p-4 text-base outline-none focus:border-primary"
         />
         {error ? (
           <p className="banner banner-error" role="alert">
@@ -406,12 +403,9 @@ function ComposeForm({
           Responses are anonymous, and any names will be redacted. By submitting, you give We (ARE)
           the People permission to share, display, and publish your response in any medium.
         </p>
-        <button
-          type="submit"
-          className="min-h-[52px] w-full rounded-full bg-primary text-[15px] font-bold text-primary-foreground transition-colors hover:bg-[#a8552e]"
-        >
+        <Button type="submit" className="h-10 w-full">
           Submit your response
-        </button>
+        </Button>
       </Form>
 
       <EventFooter eventName={eventName} venue={venue} city={city} state={state} />

@@ -15,7 +15,8 @@ import {
   LiveStateNote,
   PhotoFrame,
   ledgerStatusMeta,
-  offsetShadow,
+  StripeBackdrop,
+  stripeButton,
 } from "~/components/visual-grammar";
 import { formatCityState } from "~/features/events/location";
 import { formatRevealDate, revealAnnouncement } from "~/features/events/reveal-date";
@@ -107,7 +108,6 @@ function PromptHeadline({ text }: { text: string }) {
 // gold underline scaled to the type (em, not the fixed 8px of body headlines).
 const headlineClass =
   "mx-auto max-w-5xl font-serif text-5xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-7xl lg:text-8xl";
-const heroCta = "h-12 px-6 text-base";
 // One scale below the hero and the reveal: for the sections that carry
 // content (steps, the tour table) rather than a statement of their own.
 const sectionHeadlineClass =
@@ -144,7 +144,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   return (
     <div className="flex min-h-screen flex-col font-sans text-foreground">
       {nextStop ? (
-        <div className="bg-primary px-4 py-2 text-center text-[13px] font-bold text-primary-foreground">
+        <div className="bg-accent px-4 py-2 text-center text-[13px] font-bold text-accent-foreground">
           Next stop: {nextStop.name}, {formatCityState(nextStop.city, nextStop.state)} ·{" "}
           {nextStop.dateLabel}
         </div>
@@ -178,7 +178,9 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 We&rsquo;re taking one question around the country, to festivals and markets, and
                 asking everyone who stops by. Every answer is anonymous, and sealed until{" "}
                 {revealDateLabel ? (
-                  <span className="bg-accent px-0.5 font-semibold">{revealDateLabel}</span>
+                  <span className="bg-accent px-0.5 font-semibold text-accent-foreground">
+                    {revealDateLabel}
+                  </span>
                 ) : (
                   "the whole record opens"
                 )}
@@ -187,13 +189,10 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             )}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
-            <Button
-              render={<Link to="/find-the-table" />}
-              nativeButton={false}
-              className={`${offsetShadow} ${heroCta}`}
-            >
+            <Link to="/find-the-table" className={stripeButton}>
+              <StripeBackdrop />
               Where the table goes next
-            </Button>
+            </Link>
             <a href="#how-it-works" className="text-base underline underline-offset-4">
               How the table works
             </a>
@@ -321,7 +320,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               alt="Two people sit side by side at the table, bent over their cards with pencils, with rubber stamps, markers and a cup of pencils laid out beside them."
               width={1200}
               height={1169}
-              className="aspect-square"
+              className="photo-grade aspect-square"
             />
           </div>
         </section>
