@@ -79,8 +79,51 @@ export function WordmarkStacked({ className, decorative }: WordmarkProps) {
 }
 
 /**
+ * The WrTP stripes, sized to frame the text beside them. The bars are wavy:
+ * the right edge of the icon stops at y=191.23 of its 208.28 viewBox, because
+ * the bottom bar starts low at left and ends higher at right. The *right
+ * edge* is what frames the text, so the wrapper is stretched to the height of
+ * the grid rows it spans and the icon is scaled so the bottom bar's
+ * bottom-right corner lands at the tagline's bottom. The top-right corner
+ * rides a smidge above the wordmark (STRIPES_TOP_OVERHANG, a fraction of the
+ * text height), so the top of the "W" sits just beneath it rather than flush.
+ * The bottom bar's left end hangs ~8% below the text, as on the poster. Width
+ * follows from the aspect ratio. Place it in a grid and give it `row-span-*`.
+ */
+const STRIPES_RIGHT_EDGE_H = 191.23;
+const STRIPES_VIEWBOX_H = 208.28;
+const STRIPES_VIEWBOX_W = 193.91;
+const STRIPES_TOP_OVERHANG = 0.03;
+
+// `textHeight` is a CSS length expression for the height of the text block the
+// stripes frame. The width is computed from it explicitly rather than via
+// `aspect-ratio` on a stretched grid item: that form resolves to zero width
+// when the lockup is sized shrink-to-fit (e.g. as a flex item), collapsing
+// the stripes onto the wordmark.
+function FramingStripes({ className, textHeight }: { className?: string; textHeight: string }) {
+  const edge = 1 + STRIPES_TOP_OVERHANG; // right-edge height / text height
+  const widthPerHeight = STRIPES_VIEWBOX_W / (STRIPES_RIGHT_EDGE_H * edge);
+  return (
+    <span
+      className={cn("relative self-stretch", className)}
+      style={{ width: `calc((${textHeight}) * ${widthPerHeight})` }}
+    >
+      <WrtpIcon
+        className="absolute left-0 w-full text-wrtp-brand-orange"
+        style={{
+          top: `${-STRIPES_TOP_OVERHANG * 100}%`,
+          height: `${(STRIPES_VIEWBOX_H / STRIPES_RIGHT_EDGE_H) * edge * 100}%`,
+        }}
+      />
+    </span>
+  );
+}
+
+/**
  * The poster lockup: WrTP stripes at left, stacked wordmark at right,
- * tagline beneath the wordmark. Sized by the `--mark-h` custom property
+ * tagline beneath the wordmark. The stripes' right edge frames all the text:
+ * top corner a smidge above the top of "What's", bottom-right corner at the tagline's bottom.
+ * Sized by the `--mark-h` custom property
  * (the wordmark's height), e.g. `className="[--mark-h:160px]"`; every other
  * dimension is derived from it so the proportions match the poster at any
  * size. The stripes stay brand orange and the lettering follows
@@ -90,17 +133,44 @@ export function WytLockup({ className, decorative }: WordmarkProps) {
   return (
     <div
       className={cn(
-        "inline-grid grid-cols-[auto_auto] items-start gap-x-[calc(var(--mark-h)*0.09)] text-black",
+        "inline-grid grid-cols-[auto_auto] items-start gap-x-[calc(var(--mark-h)*0.13)] text-black",
         className,
       )}
     >
-      <WrtpIcon className="h-(--mark-h) w-auto text-wrtp-brand-orange" />
-      <div className="flex flex-col gap-y-[calc(var(--mark-h)*0.06)]">
+      {/* Text block = wordmark + 0.06 gap + tagline (leading-none, so its
+          height is its font size). Keep in step with the classes below. */}
+      <FramingStripes textHeight="var(--mark-h) * 1.06 + var(--tagline-size, var(--mark-h) * 0.085)" />
+      <div className="flex flex-col items-start gap-y-[calc(var(--mark-h)*0.06)]">
         <WordmarkStacked className="h-(--mark-h) w-auto" decorative={decorative} />
-        <span className="text-[calc(var(--mark-h)*0.085)] leading-none text-muted-tan">
+        <span className="text-(length:--tagline-size,calc(var(--mark-h)*0.085)) leading-none text-muted-tan">
           A civic mirror project.
         </span>
       </div>
     </div>
+  );
+}
+
+/**
+ * The one-line lockup for headers: stripes, then the one-line wordmark, with
+ * the tagline under the wordmark as on the poster, the stripes spanning both
+ * (see WytLockup). Sized by `--mark-h` (the
+ * wordmark's height) like WytLockup; the tagline stays live text at a fixed
+ * reading size rather than scaling with the mark.
+ */
+export function WytLockupLine({ className, decorative }: WordmarkProps) {
+  return (
+    <span
+      className={cn(
+        "inline-grid grid-cols-[auto_auto] items-center gap-x-3.5 gap-y-1 text-black",
+        className,
+      )}
+    >
+      {/* Wordmark + 4px row gap (gap-y-1) + 12.5px tagline. */}
+      <FramingStripes className="row-span-2" textHeight="var(--mark-h) + 4px + 12.5px" />
+      <WordmarkLine className="h-(--mark-h) w-auto" decorative={decorative} />
+      <span className="col-start-2 text-[12.5px] leading-none text-muted-tan">
+        A civic mirror project.
+      </span>
+    </span>
   );
 }

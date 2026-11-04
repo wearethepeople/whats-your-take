@@ -16,7 +16,7 @@ import {
 } from "~/components/ui/sheet";
 import { InstagramIcon } from "~/components/instagram-icon";
 import { WrtpIcon } from "~/components/wrtp-icon";
-import { WordmarkLine, WytLockup } from "~/components/wordmark";
+import { WytLockup } from "~/components/wordmark";
 import { cn } from "~/lib/utils";
 
 export type NavKey = "question" | "events" | "about" | "find-the-table";
@@ -43,26 +43,19 @@ const hoverUnderline =
 
 export function SiteHeader({ active }: { active?: NavKey }) {
   return (
-    <header className="flex items-center justify-between gap-6 border-b-2 border-foreground px-6 py-5 sm:px-14">
-      {/* The poster's top row compressed to one line: WrTP stripes, then the
-          wordmark, then the tagline hanging off the wordmark's baseline. The
-          link carries the accessible name; both marks are decorative inside
-          it. Heights step up with the viewport so the lockup clears the
-          hamburger on phones and the nav links on laptops. The full nav
-          needs about 820px beside the lockup, so tablets use the sheet. */}
-      <div className="flex items-baseline gap-3">
-        <Link
-          to="/"
-          aria-label="What’s Your Take? — home"
-          className="flex items-center gap-2.5 text-black"
-        >
-          <WrtpIcon className="h-5 w-auto text-wrtp-brand-orange lg:h-6" />
-          <WordmarkLine decorative className="h-5 w-auto lg:h-6" />
-        </Link>
-        <span className="hidden text-[12.5px] text-muted-tan xl:inline">
-          A civic mirror project.
-        </span>
-      </div>
+    <header className="flex items-center justify-between gap-6 border-b-2 border-foreground px-6 py-6 sm:px-14 lg:py-8">
+      {/* The poster lockup as-is: full-height WrTP stripes beside the stacked
+          wordmark, tagline beneath. The stack needs the roomier header; the
+          tagline stays a fixed reading size rather than scaling with the
+          mark. The link carries the accessible name; the marks are
+          decorative inside it. The full nav needs about 820px beside the
+          lockup, so tablets use the sheet. */}
+      <Link to="/" aria-label="What’s Your Take? — home">
+        <WytLockup
+          decorative
+          className="[--mark-h:44px] [--tagline-size:12.5px] lg:[--mark-h:56px]"
+        />
+      </Link>
       <nav className="hidden items-center gap-6 text-sm whitespace-nowrap lg:flex">
         {NAV_LINKS.filter((link) => link.key !== "find-the-table").map((link) => (
           <Link
