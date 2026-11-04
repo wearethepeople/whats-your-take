@@ -374,13 +374,9 @@ function ComposeForm({
         {words.join(" ")} {lastWord ? <GoldUnderline>{lastWord}</GoldUnderline> : null}
       </h1>
 
-      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-        <p>Just you, no audience. There are no wrong answers.</p>
-        <p>
-          Please don&rsquo;t include your name. If a name appears, it will be redacted to keep
-          submissions anonymous.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Just you, no audience. There are no wrong answers.
+      </p>
 
       <Form
         method="post"
@@ -407,8 +403,8 @@ function ComposeForm({
           </p>
         ) : null}
         <p className="consent">
-          All responses are anonymous. By submitting, you give We (ARE) the People permission to
-          share, display, and publish your response in any medium.
+          Responses are anonymous, and any names will be redacted. By submitting, you give We (ARE)
+          the People permission to share, display, and publish your response in any medium.
         </p>
         <button
           type="submit"
