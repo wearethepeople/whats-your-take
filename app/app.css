@@ -470,34 +470,17 @@ body {
    syntactically — without a .dark class ever applied, they're simply
    inert. */
 
-/* Homepage scroll motion: sections fade up as they enter, and the hero photo
-   settles from a slight zoom. Scroll-driven, so there's no JS and nothing to
-   time; gated on support (elsewhere everything simply sits in its final state)
-   and on reduced motion (same). */
+/* Homepage scroll motion: the hero photo settles from a slight zoom.
+   Scroll-driven, so there's no JS and nothing to time; gated on support
+   (elsewhere it simply sits in its final state) and on reduced motion (same).
+   Section fade-ins were removed: opacity could stick partway in Safari. */
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    .scroll-reveal {
-      animation: scroll-reveal linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 40%;
-    }
-
     .hero-photo img {
       animation: hero-photo-settle linear both;
       animation-timeline: view();
       animation-range: entry 0% cover 50%;
     }
-  }
-}
-
-@keyframes scroll-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(2rem);
-  }
-  to {
-    opacity: 1;
-    transform: none;
   }
 }
 
