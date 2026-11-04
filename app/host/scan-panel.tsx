@@ -7,7 +7,9 @@
 // the host's device isn't guaranteed to be Chrome.
 
 import jsQR from "jsqr";
+import { CameraIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "~/components/ui/button";
 
 // Floor on how long the freeze/overlay stays up after a decode, regardless
 // of how fast the promote round trip settles. A fast (e.g. local) response
@@ -139,29 +141,46 @@ export function ScanPanel({
 
   return (
     <div className="scan-panel">
-      <button
-        type="button"
-        onClick={() => {
-          setError(null);
-          setScanning((current) => !current);
-        }}
-      >
-        {!scanning ? "Scan a code" : ready ? "Stop scanning" : "Starting camera…"}
-      </button>
+      {/* Mirrors the code row above: the camera's frame on the left, the
+          button on the right. The frame is always outlined so the host knows
+          where the picture will appear before turning the camera on. */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="scan-frame" data-live={scanning || undefined}>
+          {scanning ? (
+            <>
+              <video ref={videoRef} className="scan-video" autoPlay playsInline muted />
+              <canvas
+                ref={canvasRef}
+                className={locked ? "scan-canvas scan-canvas-frozen" : "scan-canvas"}
+              />
+              {locked ? <div className="scan-overlay">Promoting response…</div> : null}
+            </>
+          ) : (
+            <div className="scan-placeholder" aria-hidden="true">
+              <CameraIcon className="size-6" />
+              <span>Camera view</span>
+            </div>
+          )}
+        </div>
+        {/* Default (brand orange) like the console's other buttons. Sized 4:3,
+            wide enough for "Starting camera…", so it reads as a tap target,
+            not a bar. */}
+        <Button
+          type="button"
+          className="h-36 w-full shrink-0 text-base sm:w-48 [&_svg:not([class*='size-'])]:size-5"
+          onClick={() => {
+            setError(null);
+            setScanning((current) => !current);
+          }}
+        >
+          <CameraIcon data-icon="inline-start" aria-hidden="true" />
+          {!scanning ? "Scan a code" : ready ? "Stop scanning" : "Starting camera…"}
+        </Button>
+      </div>
       {error ? (
         <p className="banner banner-error" role="alert">
           {error}
         </p>
-      ) : null}
-      {scanning ? (
-        <div className="scan-frame">
-          <video ref={videoRef} className="scan-video" autoPlay playsInline muted />
-          <canvas
-            ref={canvasRef}
-            className={locked ? "scan-canvas scan-canvas-frozen" : "scan-canvas"}
-          />
-          {locked ? <div className="scan-overlay">Promoting response…</div> : null}
-        </div>
       ) : null}
     </div>
   );

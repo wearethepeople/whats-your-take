@@ -47,7 +47,7 @@ export default function About() {
             width={900}
             height={1351}
             loading="eager"
-            className="aspect-[3/4] sm:relative sm:aspect-auto"
+            className="photo-grade aspect-[3/4] sm:relative sm:aspect-auto"
             imgClassName="sm:absolute sm:inset-0"
           />
         </section>

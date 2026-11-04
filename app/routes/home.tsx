@@ -15,7 +15,8 @@ import {
   LiveStateNote,
   PhotoFrame,
   ledgerStatusMeta,
-  offsetShadow,
+  StripeBackdrop,
+  stripeButton,
 } from "~/components/visual-grammar";
 import { formatCityState } from "~/features/events/location";
 import { formatRevealDate, revealAnnouncement } from "~/features/events/reveal-date";
@@ -107,7 +108,6 @@ function PromptHeadline({ text }: { text: string }) {
 // gold underline scaled to the type (em, not the fixed 8px of body headlines).
 const headlineClass =
   "mx-auto max-w-5xl font-serif text-5xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-7xl lg:text-8xl";
-const heroCta = "h-12 px-6 text-base";
 // One scale below the hero and the reveal: for the sections that carry
 // content (steps, the tour table) rather than a statement of their own.
 const sectionHeadlineClass =
@@ -144,7 +144,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   return (
     <div className="flex min-h-screen flex-col font-sans text-foreground">
       {nextStop ? (
-        <div className="bg-primary px-4 py-2 text-center text-[13px] font-bold text-primary-foreground">
+        <div className="bg-accent px-4 py-2 text-center text-[13px] font-bold text-accent-foreground">
           Next stop: {nextStop.name}, {formatCityState(nextStop.city, nextStop.state)} ·{" "}
           {nextStop.dateLabel}
         </div>
@@ -157,7 +157,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           id="question"
           className="flex flex-col items-center px-6 pt-16 text-center sm:px-14 sm:pt-24"
         >
-          <p className="scroll-reveal text-sm text-muted-tan">
+          <p className="text-sm text-muted-tan">
             A pop-up civic guestbook · One table. One question. Before labels.
           </p>
           <div className="mt-6">
@@ -167,7 +167,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               <h1 className={headlineClass}>A pop-up civic guestbook is on its way.</h1>
             )}
           </div>
-          <p className="scroll-reveal mt-8 max-w-2xl text-xl text-muted-foreground sm:text-2xl">
+          <p className="mt-8 max-w-2xl text-xl text-muted-foreground sm:text-2xl">
             {sealed ? (
               <>
                 The table has finished its tour of festivals and markets. Every take is sealed,
@@ -178,7 +178,9 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 We&rsquo;re taking one question around the country, to festivals and markets, and
                 asking everyone who stops by. Every answer is anonymous, and sealed until{" "}
                 {revealDateLabel ? (
-                  <span className="bg-accent px-0.5 font-semibold">{revealDateLabel}</span>
+                  <span className="bg-accent px-0.5 font-semibold text-accent-foreground">
+                    {revealDateLabel}
+                  </span>
                 ) : (
                   "the whole record opens"
                 )}
@@ -186,19 +188,16 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               </>
             )}
           </p>
-          <div className="scroll-reveal mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
-            <Button
-              render={<Link to="/find-the-table" />}
-              nativeButton={false}
-              className={`${offsetShadow} ${heroCta}`}
-            >
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
+            <Link to="/find-the-table" className={stripeButton}>
+              <StripeBackdrop />
               Where the table goes next
-            </Button>
+            </Link>
             <a href="#how-it-works" className="text-base underline underline-offset-4">
               How the table works
             </a>
           </div>
-          <div className="scroll-reveal mt-12 flex max-w-xl flex-col gap-1 text-[15px] text-muted-foreground">
+          <div className="mt-12 flex max-w-xl flex-col gap-1 text-[15px] text-muted-foreground">
             <p>
               You can&rsquo;t answer from here. The table only happens in person, one place at a
               time.
@@ -224,7 +223,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
         {view ? (
           <section className="bg-(--footer) px-6 py-20 text-(--footer-foreground) sm:px-14 sm:py-28">
-            <div className="scroll-reveal mx-auto flex max-w-5xl flex-col items-center gap-3 text-center">
+            <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 text-center">
               <h2 className="text-sm font-semibold text-accent">
                 {sealed ? "The record, sealed" : "The record so far"}
               </h2>
@@ -244,7 +243,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 <BigStat label="Days to the reveal" value={String(daysToReveal)} highlight />
               ) : null}
             </dl>
-            <div className="scroll-reveal mx-auto mt-14 flex max-w-xl flex-col gap-3 text-center text-sm text-(--footer-foreground)/70">
+            <div className="mx-auto mt-14 flex max-w-xl flex-col gap-3 text-center text-sm text-(--footer-foreground)/70">
               <p>No names, no accounts. The record stays sealed until it opens all at once.</p>
               {view.stats.liveState ? (
                 <p>
@@ -263,12 +262,12 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
         ) : null}
 
         <section id="the-reveal" className="px-6 py-24 text-center sm:px-14 sm:py-40">
-          <p className="scroll-reveal text-sm text-muted-tan">The reveal</p>
-          <h2 className="scroll-reveal mx-auto mt-6 max-w-4xl font-serif text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
+          <p className="text-sm text-muted-tan">The reveal</p>
+          <h2 className="mx-auto mt-6 max-w-4xl font-serif text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
             Every answer, opened{" "}
             <GoldUnderline className={headlineUnderline}>all at once.</GoldUnderline>
           </h2>
-          <p className="scroll-reveal mx-auto mt-10 max-w-2xl text-xl text-muted-foreground sm:mt-12">
+          <p className="mx-auto mt-10 max-w-2xl text-xl text-muted-foreground sm:mt-12">
             {announcement ? (
               <>
                 {announcement.preposition === "in" ? "In" : "On"} {announcement.label}, the
@@ -278,15 +277,15 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             )}{" "}
             whole record is released, alongside a short film that tries to answer two questions:
           </p>
-          <div className="scroll-reveal mx-auto mt-10 flex flex-col gap-2 font-serif text-3xl leading-tight font-semibold sm:text-5xl">
+          <div className="mx-auto mt-10 flex flex-col gap-2 font-serif text-3xl leading-tight font-semibold sm:text-5xl">
             <p>Who are we?</p>
             <p>What do we believe?</p>
           </div>
-          <p className="scroll-reveal mx-auto mt-10 max-w-2xl text-xl text-muted-foreground">
+          <p className="mx-auto mt-10 max-w-2xl text-xl text-muted-foreground">
             With no pressure to wear a label, the answers become a kind of mirror: the country,
             reflected back to itself.
           </p>
-          <div className="scroll-reveal mx-auto mt-14 w-fit text-left">
+          <div className="mx-auto mt-14 w-fit text-left">
             <SeasonTimeline
               stats={view?.stats ?? null}
               sealed={sealed}
@@ -299,7 +298,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           id="how-it-works"
           className="border-t border-dashed border-(--color-dashed) px-6 py-24 sm:px-14 sm:py-32"
         >
-          <div className="scroll-reveal flex flex-col items-center gap-4 text-center">
+          <div className="flex flex-col items-center gap-4 text-center">
             <p className="text-sm text-muted-tan">How it works</p>
             <h2 className={sectionHeadlineClass}>
               Your voice{" "}
@@ -321,14 +320,14 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               alt="Two people sit side by side at the table, bent over their cards with pencils, with rubber stamps, markers and a cup of pencils laid out beside them."
               width={1200}
               height={1169}
-              className="scroll-reveal aspect-square"
+              className="photo-grade aspect-square"
             />
           </div>
         </section>
 
         {view && view.ledger.length > 0 ? (
           <section className="border-t border-dashed border-(--color-dashed) px-6 py-20 sm:px-14 sm:py-28">
-            <div className="scroll-reveal mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+            <div className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
               <div className="flex flex-col gap-4">
                 <p className="text-sm text-muted-tan">{sealed ? "The tour" : "The tour so far"}</p>
                 <h2 className={sectionHeadlineClass}>
@@ -432,7 +431,7 @@ function BigStat({
   liveState?: LiveState;
 }) {
   return (
-    <div className="scroll-reveal flex min-w-32 flex-col-reverse items-center gap-2">
+    <div className="flex min-w-32 flex-col-reverse items-center gap-2">
       {/* The live-state note hangs below the label, out of flow, so it can't
           change this stat's height and lift its numeral off the shared baseline. */}
       <dt className="relative text-sm text-(--footer-foreground)/70">
@@ -534,7 +533,7 @@ function TimelineItem({
 
 function Step({ n, children }: { n: number; children: React.ReactNode }) {
   return (
-    <li className="scroll-reveal flex items-start gap-5">
+    <li className="flex items-start gap-5">
       <CircledStep n={n} className="size-12 text-2xl" />
       <p className="pt-1 text-xl leading-snug text-foreground sm:text-2xl">{children}</p>
     </li>

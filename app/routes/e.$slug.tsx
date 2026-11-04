@@ -11,8 +11,11 @@ import type { Route } from "./+types/e.$slug";
 import { db } from "~/db/client.server";
 import { events, prompts } from "~/db/schema.server";
 import { eq } from "drizzle-orm";
+import { Button } from "~/components/ui/button";
 import { DashedDivider, GoldUnderline } from "~/components/visual-grammar";
 import { formatCityState } from "~/features/events/location";
+import { formatDayLabel, formatTimeLabel } from "~/features/events/services/season.server";
+import { WytLockupLine } from "~/components/wordmark";
 import { revealAnnouncement, type RevealDate } from "~/features/events/reveal-date";
 import { claimCodeQr } from "~/submissions/qr.server";
 import { MAX_BODY_LENGTH } from "~/submissions/constants";
@@ -31,6 +34,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       venue: events.venue,
       city: events.city,
       state: events.state,
+      startsAt: events.startsAt,
+      endsAt: events.endsAt,
       status: events.status,
       claimNote: events.claimNote,
       promptText: prompts.text,
@@ -52,6 +57,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     venue: row.venue,
     city: row.city,
     state: row.state,
+    // Formatted here, not in the component, so server and client render the
+    // same string (same approach as the public event page).
+    when: `${formatDayLabel(row.startsAt)} · ${formatTimeLabel(row.startsAt, row.endsAt)}`,
     promptText: row.promptText,
     claimNote: row.claimNote,
     revealDate,
@@ -193,32 +201,30 @@ function EventFooter({
   venue,
   city,
   state,
+  when,
 }: {
   eventName: string;
   venue: string | null;
   city: string;
   state: string | null;
+  when: string;
 }) {
   const location = [venue, formatCityState(city, state)].filter(Boolean).join(" · ");
   return (
     <div className="w-full border-t border-dashed border-(--color-dashed) pt-4 text-center">
       <p className="text-sm font-bold">{eventName}</p>
       <p className="font-mono text-xs tracking-wide text-muted-tan uppercase">{location}</p>
+      <p className="font-mono text-xs tracking-wide text-muted-tan uppercase">{when}</p>
     </div>
   );
 }
 
-// Same wordmark + tagline pairing as SiteHeader, echoed at the top of every
-// screen in this flow so the submission card reads as the same site, not a
-// separately-branded kiosk app. Always left-aligned, even on the screens
-// below that center everything else.
+// Same lockup as SiteHeader, echoed at the top of every screen in this flow
+// so the submission card reads as the same site (and the same poster that
+// sent the participant here), not a separately-branded kiosk app. Always
+// left-aligned, even on the screens below that center everything else.
 function BrandMark() {
-  return (
-    <div className="mb-4 flex items-baseline gap-2 self-start">
-      <span className="text-[17px] font-bold">What&rsquo;s Your Take?</span>
-      <span className="text-[12.5px] text-muted-tan">A civic mirror project</span>
-    </div>
-  );
+  return <WytLockupLine className="mb-4 self-start [--mark-h:20px]" />;
 }
 
 export default function EventSubmit({ loaderData, actionData }: Route.ComponentProps) {
@@ -228,6 +234,7 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
     venue,
     city,
     state,
+    when,
     promptText,
     claimNote,
     revealDate,
@@ -281,6 +288,7 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
           venue={venue}
           city={city}
           state={state}
+          when={when}
           revealDate={revealDate}
           claimNote={claimNote}
           claimCode={staged.claimCode}
@@ -303,6 +311,7 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
         venue={venue}
         city={city}
         state={state}
+        when={when}
         promptText={promptText}
         initialBody={(actionData && "body" in actionData ? actionData.body : "") ?? ""}
         error={(actionData && "error" in actionData ? actionData.error : null) ?? null}
@@ -318,6 +327,7 @@ function ComposeForm({
   venue,
   city,
   state,
+  when,
   promptText,
   initialBody,
   error,
@@ -328,6 +338,7 @@ function ComposeForm({
   venue: string | null;
   city: string;
   state: string | null;
+  when: string;
   promptText: string;
   initialBody: string;
   error: string | null;
@@ -374,13 +385,9 @@ function ComposeForm({
         {words.join(" ")} {lastWord ? <GoldUnderline>{lastWord}</GoldUnderline> : null}
       </h1>
 
-      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-        <p>Just you, no audience. There are no wrong answers.</p>
-        <p>
-          Please don&rsquo;t include your name. If a name appears, it will be redacted to keep
-          submissions anonymous.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Just you, no audience. There are no wrong answers.
+      </p>
 
       <Form
         method="post"
@@ -399,7 +406,7 @@ function ComposeForm({
           maxLength={MAX_BODY_LENGTH}
           rows={kiosk ? 8 : 6}
           placeholder="Say it plainly."
-          className="w-full rounded-2xl border-2 border-[#e6cfa8] p-4 text-base outline-none focus:border-primary"
+          className="w-full rounded-2xl border-2 border-input p-4 text-base outline-none focus:border-primary"
         />
         {error ? (
           <p className="banner banner-error" role="alert">
@@ -407,18 +414,15 @@ function ComposeForm({
           </p>
         ) : null}
         <p className="consent">
-          All responses are anonymous. By submitting, you give We (ARE) the People permission to
-          share, display, and publish your response in any medium.
+          Responses are anonymous, and any names will be redacted. By submitting, you give We (ARE)
+          the People permission to share, display, and publish your response in any medium.
         </p>
-        <button
-          type="submit"
-          className="min-h-[52px] w-full rounded-full bg-primary text-[15px] font-bold text-primary-foreground transition-colors hover:bg-[#a8552e]"
-        >
+        <Button type="submit" className="h-10 w-full">
           Submit your response
-        </button>
+        </Button>
       </Form>
 
-      <EventFooter eventName={eventName} venue={venue} city={city} state={state} />
+      <EventFooter eventName={eventName} venue={venue} city={city} state={state} when={when} />
     </div>
   );
 }
@@ -449,6 +453,7 @@ function CodeScreen({
   venue,
   city,
   state,
+  when,
   revealDate,
   claimNote,
   claimCode,
@@ -461,6 +466,7 @@ function CodeScreen({
   venue: string | null;
   city: string;
   state: string | null;
+  when: string;
   revealDate: RevealDate | null;
   claimNote: string | null;
   claimCode: string;
@@ -566,7 +572,7 @@ function CodeScreen({
             </Link>
           </p>
         )}
-        <EventFooter eventName={eventName} venue={venue} city={city} state={state} />
+        <EventFooter eventName={eventName} venue={venue} city={city} state={state} when={when} />
       </div>
     );
   }
@@ -634,7 +640,7 @@ function CodeScreen({
       <Link to={formUrl} replace className="text-primary underline underline-offset-4">
         Back to the form
       </Link>
-      <EventFooter eventName={eventName} venue={venue} city={city} state={state} />
+      <EventFooter eventName={eventName} venue={venue} city={city} state={state} when={when} />
     </div>
   );
 }

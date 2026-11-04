@@ -425,7 +425,7 @@ export function archiveView(db: Db): ArchiveView {
   };
 }
 
-function formatDayLabel(date: Date): string {
+export function formatDayLabel(date: Date): string {
   return new Intl.DateTimeFormat("en-US", {
     weekday: "long",
     month: "long",
@@ -434,7 +434,7 @@ function formatDayLabel(date: Date): string {
   }).format(date);
 }
 
-function formatTimeLabel(starts: Date, ends: Date): string {
+export function formatTimeLabel(starts: Date, ends: Date): string {
   const time = (date: Date) =>
     new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "numeric" })
       .format(date)

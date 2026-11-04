@@ -16,42 +16,47 @@
 :root {
   color-scheme: light;
 
-  /* Design tokens from the Claude Design handoff (docs/ design-handoff
-     package), assigned to shadcn/BaseUI's semantic variable names so
-     generated components pick these up with zero overrides. Brand
-     name/hex noted alongside for anyone reading this without shadcn
-     context; the @theme inline block below maps these into Tailwind's
-     --color-* utility namespace. */
-  --background: #fdf6ec; /* paper */
-  --foreground: #3c2a1a; /* ink */
-  --card: #fffdf8; /* cream-white — stat card / highlighted ledger row */
-  --card-foreground: #3c2a1a;
-  --popover: #fffdf8;
-  --popover-foreground: #3c2a1a;
-  --primary: #c56a3d; /* terracotta */
-  --primary-foreground: #fdf6ec;
-  --secondary: #f7e9d2; /* paper-alt — newsletter band surface */
-  --secondary-foreground: #3c2a1a;
-  --muted: #f7e9d2;
-  --muted-foreground: #6b5138; /* muted-brown */
-  --accent: #f0b653; /* gold */
-  --accent-foreground: #3c2a1a;
+  /* Palette matched to the printed poster (2026-10-14): one paper, one ink,
+     one orange, no gold. Tokens keep shadcn/BaseUI's semantic names so
+     generated components pick them up with zero overrides; the @theme
+     inline block below maps them into Tailwind's --color-* namespace.
+
+     Every text pairing below meets WCAG AA (4.5:1) on paper, card, and the
+     muted band. The brand orange itself is only 2.3:1 as text on paper, so
+     it is a fill and accent only (stripes, underlines, highlights, always
+     under ink text); --primary is the same hue (OKLCH 37.8°) darkened until
+     it passes as text and carries card-colored text as a button fill. */
+  --background: #ece5dc; /* paper — sampled from the poster export */
+  --foreground: #231f20; /* ink — the wordmark's fill in the Illustrator source */
+  --card: #f7f4ef; /* lifted paper — stat card, form card (the poster's QR card) */
+  --card-foreground: #231f20;
+  --popover: #f7f4ef;
+  --popover-foreground: #231f20;
+  --primary: #b03400; /* deep brand orange — buttons, links, labels */
+  --primary-foreground: #f7f4ef;
+  --secondary: #e2dacf; /* paper-alt — newsletter band surface */
+  --secondary-foreground: #231f20;
+  --muted: #e2dacf;
+  --muted-foreground: #60554b; /* warm grey, the poster tagline's hue */
+  --accent: var(--wrtp-brand-orange); /* underlines, offset shadows, highlights */
+  --accent-foreground: #231f20;
+  --accent-hover: #ff7d36; /* brand orange lifted and hotter (OKLCH L +0.05, hue 37.8° → 46°, chroma held) — hover goes lighter without going pastel; ink on it is 6.4:1 */
   --destructive: oklch(0.577 0.245 27.325); /* not brand-specified; shadcn default red */
-  --border: #b59573; /* hairline-tan */
-  --input: #b59573;
-  --ring: #c56a3d;
+  --border: #968d86; /* hairline */
+  --input: #968d86;
+  --ring: #b03400;
   --radius: 0.5rem;
 
   /* Outside shadcn's default token set. */
-  --footer: #3c2a1a; /* ink used as an inverted surface (footer band) */
-  --footer-foreground: #fdf6ec;
-  --dashed: #d8c4a4; /* section-divider rule, distinct from --border */
-  --muted-tan: #8a5a34; /* eyebrow labels, homepage tagline */
-  --black: #231f20; /* true near-black neutral, alongside warm --foreground */
+  --footer: #231f20; /* ink used as an inverted surface (footer band) */
+  --footer-foreground: #ece5dc;
+  --dashed: #bdb7b2; /* section-divider rule, distinct from --border */
+  --muted-tan: #6a5e53; /* eyebrow labels, homepage tagline */
+  --black: #231f20; /* wordmark ink; same as --foreground since the poster match */
   /* Submission-flow-only backdrop — the rounded card floating on top of it
-     uses --background directly (per the design handoff, the card is the
-     usual paper color; only the surrounding page is this deeper tan). */
-  --submission-backdrop: #f3e4cf;
+     uses --background directly; only the surrounding page is this deeper
+     step of paper. */
+  --submission-backdrop: #ddd4c8;
 
   --wrtp-brand-orange: #f1673b;
 }
@@ -75,6 +80,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-hover: var(--accent-hover);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -129,14 +135,22 @@ body {
   background: color-mix(in srgb, seagreen 18%, transparent);
 }
 
+/* Brand orange, not gold: the palette retired gold. Ink text on it. */
 .banner-warn {
-  background: color-mix(in srgb, goldenrod 25%, transparent);
+  background: color-mix(in srgb, var(--wrtp-brand-orange) 22%, transparent);
 }
 
+/* Wraps on phones instead of running off the right edge; each label stays
+   on one line ("Table requests" used to break mid-label). */
 .host-nav {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
   margin-bottom: 2rem;
+}
+
+.host-nav a {
+  white-space: nowrap;
 }
 
 .status-badge {
@@ -150,12 +164,14 @@ body {
   letter-spacing: 0.05em;
 }
 
+/* Darkened from seagreen / darkgoldenrod so badge text clears AA (4.5:1) on
+   both paper and card: green 4.8 / 5.5, amber 5.0 / 5.7. */
 .status-open {
-  color: seagreen;
+  color: #287047;
 }
 
 .status-scheduled {
-  color: darkgoldenrod;
+  color: #805a00;
 }
 
 .status-archived,
@@ -350,25 +366,46 @@ body {
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
-  max-width: 24rem;
 }
 
-.scan-panel button {
-  font: inherit;
-  padding: 0.75rem 2rem;
-  min-height: 44px;
-}
-
+/* 4:3 box the camera fills; outlined (dashed) until the camera is on. The
+   video and the frozen canvas both use object-fit: cover so the frozen frame
+   lines up exactly with what the host was looking at. */
 .scan-frame {
   position: relative;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.scan-frame[data-live] {
+  border-style: solid;
+  border-color: var(--foreground);
+  background: black;
+}
+
+.scan-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
 }
 
 .scan-video {
   display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  border-radius: 0.25rem;
-  background: black;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Pixel extraction only — never shown, except frozen on top of the video
@@ -384,7 +421,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
-  border-radius: 0.25rem;
+  object-fit: cover;
 }
 
 .scan-overlay {
@@ -470,34 +507,25 @@ body {
    syntactically — without a .dark class ever applied, they're simply
    inert. */
 
-/* Homepage scroll motion: sections fade up as they enter, and the hero photo
-   settles from a slight zoom. Scroll-driven, so there's no JS and nothing to
-   time; gated on support (elsewhere everything simply sits in its final state)
-   and on reduced motion (same). */
+/* Hero photo grade: the source has a yellow-green cast and low contrast, which
+   reads creamy against the pinkish paper. Nudge hue toward red, pull saturation
+   slightly, deepen the tones. Display-side, so the asset stays untouched. */
+.hero-photo img,
+.photo-grade img {
+  filter: hue-rotate(-10deg) saturate(0.85) contrast(1.2) brightness(0.95);
+}
+
+/* Homepage scroll motion: the hero photo settles from a slight zoom.
+   Scroll-driven, so there's no JS and nothing to time; gated on support
+   (elsewhere it simply sits in its final state) and on reduced motion (same).
+   Section fade-ins were removed: opacity could stick partway in Safari. */
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    .scroll-reveal {
-      animation: scroll-reveal linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 40%;
-    }
-
     .hero-photo img {
       animation: hero-photo-settle linear both;
       animation-timeline: view();
       animation-range: entry 0% cover 50%;
     }
-  }
-}
-
-@keyframes scroll-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(2rem);
-  }
-  to {
-    opacity: 1;
-    transform: none;
   }
 }
 

@@ -3,8 +3,8 @@
   "short_name": "WYT",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fdf6ec",
-  "theme_color": "#fdf6ec",
+  "background_color": "#ece5dc",
+  "theme_color": "#ece5dc",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
