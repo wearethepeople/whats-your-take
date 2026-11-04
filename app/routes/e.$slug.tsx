@@ -14,6 +14,7 @@ import { eq } from "drizzle-orm";
 import { Button } from "~/components/ui/button";
 import { DashedDivider, GoldUnderline } from "~/components/visual-grammar";
 import { formatCityState } from "~/features/events/location";
+import { formatDayLabel, formatTimeLabel } from "~/features/events/services/season.server";
 import { WytLockupLine } from "~/components/wordmark";
 import { revealAnnouncement, type RevealDate } from "~/features/events/reveal-date";
 import { claimCodeQr } from "~/submissions/qr.server";
@@ -33,6 +34,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       venue: events.venue,
       city: events.city,
       state: events.state,
+      startsAt: events.startsAt,
+      endsAt: events.endsAt,
       status: events.status,
       claimNote: events.claimNote,
       promptText: prompts.text,
@@ -54,6 +57,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     venue: row.venue,
     city: row.city,
     state: row.state,
+    // Formatted here, not in the component, so server and client render the
+    // same string (same approach as the public event page).
+    when: `${formatDayLabel(row.startsAt)} · ${formatTimeLabel(row.startsAt, row.endsAt)}`,
     promptText: row.promptText,
     claimNote: row.claimNote,
     revealDate,
@@ -195,17 +201,20 @@ function EventFooter({
   venue,
   city,
   state,
+  when,
 }: {
   eventName: string;
   venue: string | null;
   city: string;
   state: string | null;
+  when: string;
 }) {
   const location = [venue, formatCityState(city, state)].filter(Boolean).join(" · ");
   return (
     <div className="w-full border-t border-dashed border-(--color-dashed) pt-4 text-center">
       <p className="text-sm font-bold">{eventName}</p>
       <p className="font-mono text-xs tracking-wide text-muted-tan uppercase">{location}</p>
+      <p className="font-mono text-xs tracking-wide text-muted-tan uppercase">{when}</p>
     </div>
   );
 }
@@ -225,6 +234,7 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
     venue,
     city,
     state,
+    when,
     promptText,
     claimNote,
     revealDate,
@@ -278,6 +288,7 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
           venue={venue}
           city={city}
           state={state}
+          when={when}
           revealDate={revealDate}
           claimNote={claimNote}
           claimCode={staged.claimCode}
@@ -300,6 +311,7 @@ export default function EventSubmit({ loaderData, actionData }: Route.ComponentP
         venue={venue}
         city={city}
         state={state}
+        when={when}
         promptText={promptText}
         initialBody={(actionData && "body" in actionData ? actionData.body : "") ?? ""}
         error={(actionData && "error" in actionData ? actionData.error : null) ?? null}
@@ -315,6 +327,7 @@ function ComposeForm({
   venue,
   city,
   state,
+  when,
   promptText,
   initialBody,
   error,
@@ -325,6 +338,7 @@ function ComposeForm({
   venue: string | null;
   city: string;
   state: string | null;
+  when: string;
   promptText: string;
   initialBody: string;
   error: string | null;
@@ -408,7 +422,7 @@ function ComposeForm({
         </Button>
       </Form>
 
-      <EventFooter eventName={eventName} venue={venue} city={city} state={state} />
+      <EventFooter eventName={eventName} venue={venue} city={city} state={state} when={when} />
     </div>
   );
 }
@@ -439,6 +453,7 @@ function CodeScreen({
   venue,
   city,
   state,
+  when,
   revealDate,
   claimNote,
   claimCode,
@@ -451,6 +466,7 @@ function CodeScreen({
   venue: string | null;
   city: string;
   state: string | null;
+  when: string;
   revealDate: RevealDate | null;
   claimNote: string | null;
   claimCode: string;
@@ -556,7 +572,7 @@ function CodeScreen({
             </Link>
           </p>
         )}
-        <EventFooter eventName={eventName} venue={venue} city={city} state={state} />
+        <EventFooter eventName={eventName} venue={venue} city={city} state={state} when={when} />
       </div>
     );
   }
@@ -624,7 +640,7 @@ function CodeScreen({
       <Link to={formUrl} replace className="text-primary underline underline-offset-4">
         Back to the form
       </Link>
-      <EventFooter eventName={eventName} venue={venue} city={city} state={state} />
+      <EventFooter eventName={eventName} venue={venue} city={city} state={state} when={when} />
     </div>
   );
 }

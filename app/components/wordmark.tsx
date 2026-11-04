@@ -133,7 +133,7 @@ export function WytLockup({ className, decorative }: WordmarkProps) {
   return (
     <div
       className={cn(
-        "inline-grid grid-cols-[auto_auto] items-start gap-x-[calc(var(--mark-h)*0.13)] text-black",
+        "inline-grid grid-cols-[auto_auto] items-start gap-x-[calc(var(--mark-h)*0.13)] text-left text-black",
         className,
       )}
     >
@@ -161,7 +161,7 @@ export function WytLockupLine({ className, decorative }: WordmarkProps) {
   return (
     <span
       className={cn(
-        "inline-grid grid-cols-[auto_auto] items-center gap-x-3.5 gap-y-1 text-black",
+        "inline-grid grid-cols-[auto_auto] items-center gap-x-3.5 gap-y-1 text-left text-black",
         className,
       )}
     >
