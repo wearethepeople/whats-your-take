@@ -2,7 +2,14 @@ import { Link } from "react-router";
 import type { Route } from "./+types/events";
 import { db } from "~/db/client.server";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
-import { GoldUnderline, LiveStateNote, ledgerStatusMeta, Stamp } from "~/components/visual-grammar";
+import {
+  GoldUnderline,
+  InProcessSpinner,
+  LiveStateNote,
+  ledgerRowSurface,
+  ledgerStatusMeta,
+  Stamp,
+} from "~/components/visual-grammar";
 import { formatCityState } from "~/features/events/location";
 import { formatRevealDate, revealAnnouncement } from "~/features/events/reveal-date";
 import {
@@ -111,16 +118,16 @@ export default function Events({ loaderData }: Route.ComponentProps) {
                   <h2 className="mb-2 font-serif text-xl font-semibold">{group.promptText}</h2>
                 ) : null}
                 <div className="overflow-x-auto">
-                  <div className="flex flex-col sm:grid sm:grid-cols-[auto_auto_1fr_auto_auto] sm:gap-x-8">
-                    <div className="col-span-full hidden grid-cols-subgrid items-center border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase sm:grid">
+                  <div className="flex flex-col sm:grid sm:grid-cols-[auto_auto_1fr_6rem_7rem] sm:gap-x-8">
+                    <div className="col-span-full hidden grid-cols-subgrid items-baseline border-b border-foreground px-3 pb-2 font-mono text-xs text-muted-foreground uppercase sm:grid">
                       <span>No.</span>
                       <span>Date</span>
                       <span>Stop</span>
-                      <span>Takes</span>
-                      <span>Status</span>
+                      <span className="text-right">Takes</span>
+                      <span className="text-right">Status</span>
                     </div>
-                    {group.events.map((event) => (
-                      <ArchiveRow key={event.id} event={event} />
+                    {group.events.map((event, i) => (
+                      <ArchiveRow key={event.id} event={event} striped={i % 2 === 1} />
                     ))}
                   </div>
                 </div>
@@ -150,7 +157,9 @@ export default function Events({ loaderData }: Route.ComponentProps) {
 
 function ArchiveRow({
   event,
+  striped,
 }: {
+  striped: boolean;
   event: {
     id: number;
     publicSlug: string;
@@ -168,9 +177,10 @@ function ArchiveRow({
   return (
     <Link
       to={`/events/${event.publicSlug}`}
-      className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-foreground/10 px-0 py-4 sm:col-span-full sm:grid sm:grid-cols-subgrid sm:items-center ${
-        status.rowHighlight ? "bg-card" : ""
-      }`}
+      className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-foreground/10 px-3 py-4 sm:col-span-full sm:grid sm:grid-cols-subgrid sm:gap-x-8 sm:items-baseline ${ledgerRowSurface(
+        status.rowHighlight,
+        striped,
+      )}`}
     >
       <span className="order-1 font-mono text-sm text-muted-foreground sm:order-none">
         {String(event.stopNumber).padStart(2, "0")}
@@ -181,23 +191,30 @@ function ArchiveRow({
         {event.dateLabel}
       </span>
       <span className="order-4 basis-full font-semibold sm:order-none sm:basis-auto">
-        {event.name}{" "}
-        <span className="font-normal text-muted-tan">
-          · {formatCityState(event.city, event.state)}
+        {event.name}
+        <span className="block font-normal text-muted-tan">
+          {formatCityState(event.city, event.state)}
         </span>
       </span>
       <span
-        className={`order-5 basis-full flex-col justify-center leading-tight sm:order-none sm:flex sm:basis-auto ${
+        className={`order-5 basis-full flex-col items-start leading-tight sm:order-none sm:flex sm:basis-auto sm:items-end sm:justify-center sm:text-right ${
           event.status === "scheduled" ? "hidden" : "flex"
         }`}
       >
-        <span className="font-mono text-sm text-muted-foreground">
-          {status.countLabel ?? `${event.takeCount} takes`}
-        </span>
-        {event.liveState ? <LiveStateNote state={event.liveState} /> : null}
+        {event.status === "up-next" ? (
+          <InProcessSpinner />
+        ) : (
+          <span className="font-mono text-sm text-muted-foreground">
+            {status.countLabel ?? `${event.takeCount} takes`}
+          </span>
+        )}
+        {/* "Transcribing" still needs its note; an open stop is covered above. */}
+        {event.liveState && event.liveState !== "open" ? (
+          <LiveStateNote state={event.liveState} />
+        ) : null}
       </span>
       <span
-        className={`order-3 ml-auto font-mono text-xs uppercase sm:order-none sm:ml-0 ${status.statusClassName}`}
+        className={`order-3 ml-auto font-mono text-xs uppercase sm:order-none sm:ml-0 sm:text-right ${status.statusClassName}`}
       >
         {status.statusLabel}
       </span>

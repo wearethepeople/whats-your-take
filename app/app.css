@@ -52,6 +52,11 @@
   --footer-foreground: #ece5dc;
   --dashed: #bdb7b2; /* section-divider rule, distinct from --border */
   --muted-tan: #6a5e53; /* eyebrow labels, homepage tagline */
+  /* Zebra stripe for listing tables: paper (HSL 33.7° 29.6% 89.4%) with
+     lightness lowered 4 points and hue/saturation held. Ink, warm grey, tan
+     and --primary text all stay ≥ 4.5:1 on it; darker than -5 points drops
+     tan and --primary below AA. */
+  --zebra: #e5dbcf;
   --black: #231f20; /* wordmark ink; same as --foreground since the poster match */
   /* Submission-flow-only backdrop — the rounded card floating on top of it
      uses --background directly; only the surrounding page is this deeper
@@ -97,6 +102,7 @@
   --color-footer-foreground: var(--footer-foreground);
   --color-dashed: var(--dashed);
   --color-muted-tan: var(--muted-tan);
+  --color-zebra: var(--zebra);
   --color-black: var(--black);
 
   --color-wrtp-brand-orange: var(--wrtp-brand-orange);
@@ -352,6 +358,30 @@ body {
     animation: none;
     opacity: 0.25;
     transform: scale(2);
+  }
+}
+
+/* "Table is open right now" marker beside a homepage tour row: a ring with a
+   gap, turning slowly. Reduced motion keeps it still. */
+.in-process-spinner {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 9999px;
+  animation: in-process-spin 3s linear infinite;
+}
+
+@keyframes in-process-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .in-process-spinner {
+    animation: none;
   }
 }
 

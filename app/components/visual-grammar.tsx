@@ -117,6 +117,21 @@ export function LiveStateNote({
   );
 }
 
+// The "table is open right now" marker in a ledger row's count column: a slow
+// spinner in place of "up next" text, since it's happening, not queued. The
+// row's "Come find us" status says the rest, so there's no text note beside
+// it; the label is for assistive tech. Motion rules live in .in-process-spinner.
+export function InProcessSpinner() {
+  return <span className="in-process-spinner text-primary" role="img" aria-label="In process" />;
+}
+
+// Row surface for the ledger tables (home, /events, /find-the-table): the open
+// stop keeps its lifted-card highlight; otherwise every second row is striped.
+export function ledgerRowSurface(rowHighlight: boolean, striped: boolean): string {
+  if (rowHighlight) return "bg-card";
+  return striped ? "bg-zebra" : "";
+}
+
 // Shared status treatment for public ledger rows (home, /events,
 // /find-the-table) — one place that decides what a stop's status reads as
 // and how loud it looks, so the three pages don't drift from each other.

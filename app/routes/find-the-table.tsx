@@ -2,7 +2,13 @@ import { Link } from "react-router";
 import type { Route } from "./+types/find-the-table";
 import { Button } from "~/components/ui/button";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
-import { GoldUnderline, ledgerStatusMeta, offsetShadow, Stamp } from "~/components/visual-grammar";
+import {
+  GoldUnderline,
+  ledgerRowSurface,
+  ledgerStatusMeta,
+  offsetShadow,
+  Stamp,
+} from "~/components/visual-grammar";
 import { db } from "~/db/client.server";
 import { formatCityState } from "~/features/events/location";
 import { nextStop, upcomingLedger } from "~/features/events/services/season.server";
@@ -185,15 +191,15 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
 
               {upcoming.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <div className="flex flex-col sm:grid sm:grid-cols-[auto_auto_1fr_auto] sm:gap-x-8">
-                    <div className="col-span-full hidden grid-cols-subgrid items-center border-b border-foreground pb-2 font-mono text-xs text-muted-foreground uppercase sm:grid">
+                  <div className="flex flex-col sm:grid sm:grid-cols-[auto_auto_1fr_7rem] sm:gap-x-8">
+                    <div className="col-span-full hidden grid-cols-subgrid items-baseline border-b border-foreground px-3 pb-2 font-mono text-xs text-muted-foreground uppercase sm:grid">
                       <span>No.</span>
                       <span>Date</span>
                       <span>Stop</span>
-                      <span>Status</span>
+                      <span className="text-right">Status</span>
                     </div>
-                    {upcoming.map((event) => (
-                      <UpcomingRow key={event.id} event={event} />
+                    {upcoming.map((event, i) => (
+                      <UpcomingRow key={event.id} event={event} striped={i % 2 === 1} />
                     ))}
                   </div>
                 </div>
@@ -219,7 +225,9 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
 
 function UpcomingRow({
   event,
+  striped,
 }: {
+  striped: boolean;
   event: {
     id: number;
     publicSlug: string;
@@ -235,20 +243,23 @@ function UpcomingRow({
   return (
     <Link
       to={`/events/${event.publicSlug}`}
-      className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-foreground/10 px-0 py-4 sm:col-span-full sm:grid sm:grid-cols-subgrid sm:items-center"
+      className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-foreground/10 px-3 py-4 sm:col-span-full sm:grid sm:grid-cols-subgrid sm:gap-x-8 sm:items-baseline ${ledgerRowSurface(
+        status.rowHighlight,
+        striped,
+      )}`}
     >
       <span className="order-1 font-mono text-sm text-muted-foreground sm:order-none">
         {String(event.stopNumber).padStart(2, "0")}
       </span>
       <span className="order-2 text-sm text-muted-foreground sm:order-none">{event.dateLabel}</span>
       <span className="order-4 basis-full font-semibold sm:order-none sm:basis-auto">
-        {event.name}{" "}
-        <span className="font-normal text-muted-tan">
-          · {formatCityState(event.city, event.state)}
+        {event.name}
+        <span className="block font-normal text-muted-tan">
+          {formatCityState(event.city, event.state)}
         </span>
       </span>
       <span
-        className={`order-3 ml-auto font-mono text-xs uppercase sm:order-none sm:ml-0 ${status.statusClassName}`}
+        className={`order-3 ml-auto font-mono text-xs uppercase sm:order-none sm:ml-0 sm:text-right ${status.statusClassName}`}
       >
         {status.statusLabel}
       </span>

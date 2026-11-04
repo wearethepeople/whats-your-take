@@ -12,13 +12,16 @@ import writingPhoto from "~/assets/photos/writing.webp";
 import {
   CircledStep,
   GoldUnderline,
+  InProcessSpinner,
   LiveStateNote,
   PhotoFrame,
+  ledgerRowSurface,
   ledgerStatusMeta,
   StripeBackdrop,
   stripeButton,
 } from "~/components/visual-grammar";
 import { bannerStop } from "~/features/events/banner-stop";
+import { countdownLabel } from "~/features/events/countdown";
 import { formatCityState } from "~/features/events/location";
 import { formatRevealDate, revealAnnouncement } from "~/features/events/reveal-date";
 import {
@@ -29,6 +32,7 @@ import {
 } from "~/features/events/services/season.server";
 import { checkRateLimit, getClientIp } from "~/newsletter/rate-limit.server";
 import { newsletterFormSchema } from "~/newsletter/schema";
+import { buildTour, type TourEvent } from "~/features/events/tour";
 import { subscribe } from "~/newsletter/subscribe.server";
 
 export function meta() {
@@ -51,8 +55,10 @@ export async function loader() {
   const view = live ?? closedSeasonView(db);
   const sealed = !live && view != null;
   // Computed server-side so "within a week" is judged against one clock.
-  const nextStop = view ? (bannerStop(view.ledger) ?? null) : null;
-  return { view, sealed, nextStop };
+  const now = new Date();
+  const nextStop = view ? (bannerStop(view.ledger, now) ?? null) : null;
+  const tour = view ? buildTour(view.ledger, now) : null;
+  return { view, sealed, nextStop, tour };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -123,7 +129,7 @@ function daysUntil(date: Date): number {
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
-  const { view, sealed, nextStop } = loaderData;
+  const { view, sealed, nextStop, tour } = loaderData;
   const reveal = view?.season.revealDate ?? null;
   const revealDateLabel = reveal ? formatRevealDate(reveal) : null;
   // "on" a day, "in" a month — see revealAnnouncement().
@@ -327,7 +333,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           </div>
         </section>
 
-        {view && view.ledger.length > 0 ? (
+        {view && tour && (!sealed || tour.past.length > 0) ? (
           <section className="border-t border-dashed border-(--color-dashed) px-6 py-20 sm:px-14 sm:py-28">
             <div className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
               <div className="flex flex-col gap-4">
@@ -345,20 +351,68 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                   )}
                 </h2>
               </div>
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                <Link to="/events" className="underline underline-offset-4">
-                  All stops
-                </Link>
-                <Link to="/bring-the-table" className="underline underline-offset-4">
+              {/* With nothing upcoming, the empty state below carries this link. */}
+              {!sealed && tour.upcoming.length > 0 ? (
+                <Link to="/bring-the-table" className="text-sm underline underline-offset-4">
                   Bring the table to your town
                 </Link>
-              </div>
+              ) : null}
             </div>
+            {/* One grid for both lists so their columns line up. */}
             <div className="overflow-x-auto">
-              <div className="flex flex-col sm:grid sm:grid-cols-[auto_1fr_6rem_auto] sm:gap-x-8">
-                {view.ledger.map((event) => (
-                  <LedgerRow key={event.id} event={event} />
-                ))}
+              <div className="flex flex-col sm:grid sm:grid-cols-[auto_1fr_6rem_7rem] sm:gap-x-8">
+                {sealed ? null : (
+                  <>
+                    <TourLabel>Upcoming</TourLabel>
+                    {tour.upcoming.length > 0 ? (
+                      tour.upcoming.map((event, i) => (
+                        <LedgerRow key={event.id} event={event} striped={i % 2 === 1} />
+                      ))
+                    ) : (
+                      <TourFooter>
+                        <span className="text-muted-foreground">Nothing on the calendar yet. </span>
+                        <Link
+                          to="/bring-the-table"
+                          className="text-primary underline underline-offset-4"
+                        >
+                          Bring the table to your town
+                        </Link>
+                      </TourFooter>
+                    )}
+                    {tour.upcomingMore > 0 ? (
+                      <TourFooter>
+                        <Link to="/find-the-table" className="underline underline-offset-4">
+                          {tour.upcomingMore} more upcoming{" "}
+                          {tour.upcomingMore === 1 ? "stop" : "stops"}
+                        </Link>
+                      </TourFooter>
+                    ) : null}
+                  </>
+                )}
+                {tour.past.length > 0 ? (
+                  <>
+                    <TourLabel
+                      aside={
+                        <>
+                          {pluralize(tour.pastTotal, "stop")} · {pluralize(tour.pastTakes, "take")}
+                          {tour.pastLiveState ? (
+                            <LiveStateNote state={tour.pastLiveState} className="ml-3" />
+                          ) : null}
+                        </>
+                      }
+                    >
+                      Past
+                    </TourLabel>
+                    {tour.past.map((event, i) => (
+                      <LedgerRow key={event.id} event={event} striped={i % 2 === 1} />
+                    ))}
+                    <TourFooter>
+                      <Link to="/events" className="underline underline-offset-4">
+                        See where the table&rsquo;s been
+                      </Link>
+                    </TourFooter>
+                  </>
+                ) : null}
               </div>
             </div>
           </section>
@@ -542,28 +596,35 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
   );
 }
 
-function LedgerRow({
-  event,
-}: {
-  event: {
-    id: number;
-    publicSlug: string;
-    name: string;
-    city: string;
-    state: string | null;
-    dateLabel: string;
-    takeCount: number;
-    status: "up-next" | "scheduled" | "sealed";
-    liveState: LiveState;
-  };
-}) {
+// Column-spanning heading for one side of the tour, styled like the archive
+// table's header rule.
+function TourLabel({ children, aside }: { children: React.ReactNode; aside?: React.ReactNode }) {
+  return (
+    <div className="col-span-full flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-foreground px-3 pt-10 pb-2font-mono text-xs text-muted-foreground uppercase first:pt-0">
+      <p>{children}</p>
+      {aside ? <p className="flex items-center">{aside}</p> : null}
+    </div>
+  );
+}
+
+// Column-spanning closing line for a list: the empty state or its "more" link.
+function TourFooter({ children }: { children: React.ReactNode }) {
+  return <p className="col-span-full px-3 py-4 text-sm">{children}</p>;
+}
+
+function LedgerRow({ event, striped }: { event: TourEvent; striped: boolean }) {
   const status = ledgerStatusMeta(event.status);
+  // Within a week the "Scheduled" tag becomes a countdown; "Today" holds
+  // until the host opens the table, when the status flips to "Come find us".
+  const statusLabel = event.countdown ? countdownLabel(event.countdown) : status.statusLabel;
+  const statusClassName = event.countdown ? "font-semibold text-primary" : status.statusClassName;
   return (
     <Link
       to={`/events/${event.publicSlug}`}
-      className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-foreground/10 px-3 py-4 first:border-t sm:col-span-full sm:grid sm:grid-cols-subgrid sm:items-center ${
-        status.rowHighlight ? "bg-card" : ""
-      }`}
+      className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-foreground/10 px-3 py-4 sm:col-span-full sm:grid sm:grid-cols-subgrid sm:gap-x-8 sm:items-baseline ${ledgerRowSurface(
+        status.rowHighlight,
+        striped,
+      )}`}
     >
       <span
         className={`order-1 text-sm sm:order-none ${status.rowHighlight ? "font-semibold text-primary" : "text-muted-foreground"}`}
@@ -571,9 +632,9 @@ function LedgerRow({
         {event.dateLabel}
       </span>
       <span className="order-3 basis-full font-semibold sm:order-none sm:basis-auto">
-        {event.name}{" "}
-        <span className="font-normal text-muted-tan">
-          · {formatCityState(event.city, event.state)}
+        {event.name}
+        <span className="block font-normal text-muted-tan">
+          {formatCityState(event.city, event.state)}
         </span>
       </span>
       <span
@@ -581,15 +642,22 @@ function LedgerRow({
           event.status === "scheduled" ? "hidden" : "flex"
         }`}
       >
-        <span className="font-mono text-sm text-muted-foreground">
-          {status.countLabel ?? `${event.takeCount} takes`}
-        </span>
-        {event.liveState ? <LiveStateNote state={event.liveState} /> : null}
+        {event.status === "up-next" ? (
+          <InProcessSpinner />
+        ) : (
+          <span className="font-mono text-sm text-muted-foreground">
+            {status.countLabel ?? `${event.takeCount} takes`}
+          </span>
+        )}
+        {/* "Transcribing" still needs its note; an open stop is covered above. */}
+        {event.liveState && event.liveState !== "open" ? (
+          <LiveStateNote state={event.liveState} />
+        ) : null}
       </span>
       <span
-        className={`order-2 ml-auto font-mono text-xs uppercase sm:order-none sm:ml-0 ${status.statusClassName}`}
+        className={`order-2 ml-auto font-mono text-xs uppercase sm:order-none sm:ml-0 sm:text-right ${statusClassName}`}
       >
-        {status.statusLabel}
+        {statusLabel}
       </span>
     </Link>
   );
