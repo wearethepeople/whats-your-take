@@ -7,20 +7,57 @@ import { DashedDivider, GoldUnderline, LiveStateNote, Stamp } from "~/components
 import { formatCityState } from "~/features/events/location";
 import { revealAnnouncement, type RevealAnnouncement } from "~/features/events/reveal-date";
 import { eventDetail } from "~/features/events/services/season.server";
-
-function formatDateStamp(date: Date): string {
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${mm}/${dd}/${date.getFullYear()}`;
-}
+import { absoluteUrl, pageMeta, SITE_NAME } from "~/lib/seo";
 
 export function meta({ loaderData }: Route.MetaArgs) {
+  if (!loaderData) return [{ title: SITE_NAME }];
+  const { event } = loaderData;
+  const stop = String(event.stopNumber).padStart(2, "0");
+  const description = `Stop No. ${stop} of the ${SITE_NAME} tour: ${event.dayLabel}, ${formatCityState(event.city, event.state)}. Every take is anonymous and sealed until the reveal.`;
+  const path = `/events/${event.publicSlug}`;
   return [
-    {
-      title: loaderData
-        ? `${formatDateStamp(loaderData.event.startsAt)} ${loaderData.event.name} · What’s Your Take?`
-        : "What’s Your Take?",
-    },
+    ...pageMeta({
+      title: `${event.name} · Stop No. ${stop} · ${SITE_NAME}`,
+      description,
+      path,
+    }),
+    // Event markup needs a place; a stop with no venue yet gets none rather
+    // than a half-filled one.
+    ...(event.venue
+      ? [
+          {
+            "script:ld+json": {
+              "@context": "https://schema.org",
+              "@type": "Event",
+              name: event.name,
+              description,
+              url: absoluteUrl(path),
+              startDate: event.startsAt.toISOString(),
+              endDate: event.endsAt.toISOString(),
+              eventStatus: "https://schema.org/EventScheduled",
+              eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+              location: {
+                "@type": "Place",
+                name: event.venue,
+                address: {
+                  "@type": "PostalAddress",
+                  ...(event.address ? { streetAddress: event.address } : {}),
+                  addressLocality: event.city,
+                  ...(event.state ? { addressRegion: event.state } : {}),
+                  ...(event.zip ? { postalCode: event.zip } : {}),
+                  addressCountry: "US",
+                },
+              },
+              organizer: {
+                "@type": "Organization",
+                name: "We (ARE) the People",
+                url: "https://wearethepeople.us",
+              },
+              isAccessibleForFree: true,
+            },
+          },
+        ]
+      : []),
   ];
 }
 

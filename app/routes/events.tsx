@@ -18,15 +18,14 @@ import {
   type ArchiveEvent,
   type LiveState,
 } from "~/features/events/services/season.server";
+import { pageMeta, SITE_NAME } from "~/lib/seo";
 
 export function meta() {
-  return [
-    { title: "Where the table has been · What’s Your Take?" },
-    {
-      name: "description",
-      content: "Every stop the table has made, and what’s still sealed until the reveal.",
-    },
-  ];
+  return pageMeta({
+    title: `Where the table has been · ${SITE_NAME}`,
+    description: "Every stop the table has made: the day, the place, and how many people sat down.",
+    path: "/events",
+  });
 }
 
 export async function loader() {

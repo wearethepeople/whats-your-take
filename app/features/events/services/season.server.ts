@@ -559,6 +559,18 @@ function buildEventDetail(db: Db, event: PublicEventRow): EventDetail {
 // doesn't resolve to a real (non-draft) event. Deliberately looked up by
 // publicSlug, not the submission slug — see the schema comment on
 // events.slug for why the two must never be conflated.
+// Every event that has a public page, soonest first, for the sitemap. Same
+// status rule as eventDetail() below, so the sitemap never lists a 404.
+export function publicEventSlugs(db: Db): string[] {
+  return db
+    .select({ publicSlug: events.publicSlug })
+    .from(events)
+    .where(inArray(events.status, PUBLIC_STATUSES))
+    .orderBy(asc(events.startsAt))
+    .all()
+    .map((row) => row.publicSlug);
+}
+
 export function eventDetail(db: Db, publicSlug: string): EventDetail | undefined {
   const event = db
     .select()

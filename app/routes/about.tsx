@@ -2,15 +2,15 @@ import { Link } from "react-router";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { DashedDivider, GoldUnderline, PhotoFrame } from "~/components/visual-grammar";
 import tablePhoto from "~/assets/photos/the-table.webp";
+import { pageMeta, SITE_NAME } from "~/lib/seo";
 
 export function meta() {
-  return [
-    { title: "About · What’s Your Take?" },
-    {
-      name: "description",
-      content: "A guestbook for the country’s 250th birthday: in person, anonymous, and sealed.",
-    },
-  ];
+  return pageMeta({
+    title: `About · ${SITE_NAME}`,
+    description:
+      "A civic identity project from We (ARE) the People. One question, answered in person and anonymously, sealed until the reveal.",
+    path: "/about",
+  });
 }
 
 export default function About() {

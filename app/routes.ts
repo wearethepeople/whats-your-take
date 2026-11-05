@@ -7,6 +7,7 @@ export default [
   route("about", "routes/about.tsx"),
   route("find-the-table", "routes/find-the-table.tsx"),
   route("bring-the-table", "routes/bring-the-table.tsx"),
+  route("sitemap.xml", "routes/sitemap.xml.ts"),
   route("resources/healthcheck", "routes/resources.healthcheck.ts"),
   route("resources/area-suggestions", "routes/resources.area-suggestions.ts"),
   route("photos/*", "routes/photos.$.tsx"),

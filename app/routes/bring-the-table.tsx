@@ -24,17 +24,16 @@ import {
   createRequest,
   requestFormSchema,
 } from "~/features/table-requests/services/table-requests.server";
+import { pageMeta, SITE_NAME } from "~/lib/seo";
 
 const AREA_SUGGEST_DEBOUNCE_MS = 300;
 
 export function meta() {
-  return [
-    { title: "Bring the table to your town · What’s Your Take?" },
-    {
-      name: "description",
-      content: "Point us toward a ZIP code where the table should go next.",
-    },
-  ];
+  return pageMeta({
+    title: `Bring the table to your town · ${SITE_NAME}`,
+    description: "Point us toward a ZIP code or city where the table should go next.",
+    path: "/bring-the-table",
+  });
 }
 
 export async function action({ request }: Route.ActionArgs) {

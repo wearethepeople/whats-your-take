@@ -34,14 +34,39 @@ import { checkRateLimit, getClientIp } from "~/newsletter/rate-limit.server";
 import { newsletterFormSchema } from "~/newsletter/schema";
 import { buildTour, type TourEvent } from "~/features/events/tour";
 import { subscribe } from "~/newsletter/subscribe.server";
+import { pageMeta, SITE_NAME, SITE_ORIGIN } from "~/lib/seo";
+
+const HOME_DESCRIPTION =
+  "One table, one question, answered anonymously in person. Sealed until the reveal, then opened with a short film: a civic mirror for the country.";
 
 export function meta() {
   return [
-    { title: "What’s Your Take?" },
+    ...pageMeta({
+      title: `${SITE_NAME} · A civic mirror project`,
+      description: HOME_DESCRIPTION,
+      path: "/",
+    }),
     {
-      name: "description",
-      content:
-        "A pop-up civic guestbook from We (ARE) the People. One question, answered anonymously, shared publicly.",
+      "script:ld+json": {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": `${SITE_ORIGIN}/#website`,
+            url: `${SITE_ORIGIN}/`,
+            name: SITE_NAME,
+            description: HOME_DESCRIPTION,
+            publisher: { "@id": `${SITE_ORIGIN}/#organization` },
+          },
+          {
+            "@type": "Organization",
+            "@id": `${SITE_ORIGIN}/#organization`,
+            name: "We (ARE) the People",
+            url: "https://wearethepeople.us",
+            sameAs: ["https://www.instagram.com/wrtp.us/"],
+          },
+        ],
+      },
     },
   ];
 }

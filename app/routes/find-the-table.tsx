@@ -13,15 +13,15 @@ import { db } from "~/db/client.server";
 import { formatCityState } from "~/features/events/location";
 import { nextStop, upcomingLedger } from "~/features/events/services/season.server";
 import { DEFAULT_TIME_ZONE } from "~/lib/timezone";
+import { pageMeta, SITE_NAME } from "~/lib/seo";
 
 export function meta() {
-  return [
-    { title: "Find the table · What’s Your Take?" },
-    {
-      name: "description",
-      content: "No tickets, no signup, just show up. Where the table is headed next.",
-    },
-  ];
+  return pageMeta({
+    title: `Find the table · ${SITE_NAME}`,
+    description:
+      "Where the table is headed next. You can only participate in person, so find a stop near you.",
+    path: "/find-the-table",
+  });
 }
 
 export async function loader() {
