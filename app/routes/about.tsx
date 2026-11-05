@@ -34,11 +34,13 @@ export default function About() {
             <p className="max-w-prose text-[17.5px] text-muted-foreground">
               We&rsquo;re taking that question around the country, and everything people write stays
               sealed until the reveal. Then every answer is released at once, alongside a short film
-              that tries to answer two questions: Who are we? What do we believe?
+              that synthesizes the responses and attempts to answer two questions: Who are we? What
+              do we believe?
             </p>
             <p className="max-w-prose text-[17.5px] text-muted-foreground">
-              With no pressure to wear a label, the answers add up to a kind of civic mirror: the
-              country, reflected back to itself. It's "know thyself" at scale.
+              With no pressure to wear a label, the answers add up to a civic mirror: the country,
+              reflected back to itself, outside of feeds and algorithms. It&rsquo;s &ldquo;know
+              thyself&rdquo; at scale.
             </p>
           </div>
           <PhotoFrame

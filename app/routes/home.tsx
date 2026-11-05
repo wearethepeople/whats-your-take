@@ -134,9 +134,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const revealDateLabel = reveal ? formatRevealDate(reveal) : null;
   // "on" a day, "in" a month — see revealAnnouncement().
   const announcement = revealAnnouncement(reveal);
-  // The prompt is host-authored and changes, so the "Why 2076?" line only
-  // appears while the live question actually mentions 2076.
-  const asksAboutTricentennial = view?.season.promptText.includes("2076") ?? false;
   const daysToReveal = reveal ? daysUntil(reveal.date) : null;
   const subscribed = actionData?.ok === true;
 
@@ -175,28 +172,35 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               <h1 className={headlineClass}>A pop-up civic guestbook is on its way.</h1>
             )}
           </div>
-          <p className="mt-8 max-w-2xl text-xl text-muted-foreground sm:text-2xl">
+          <div className="mt-10 flex max-w-2xl flex-col gap-5 text-xl text-muted-foreground sm:text-2xl">
+            <p>
+              {sealed
+                ? "The table has finished its tour of festivals and markets."
+                : "We’re taking one question around the country, to festivals and markets, and asking everyone who stops by."}
+            </p>
             {sealed ? (
-              <>
-                The table has finished its tour of festivals and markets. Every take is sealed,
-                anonymous and unedited, until the whole record opens together.
-              </>
+              <p>
+                Every take is sealed, anonymous and unedited, until the whole record opens together.
+                Alongside it comes a short film that synthesizes the responses into a civic mirror,
+                reflecting us back to ourselves outside of feeds and algorithms.
+              </p>
             ) : (
-              <>
-                We&rsquo;re taking one question around the country, to festivals and markets, and
-                asking everyone who stops by. Every answer is anonymous, and sealed until{" "}
+              <p>
+                Every answer is anonymous, and sealed until{" "}
                 {revealDateLabel ? (
                   <span className="bg-accent px-0.5 font-semibold text-accent-foreground">
                     {revealDateLabel}
                   </span>
                 ) : (
-                  "the whole record opens"
+                  "the reveal"
                 )}
-                .
-              </>
+                . Then every answer opens at once, alongside a short film that synthesizes the
+                responses into a civic mirror, reflecting us back to ourselves outside of feeds and
+                algorithms.
+              </p>
             )}
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
+          </div>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
             <Link to="/find-the-table" className={stripeButton}>
               <StripeBackdrop />
               Where the table goes next
@@ -204,15 +208,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             <a href="#how-it-works" className="text-base underline underline-offset-4">
               How the table works
             </a>
-          </div>
-          <div className="mt-12 flex max-w-xl flex-col gap-1 text-[15px] text-muted-foreground">
-            <p>
-              You can&rsquo;t answer from here. The table only happens in person, one place at a
-              time.
-            </p>
-            {asksAboutTricentennial ? (
-              <p className="text-muted-tan">Why 2076? It&rsquo;s America&rsquo;s 300th birthday.</p>
-            ) : null}
           </div>
         </section>
 
@@ -290,8 +285,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             <p>What do we believe?</p>
           </div>
           <p className="mx-auto mt-10 max-w-2xl text-xl text-muted-foreground">
-            With no pressure to wear a label, the answers become a kind of mirror: the country,
-            reflected back to itself.
+            With no pressure to wear a label, the answers become a mirror: the country, reflected
+            back to itself.
           </p>
           <div className="mx-auto mt-14 w-fit text-left">
             <SeasonTimeline
