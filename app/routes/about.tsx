@@ -23,7 +23,7 @@ export default function About() {
           <div className="flex flex-col gap-6">
             <p className="text-sm text-muted-tan">About the project</p>
             <h1 className="max-w-2xl font-serif text-4xl leading-tight font-semibold text-balance sm:text-5xl">
-              A guestbook for the country&rsquo;s <GoldUnderline>250th birthday.</GoldUnderline>
+              A portrait of the country at <GoldUnderline>250 years old.</GoldUnderline>
             </h1>
             <p className="max-w-prose text-[17.5px] text-muted-foreground">
               What&rsquo;s Your Take? is a table we set up where people already are: festivals,

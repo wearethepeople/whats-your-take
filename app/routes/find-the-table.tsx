@@ -140,13 +140,12 @@ export default function FindTheTable({ loaderData }: Route.ComponentProps) {
 
       <main className="flex-1">
         <section className="flex flex-col gap-6 border-b border-dashed border-(--color-dashed) px-6 py-14 sm:px-14 sm:py-16">
-          <p className="text-sm text-muted-tan">No tickets, no signup, just show up</p>
+          <p className="text-sm text-muted-tan">You can only participate in person</p>
           <h1 className="max-w-2xl font-serif text-4xl leading-tight font-semibold text-balance sm:text-5xl">
             Come find <GoldUnderline>the table.</GoldUnderline>
           </h1>
           <p className="max-w-prose text-[17.5px] text-muted-foreground">
-            Find the table and have a seat. It takes a couple minutes on average. You can only
-            answer in person. That&rsquo;s the point.
+            Find the table and have a seat. It takes a couple minutes on average.
           </p>
           <Link to="/events" className="w-fit text-primary underline underline-offset-4">
             See every stop, past and upcoming
