@@ -126,52 +126,78 @@ function IdleResetGuard({
   idleMs: number;
   onReset: () => void;
 }) {
-  const [warning, setWarning] = useState(false);
-  const [remaining, setRemaining] = useState(IDLE_WARNING_SECONDS);
-  const armRef = useRef<() => void>(() => {});
+  // null = no warning showing; otherwise seconds left before onReset fires.
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const idleTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const onResetRef = useRef(onReset);
+
+  useEffect(() => {
+    onResetRef.current = onReset;
+  });
+
+  const startIdle = useCallback(() => {
+    clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => setRemaining(IDLE_WARNING_SECONDS), idleMs);
+  }, [idleMs]);
+
+  // Any interaction (or the keep-working button) clears the warning and
+  // starts a fresh idle cycle.
+  const restart = useCallback(() => {
+    setRemaining(null);
+    startIdle();
+  }, [startIdle]);
 
   useEffect(() => {
     if (!enabled) return;
-    let timer: ReturnType<typeof setTimeout>;
-    const arm = () => {
-      clearTimeout(timer);
-      setWarning(false);
-      setRemaining(IDLE_WARNING_SECONDS);
-      timer = setTimeout(() => setWarning(true), idleMs);
-    };
-    armRef.current = arm;
-    arm();
+    startIdle();
     const activity = ["pointerdown", "touchstart", "keydown"] as const;
-    for (const name of activity) window.addEventListener(name, arm);
+    for (const name of activity) window.addEventListener(name, restart);
     return () => {
-      clearTimeout(timer);
-      for (const name of activity) window.removeEventListener(name, arm);
+      clearTimeout(idleTimer.current);
+      for (const name of activity) window.removeEventListener(name, restart);
     };
-  }, [enabled, idleMs]);
+  }, [enabled, startIdle, restart]);
 
   useEffect(() => {
-    if (!warning) return;
-    const tick = setInterval(() => setRemaining((seconds) => seconds - 1), 1000);
-    return () => clearInterval(tick);
-  }, [warning]);
+    if (remaining === null) return;
+    const tick = setTimeout(() => {
+      if (remaining > 1) {
+        setRemaining(remaining - 1);
+        return;
+      }
+      // Re-arm before resetting: clears the banner and starts a fresh idle
+      // cycle for the next participant.
+      restart();
+      onResetRef.current();
+    }, 1000);
+    return () => clearTimeout(tick);
+  }, [remaining, restart]);
 
-  useEffect(() => {
-    if (!warning || remaining > 0) return;
-    // Re-arm before resetting: clears the banner and starts a fresh idle
-    // cycle for the next participant (and keeps this effect from re-firing).
-    armRef.current();
-    onReset();
-  }, [warning, remaining, onReset]);
-
-  if (!warning) return null;
+  if (remaining === null) return null;
   return (
     <div className="banner banner-warn idle-warning" role="alertdialog" aria-live="assertive">
-      <p>Still there? The form resets in {Math.max(remaining, 0)}…</p>
-      <button type="button" onClick={() => armRef.current()}>
+      <p>Still there? The form resets in {remaining}…</p>
+      <button type="button" onClick={restart}>
         Keep working
       </button>
     </div>
   );
+}
+
+// Off-kiosk: this is someone's own phone, so send them back to the homepage
+// rather than leaving them stranded on the confirmation screen. Mounts only
+// on the promoted screen, so the countdown starts when that screen appears.
+function HomeRedirectSeconds() {
+  const navigate = useNavigate();
+  const [seconds, setSeconds] = useState(HOME_REDIRECT_SECONDS);
+  useEffect(() => {
+    const tick = setTimeout(() => {
+      if (seconds > 1) setSeconds(seconds - 1);
+      else navigate("/", { replace: true });
+    }, 1000);
+    return () => clearTimeout(tick);
+  }, [seconds, navigate]);
+  return <>{seconds}</>;
 }
 
 // Rounded-card treatment (24px radius) on a tan backdrop — deliberately
@@ -475,7 +501,6 @@ function CodeScreen({
 }) {
   const [status, setStatus] = useState<"waiting" | "promoted" | "gone">("waiting");
   const [pulseCount, setPulseCount] = useState(0);
-  const [homeRedirectIn, setHomeRedirectIn] = useState(HOME_REDIRECT_SECONDS);
   const navigate = useNavigate();
   const formUrl = kiosk ? `/e/${slug}?kiosk=1` : `/e/${slug}`;
 
@@ -511,25 +536,12 @@ function CodeScreen({
     }
   }, [status, kiosk, slug, formUrl, navigate]);
 
-  // Off-kiosk: this is someone's own phone, so send them back to the
-  // homepage rather than leaving them stranded on the confirmation screen.
-  useEffect(() => {
-    if (status !== "promoted" || kiosk) return;
-    setHomeRedirectIn(HOME_REDIRECT_SECONDS);
-    const tick = setInterval(() => setHomeRedirectIn((seconds) => seconds - 1), 1000);
-    return () => clearInterval(tick);
-  }, [status, kiosk]);
-
-  useEffect(() => {
-    if (status !== "promoted" || kiosk || homeRedirectIn > 0) return;
-    navigate("/", { replace: true });
-  }, [status, kiosk, homeRedirectIn, navigate]);
-
   // Promoted resets itself in 6s; waiting gets the long idle deadline (a
   // reset destroys the only copy of the code), gone the short one.
   const idleGuard =
     status === "promoted" ? null : (
       <IdleResetGuard
+        key={status}
         enabled={kiosk}
         idleMs={status === "waiting" ? KIOSK_IDLE_CODE_MS : KIOSK_IDLE_COMPOSE_MS}
         onReset={onIdleReset}
@@ -566,7 +578,8 @@ function CodeScreen({
             >
               whatsyourtake.us
             </a>{" "}
-            in {Math.max(homeRedirectIn, 0)}s.{" "}
+            in <HomeRedirectSeconds />
+            s.{" "}
             <Link to="/" replace className="text-primary underline underline-offset-4">
               Go now
             </Link>

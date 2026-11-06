@@ -10,7 +10,7 @@ and after each event publishes a synthesis + browsable corpus. Full design:
 
 ## Stack
 
-- React Router v8, framework mode (Node 22.22+, React 19.2.7+, ESM-only)
+- React Router v8, framework mode (Node 26+, React 19.2.7+, ESM-only)
 - SQLite (WAL mode) + Drizzle ORM — single Fly.io machine (count pinned to 1)
   with a volume; Litestream replication to object storage (pin a version
   outside the v0.5.6–v0.5.7 silent-failure range; test restore before event

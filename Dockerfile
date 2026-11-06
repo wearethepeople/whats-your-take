@@ -5,23 +5,23 @@
 # silent-failure range.
 ARG LITESTREAM_VERSION=0.5.14
 
-FROM node:24-slim AS deps
+FROM node:26-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 
-FROM node:24-slim AS build
+FROM node:26-slim AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM node:24-slim AS prod-deps
+FROM node:26-slim AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci --omit=dev
 
-FROM node:24-slim
+FROM node:26-slim
 ARG LITESTREAM_VERSION
 WORKDIR /app
 ENV NODE_ENV=production
