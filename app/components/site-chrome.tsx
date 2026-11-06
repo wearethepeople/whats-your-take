@@ -51,7 +51,7 @@ export function SiteHeader({ active }: { active?: NavKey }) {
           mark. The link carries the accessible name; the marks are
           decorative inside it. The full nav needs about 820px beside the
           lockup, so tablets use the sheet. */}
-      <Link to="/" aria-label="What’s Your Take? — home">
+      <Link to="/" aria-label="What’s Your Take? A civic mirror project. Home">
         <WytLockup
           decorative
           className="[--mark-h:44px] [--tagline-size:12.5px] lg:[--mark-h:56px]"
