@@ -18,12 +18,14 @@ import {
   type ArchiveEvent,
   type LiveState,
 } from "~/features/events/services/season.server";
+import { revealPhrase } from "~/features/events/seo";
 import { pageMeta, SITE_NAME } from "~/lib/seo";
 
-export function meta() {
+export function meta({ loaderData }: Route.MetaArgs) {
+  const when = revealPhrase(loaderData?.season?.revealDate ?? null);
   return pageMeta({
     title: `Where the table has been · ${SITE_NAME}`,
-    description: "Every stop the table has made: the day, the place, and how many people sat down.",
+    description: `Every stop the table has made: the day, the place, and how many people sat down. What they wrote stays sealed until ${when}.`,
     path: "/events",
   });
 }

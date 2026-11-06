@@ -1,14 +1,25 @@
 import { Link } from "react-router";
+import type { Route } from "./+types/about";
+import { db } from "~/db/client.server";
+import { revealPhrase } from "~/features/events/seo";
+import { currentOrClosedSeason } from "~/features/events/services/season.server";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
 import { DashedDivider, GoldUnderline, PhotoFrame } from "~/components/visual-grammar";
 import tablePhoto from "~/assets/photos/the-table.webp";
 import { pageMeta, SITE_NAME } from "~/lib/seo";
 
-export function meta() {
+export async function loader() {
+  return { revealDate: currentOrClosedSeason(db)?.revealDate ?? null };
+}
+
+export function meta({ loaderData }: Route.MetaArgs) {
+  const reveal = loaderData?.revealDate ?? null;
+  // Without a configured date the sentence is left out rather than saying
+  // "sealed until the reveal", which tells a searcher nothing.
+  const sealed = reveal ? ` Sealed until ${revealPhrase(reveal)}.` : "";
   return pageMeta({
     title: `About · ${SITE_NAME}`,
-    description:
-      "A civic identity project from We (ARE) the People. One question, answered in person and anonymously, sealed until the reveal.",
+    description: `A civic identity project from We (ARE) the People that seeks to create a civic mirror based on anonymous responses from real people, outside of feeds and algorithms.${sealed}`,
     path: "/about",
   });
 }

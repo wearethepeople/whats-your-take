@@ -23,7 +23,12 @@ import {
 import { bannerStop } from "~/features/events/banner-stop";
 import { countdownLabel } from "~/features/events/countdown";
 import { formatCityState } from "~/features/events/location";
-import { formatRevealDate, revealAnnouncement } from "~/features/events/reveal-date";
+import {
+  formatRevealDate,
+  revealAnnouncement,
+  type RevealDate,
+} from "~/features/events/reveal-date";
+import { revealPhrase } from "~/features/events/seo";
 import {
   closedSeasonView,
   seasonView,
@@ -36,14 +41,16 @@ import { buildTour, type TourEvent } from "~/features/events/tour";
 import { subscribe } from "~/newsletter/subscribe.server";
 import { pageMeta, SITE_NAME, SITE_ORIGIN } from "~/lib/seo";
 
-const HOME_DESCRIPTION =
-  "One table, one question, answered anonymously in person. Sealed until the reveal, then opened with a short film: a civic mirror for the country.";
+function homeDescription(reveal: RevealDate | null): string {
+  return `One table, one question, answered anonymously in person. Sealed until ${revealPhrase(reveal)}, then opened with a short film: a civic mirror for the country.`;
+}
 
-export function meta() {
+export function meta({ loaderData }: Route.MetaArgs) {
+  const description = homeDescription(loaderData?.view?.season.revealDate ?? null);
   return [
     ...pageMeta({
       title: `${SITE_NAME} · A civic mirror project`,
-      description: HOME_DESCRIPTION,
+      description,
       path: "/",
     }),
     {
@@ -55,7 +62,7 @@ export function meta() {
             "@id": `${SITE_ORIGIN}/#website`,
             url: `${SITE_ORIGIN}/`,
             name: SITE_NAME,
-            description: HOME_DESCRIPTION,
+            description,
             publisher: { "@id": `${SITE_ORIGIN}/#organization` },
           },
           {

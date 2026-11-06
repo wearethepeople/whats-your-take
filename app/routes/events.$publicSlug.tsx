@@ -7,13 +7,14 @@ import { DashedDivider, GoldUnderline, LiveStateNote, Stamp } from "~/components
 import { formatCityState } from "~/features/events/location";
 import { revealAnnouncement, type RevealAnnouncement } from "~/features/events/reveal-date";
 import { eventDetail } from "~/features/events/services/season.server";
+import { eventDescription } from "~/features/events/seo";
 import { absoluteUrl, pageMeta, SITE_NAME } from "~/lib/seo";
 
 export function meta({ loaderData }: Route.MetaArgs) {
   if (!loaderData) return [{ title: SITE_NAME }];
   const { event } = loaderData;
   const stop = String(event.stopNumber).padStart(2, "0");
-  const description = `Stop No. ${stop} of the ${SITE_NAME} tour: ${event.dayLabel}, ${formatCityState(event.city, event.state)}. Every take is anonymous and sealed until the reveal.`;
+  const description = eventDescription(event);
   const path = `/events/${event.publicSlug}`;
   return [
     ...pageMeta({
