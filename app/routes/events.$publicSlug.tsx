@@ -8,7 +8,7 @@ import { formatCityState } from "~/features/events/location";
 import { revealAnnouncement, type RevealAnnouncement } from "~/features/events/reveal-date";
 import { eventDetail } from "~/features/events/services/season.server";
 import { eventDescription } from "~/features/events/seo";
-import { absoluteUrl, pageMeta, SITE_NAME } from "~/lib/seo";
+import { absoluteUrl, ORGANIZATION, pageMeta, SITE_NAME } from "~/lib/seo";
 
 export function meta({ loaderData }: Route.MetaArgs) {
   if (!loaderData) return [{ title: SITE_NAME }];
@@ -49,11 +49,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
                   addressCountry: "US",
                 },
               },
-              organizer: {
-                "@type": "Organization",
-                name: "We (ARE) the People",
-                url: "https://wearethepeople.us",
-              },
+              organizer: ORGANIZATION,
               isAccessibleForFree: true,
             },
           },

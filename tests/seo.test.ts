@@ -18,10 +18,23 @@ describe("canonicalHostRedirect", () => {
     expect(canonicalHostRedirect(new URL("https://whatsyourtake.us/about"))).toBeNull();
   });
 
-  it("leaves the Fly hostname alone so its health check keeps answering", () => {
-    expect(
-      canonicalHostRedirect(new URL("https://whats-your-take.fly.dev/resources/healthcheck")),
-    ).toBeNull();
+  it("sends the Fly hostname to the apex, keeping path and query", () => {
+    expect(canonicalHostRedirect(new URL("https://whats-your-take.fly.dev/about?a=1"))).toBe(
+      "https://whatsyourtake.us/about?a=1",
+    );
+  });
+
+  it("never redirects the health check, on any host", () => {
+    for (const host of ["whats-your-take.fly.dev", "www.whatsyourtake.us", "172.19.0.2:8080"]) {
+      expect(
+        canonicalHostRedirect(new URL(`http://${host}/resources/healthcheck`)),
+        host,
+      ).toBeNull();
+    }
+  });
+
+  it("does not match a host that merely contains fly.dev", () => {
+    expect(canonicalHostRedirect(new URL("https://fly.dev.evil.test/"))).toBeNull();
   });
 
   it("leaves localhost alone", () => {

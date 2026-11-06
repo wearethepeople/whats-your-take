@@ -39,7 +39,7 @@ import { checkRateLimit, getClientIp } from "~/newsletter/rate-limit.server";
 import { newsletterFormSchema } from "~/newsletter/schema";
 import { buildTour, type TourEvent } from "~/features/events/tour";
 import { subscribe } from "~/newsletter/subscribe.server";
-import { pageMeta, SITE_NAME, SITE_ORIGIN } from "~/lib/seo";
+import { ORGANIZATION, ORGANIZATION_ID, pageMeta, SITE_NAME, SITE_ORIGIN } from "~/lib/seo";
 
 function homeDescription(reveal: RevealDate | null): string {
   return `One table, one question, answered anonymously in person. Sealed until ${revealPhrase(reveal)}, then opened with a short film: a civic mirror for the country.`;
@@ -63,15 +63,9 @@ export function meta({ loaderData }: Route.MetaArgs) {
             url: `${SITE_ORIGIN}/`,
             name: SITE_NAME,
             description,
-            publisher: { "@id": `${SITE_ORIGIN}/#organization` },
+            publisher: { "@id": ORGANIZATION_ID },
           },
-          {
-            "@type": "Organization",
-            "@id": `${SITE_ORIGIN}/#organization`,
-            name: "We (ARE) the People",
-            url: "https://wearethepeople.us",
-            sameAs: ["https://www.instagram.com/wrtp.us/"],
-          },
+          { ...ORGANIZATION, sameAs: ["https://www.instagram.com/wrtp.us/"] },
         ],
       },
     },
