@@ -73,3 +73,27 @@ jobs:
       - run: flyctl deploy --remote-only --ha=false
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  # Tells IndexNow (Bing, Yandex and other participating engines) about every
+  # URL in the live sitemap once the deploy is out. INDEXNOW_KEY must match
+  # the key file public/<key>.txt, which proves ownership. The key is public
+  # by design. Same job in wearethepeople.us, whatsyourtake.us and
+  # itsourmoney.us.
+  indexnow:
+    name: notify IndexNow
+    needs: [deploy]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      SITE: https://whatsyourtake.us
+      INDEXNOW_KEY: 3675f536cfedb74df879b03a70a2d732
+    steps:
+      - name: submit sitemap URLs
+        run: |
+          urls=$(curl -fsS "$SITE/sitemap.xml" | grep -o '<loc>[^<]*' | sed 's/<loc>//' \
+            | jq -Rsc 'split("\n") | map(select(length > 0))')
+          jq -n --arg host "${SITE#https://}" --arg key "$INDEXNOW_KEY" --argjson urls "$urls" \
+            '{host: $host, key: $key, urlList: $urls}' \
+            | curl -fsS -X POST https://api.indexnow.org/indexnow \
+                -H 'Content-Type: application/json; charset=utf-8' --data-binary @- \
+                -o /dev/null -w 'IndexNow: HTTP %{http_code}\n'
