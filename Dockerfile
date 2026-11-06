@@ -36,7 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
-COPY package.json ./
+COPY package.json server.ts ./
+COPY app/lib/seo.ts ./app/lib/seo.ts
 COPY drizzle ./drizzle
 COPY other/migrate.js ./other/migrate.js
 COPY other/litestream.yml /etc/litestream.yml

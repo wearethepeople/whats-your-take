@@ -3,12 +3,11 @@ import {
   Links,
   Meta,
   Outlet,
-  redirect,
   Scripts,
   ScrollRestoration,
 } from "react-router";
 import type { Route } from "./+types/root";
-import { absoluteUrl, canonicalHostRedirect, isNoindexPath, SITE_NAME } from "~/lib/seo";
+import { absoluteUrl, isNoindexPath, SITE_NAME } from "~/lib/seo";
 import "./app.css";
 import publicSans400 from "@fontsource/public-sans/files/public-sans-latin-400-normal.woff2?url";
 import sourceSerif600 from "@fontsource/source-serif-4/files/source-serif-4-latin-600-normal.woff2?url";
@@ -22,13 +21,11 @@ export const links: Route.LinksFunction = () =>
     crossOrigin: "anonymous",
   }));
 
-// Runs for every route, including resource routes like /sitemap.xml.
+// Runs for every route, including resource routes like /sitemap.xml. The
+// canonical-host redirect happens earlier, in server.ts.
 export const middleware: Route.MiddlewareFunction[] = [
   async ({ request }, next) => {
     const url = new URL(request.url);
-    const target = canonicalHostRedirect(url);
-    if (target) throw redirect(target, 301);
-
     const response = await next();
     if (response instanceof Response && isNoindexPath(url.pathname)) {
       response.headers.set("X-Robots-Tag", "noindex");
