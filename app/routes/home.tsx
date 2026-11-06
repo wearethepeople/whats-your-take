@@ -5,6 +5,7 @@ import { db } from "~/db/client.server";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { SiteFooter, SiteHeader } from "~/components/site-chrome";
+import publicSans700 from "@fontsource/public-sans/files/public-sans-latin-700-normal.woff2?url";
 import heroPhoto800 from "~/assets/photos/hero-800.webp";
 import heroPhoto1400 from "~/assets/photos/hero-1400.webp";
 import heroPhoto2000 from "~/assets/photos/hero-2000.webp";
@@ -44,6 +45,18 @@ import { ORGANIZATION, ORGANIZATION_ID, pageMeta, SITE_NAME, SITE_ORIGIN } from 
 function homeDescription(reveal: RevealDate | null): string {
   return `One table, one question, answered anonymously in person. Sealed until ${revealPhrase(reveal)}, then opened with a short film: a civic mirror for the country.`;
 }
+
+// The "Next stop" strip is bold Public Sans above the fold on this page only;
+// root.tsx preloads the weights every page needs.
+export const links: Route.LinksFunction = () => [
+  {
+    rel: "preload",
+    as: "font",
+    type: "font/woff2",
+    href: publicSans700,
+    crossOrigin: "anonymous",
+  },
+];
 
 export function meta({ loaderData }: Route.MetaArgs) {
   const description = homeDescription(loaderData?.view?.season.revealDate ?? null);

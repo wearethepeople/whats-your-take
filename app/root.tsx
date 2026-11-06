@@ -10,6 +10,17 @@ import {
 import type { Route } from "./+types/root";
 import { absoluteUrl, canonicalHostRedirect, isNoindexPath, SITE_NAME } from "~/lib/seo";
 import "./app.css";
+import publicSans400 from "@fontsource/public-sans/files/public-sans-latin-400-normal.woff2?url";
+import sourceSerif600 from "@fontsource/source-serif-4/files/source-serif-4-latin-600-normal.woff2?url";
+
+export const links: Route.LinksFunction = () =>
+  [publicSans400, sourceSerif600].map((href) => ({
+    rel: "preload",
+    as: "font",
+    type: "font/woff2",
+    href,
+    crossOrigin: "anonymous",
+  }));
 
 // Runs for every route, including resource routes like /sitemap.xml.
 export const middleware: Route.MiddlewareFunction[] = [
