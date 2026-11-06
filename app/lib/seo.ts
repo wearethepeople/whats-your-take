@@ -34,6 +34,16 @@ export function pageMeta({
   ];
 }
 
+// Pages that must never appear in search: the participant submission flow,
+// the host console and internal resources. Kept out with a noindex header, not
+// robots.txt — a robots.txt Disallow stops crawling but not indexing, and a
+// crawler blocked by it never sees a noindex, so these paths stay crawlable.
+const NOINDEX_PREFIXES = ["/e/", "/host/", "/resources/"];
+
+export function isNoindexPath(pathname: string): boolean {
+  return NOINDEX_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
 // www.whatsyourtake.us serves the same site as the apex, so it is sent to the
 // apex with a permanent redirect: one address in links and in search results.
 // Only that one host is rewritten — the Fly hostname and localhost are left

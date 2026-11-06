@@ -8,14 +8,21 @@ import {
   ScrollRestoration,
 } from "react-router";
 import type { Route } from "./+types/root";
-import { absoluteUrl, canonicalHostRedirect, SITE_NAME } from "~/lib/seo";
+import { absoluteUrl, canonicalHostRedirect, isNoindexPath, SITE_NAME } from "~/lib/seo";
 import "./app.css";
 
 // Runs for every route, including resource routes like /sitemap.xml.
 export const middleware: Route.MiddlewareFunction[] = [
-  ({ request }) => {
-    const target = canonicalHostRedirect(new URL(request.url));
+  async ({ request }, next) => {
+    const url = new URL(request.url);
+    const target = canonicalHostRedirect(url);
     if (target) throw redirect(target, 301);
+
+    const response = await next();
+    if (response instanceof Response && isNoindexPath(url.pathname)) {
+      response.headers.set("X-Robots-Tag", "noindex");
+    }
+    return response;
   },
 ];
 

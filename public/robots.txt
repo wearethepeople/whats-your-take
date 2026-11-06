@@ -1,6 +1,4 @@
 User-agent: *
-Disallow: /host/
-Disallow: /e/
-Disallow: /resources/
+Disallow:
 
 Sitemap: https://whatsyourtake.us/sitemap.xml

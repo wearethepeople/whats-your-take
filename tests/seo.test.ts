@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canonicalHostRedirect, pageMeta } from "~/lib/seo";
+import { canonicalHostRedirect, isNoindexPath, pageMeta } from "~/lib/seo";
 
 describe("canonicalHostRedirect", () => {
   it("sends www to the apex, keeping path and query", () => {
@@ -47,5 +47,32 @@ describe("pageMeta", () => {
   it("omits description tags when there is no description", () => {
     const tags = pageMeta({ title: "T", path: "/" });
     expect(JSON.stringify(tags)).not.toContain("description");
+  });
+});
+
+describe("isNoindexPath", () => {
+  it("covers the submission flow, host console and internal resources", () => {
+    for (const path of [
+      "/e/abc",
+      "/e/abc/status/XYZ",
+      "/host/login",
+      "/host/events/3",
+      "/resources/healthcheck",
+    ]) {
+      expect(isNoindexPath(path), path).toBe(true);
+    }
+  });
+
+  it("leaves public pages indexable, including lookalike prefixes", () => {
+    for (const path of [
+      "/",
+      "/about",
+      "/events",
+      "/events/2026-08-15-dallas",
+      "/events/e/x",
+      "/hosting",
+    ]) {
+      expect(isNoindexPath(path), path).toBe(false);
+    }
   });
 });
