@@ -15,6 +15,12 @@ const PORT = Number(process.env.PORT ?? 3000);
 
 const app = express();
 app.disable("x-powered-by");
+// Fly terminates TLS and forwards plain HTTP, so without this req.protocol is
+// "http" and React Router builds request.url as http://…. Its CSRF check then
+// rejects every action POST (host login included), because the browser's
+// Origin header is https://…. Trusting the proxy makes req.protocol read
+// X-Forwarded-Proto. Fly is the only way in, so this is safe.
+app.set("trust proxy", true);
 
 const getHost = (req: express.Request) => req.get("X-Forwarded-Host") ?? req.get("host") ?? "";
 
